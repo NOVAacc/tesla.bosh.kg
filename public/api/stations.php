@@ -28,7 +28,7 @@ function sparkRows(bool $ccs2): array
 {
     $query = $ccs2
         ? 'query ChargingStationsList($page: Page, $connectors: ConnectorType) { ChargingStationsList(page: $page, connectors: $connectors) { count rows { id } } }'
-        : 'query ChargingStationsList($page: Page) { ChargingStationsList(page: $page) { count rows { id name active address blacklisted forceBlocked coordinates { latitude longitude } evses { id connectors { id type status pending chargingFinished activeTransactionBrief { percentage } } } } } }';
+        : 'query ChargingStationsList($page: Page) { ChargingStationsList(page: $page) { count rows { id seqNo name active address blacklisted forceBlocked coordinates { latitude longitude } evses { id connectors { id type status pending chargingFinished activeTransactionBrief { percentage } } } } } }';
     $rows = [];
     $total = null;
     $deadline = microtime(true) + 22;
@@ -86,7 +86,7 @@ function sparkStations(array $rows, array $ccs2 = []): array
             }
         }
         $stations[] = stationWithConnectors([
-            'id' => "spark:$id", 'sourceId' => $id, 'operator' => 'SPARK KG',
+            'id' => "spark:$id", 'sourceId' => $id, 'seqNo' => $row['seqNo'] ?? null, 'operator' => 'SPARK KG',
             'name' => $row['name'], 'address' => $row['address'] ?? '',
             'lat' => (float) $lat, 'lng' => (float) $lng, 'active' => $active, 'blocked' => $blocked,
             'supportedConnectorTypes' => isset($ccs2[(string) $id]) ? ['CCS2'] : ($row['supportedConnectorTypes'] ?? []),
@@ -199,7 +199,7 @@ function groupSites(array $stations): array
 
 function loadCached(string $operator, callable $loader, array $fallback = []): array
 {
-    $path = sys_get_temp_dir() . '/tesla-map-' . hash('sha256', __DIR__) . ($operator === 'spark' ? '-spark-v3.json' : "-$operator.json");
+    $path = sys_get_temp_dir() . '/tesla-map-' . hash('sha256', __DIR__) . ($operator === 'spark' ? '-spark-v4.json' : "-$operator.json");
     $cached = is_file($path) ? json_decode((string) @file_get_contents($path), true) : null;
     if ($cached && time() - $cached['checkedAt'] < ($cached['error'] ? 30 : 300)) {
         return $cached;
@@ -221,8 +221,57 @@ function loadCached(string $operator, callable $loader, array $fallback = []): a
     return $result;
 }
 
+function sparkCardPercentages(int $seqNo): array
+{
+    $query = <<<'GRAPHQL'
+query ChargingStationCard($seqNo: Float!) {
+  ChargingStationCard(seqNo: $seqNo) {
+    seqNo
+    evses {
+      id power
+      connectors {
+        id evseId type status oldOCPPStatus chargingFinished pending outletType power maxAmps
+        activeTransactionBrief { percentage estimatedChargingTime }
+      }
+    }
+  }
+}
+GRAPHQL;
+    $card = graphql('https://api.itcharge.ru/graphql/v1', $query, ['seqNo' => $seqNo], [
+        'tenant: spark', 'x-application-version: 2.3.3-ios',
+    ])['ChargingStationCard'] ?? [];
+    $percentages = [];
+    foreach ($card['evses'] ?? [] as $device) {
+        foreach ($device['connectors'] ?? [] as $connector) {
+            $percentage = $connector['activeTransactionBrief']['percentage'] ?? null;
+            if (($connector['status'] ?? '') === 'OCCUPIED' && empty($connector['chargingFinished'])
+                && is_numeric($percentage) && $percentage >= 0 && $percentage <= 100) {
+                $percentages[$device['id'] . ':' . $connector['id']] = (float) $percentage;
+            }
+        }
+    }
+    return $percentages;
+}
+
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
+if (isset($_GET['sparkCard'])) {
+    $seqNo = filter_input(INPUT_GET, 'sparkCard', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    if (!$seqNo) {
+        http_response_code(400);
+        echo '{"error":"Invalid station number"}';
+        exit;
+    }
+    $result = loadCached('spark-card-' . $seqNo, static fn (): array => [
+        'percentages' => sparkCardPercentages($seqNo),
+    ]);
+    if ($result['error'] !== null) {
+        http_response_code(502);
+    }
+    echo json_encode(['percentages' => (object) ($result['percentages'] ?? [])], JSON_THROW_ON_ERROR);
+    exit;
+}
+
 $snapshot = json_decode((string) file_get_contents(__DIR__ . '/spark-snapshot.json'), true);
 $fallback = sparkStations($snapshot['rows'] ?? []);
 $spark = loadCached('spark', static function (): array {
