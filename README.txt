@@ -12,10 +12,9 @@
 
 Публикация на tesla.bosh.kg
 
-В cPanel зарегистрируйте отдельное приложение Node.js 22 (Passenger)
-для tesla.bosh.kg с корнем tesla-map и стартовым файлом app.cjs.
-Каталог приложения должен быть доступен FTPS-пользователю. В GitHub
-Environment production задайте FTPS_HOST, FTPS_USER и FTPS_PASSWORD
-как секреты, а FTPS_APP_DIR как путь к tesla-map относительно корня
-FTPS-пользователя. Push в main проверяет исходники, загружает приложение,
-перезапускает Passenger и проверяет главную страницу и API.
+Ветка main публикуется через GitHub Actions и FTPS в каталог
+public_html/tesla.bosh.kg на Fornex. Настройте секреты FTPS_HOST,
+FTPS_USER и FTPS_PASSWORD в окружении production. FTP-пользователю
+нужен доступ к этому каталогу из корня учётной записи или из public_html.
+Для API нужны PHP 8.1 или новее, расширение cURL и Apache mod_rewrite.
+Node.js используется для локального запуска и тестирования исходной версии.

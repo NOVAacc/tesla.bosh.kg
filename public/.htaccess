@@ -1,0 +1,3 @@
+DirectoryIndex index.html
+RewriteEngine On
+RewriteRule ^api/stations/?$ api/stations.php [L]
