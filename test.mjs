@@ -90,3 +90,10 @@ test('Mobile stations use bottom details panel and visual charging indicators',(
  assert.match(html,/if\(mobileMQ\.matches\)\{openStationPanel\(station\)\}/);
  assert.match(html,/startSparkDetails\(site,/);
 });
+
+test('Mobile station panel closes on map tab, background tap and viewport switch',()=>{
+ const html=fs.readFileSync('public/index.html','utf8');
+ assert.match(html,/if\(name==='map'\)\{closeSheet\(\);closeStationPanel\(\);return\}/);
+ assert.match(html,/map\.on\('click',\(\)=>\{if\(mobileMQ\.matches&&selectedStation\)closeStationPanel\(\)\}\)/);
+ assert.match(html,/function syncMobileLayout\(\)\{\s*closeStationPanel\(\)/);
+});
