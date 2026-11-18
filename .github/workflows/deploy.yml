@@ -35,6 +35,7 @@ jobs:
           FTPS_HOST: ${{ secrets.FTPS_HOST }}
           FTPS_USER: ${{ secrets.FTPS_USER }}
           LFTP_PASSWORD: ${{ secrets.FTPS_PASSWORD }}
+          CARTO_BASEMAP_KEY: ${{ secrets.CARTO_BASEMAP_KEY }}
         run: |
           set -euo pipefail
           : "${FTPS_HOST:?}" "${FTPS_USER:?}" "${LFTP_PASSWORD:?}"
@@ -43,6 +44,11 @@ jobs:
           release_dir="$(mktemp -d)"
           cp -R public/. "$release_dir/"
           cp data/spark-snapshot.json "$release_dir/api/"
+          # CARTO Voyager uses a client-side, provider-issued public basemap key.
+          # If unset, the site safely retains the OSM base map.
+          if [[ -n "${CARTO_BASEMAP_KEY:-}" ]]; then
+            printf 'window.TESLA_MAP_CONFIG={cartoApiKey:%s};\n' "$(jq -Rn --arg key "$CARTO_BASEMAP_KEY" '$key')" > "$release_dir/map-config.js"
+          fi
           lftp -c "
             set cmd:fail-exit yes
             set ftp:ssl-force yes
