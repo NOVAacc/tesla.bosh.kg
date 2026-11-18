@@ -57,3 +57,13 @@ test('SPARK card includes prices and explains missing credentials',()=>{
  assert.match(html,/data\.connectors\?/);
  assert.match(html,/tariffText\(c\.tariff\)/);
 });
+
+test('Mobile navigation: persistent tabs and bottom sheets are wired',()=>{
+ const html=fs.readFileSync('public/index.html','utf8');
+ for(const tab of ['map','search','filters'])assert.match(html,new RegExp('data-mobile-tab="'+tab+'"'));
+ for(const id of ['searchSheet','filterSheet','mobileShade','mobileRefresh','mobileReset','applyFilters'])assert.ok(html.includes('id="'+id+'"'));
+ assert.match(html,/function syncMobileLayout\(\)/);
+ assert.match(html,/function openSheet\(name\)/);
+ assert.match(html,/map\.invalidateSize\(\)/);
+ assert.match(html,/visibleMarkers\.set\(s\.id,markerRef\)/);
+});
