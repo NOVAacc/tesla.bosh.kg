@@ -1,6 +1,51 @@
 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Карта зарядных станций Кыргызстана</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><style>
 :root{color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1b2430}*{box-sizing:border-box}body{margin:0;background:#f6f7f9}.app{height:100dvh;display:flex;flex-direction:column}.toolbar{background:white;border-bottom:1px solid #e5e9ef;z-index:900;padding:12px 16px;box-shadow:0 1px 7px #1020300a}.top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.brand h1{font-size:18px;margin:0;letter-spacing:-.35px}.sub{font-size:12px;color:#64748b;margin-top:4px}.actions,.filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.filters{margin-top:12px}.chip,.control,.search{border:1px solid #dce2e9;background:#fff;color:#273547;font:inherit;font-size:13px;border-radius:10px;min-height:37px;padding:7px 10px}.chip{cursor:pointer;white-space:nowrap}.chip[aria-pressed=true]{background:#1e293b;border-color:#1e293b;color:#fff}.search{width:200px}.control{max-width:190px}.control:disabled{opacity:.45}.summary{color:#64748b;font-size:12px;margin-top:9px}.main{position:relative;flex:1;min-height:0}#map{height:100%;width:100%}.status{position:absolute;z-index:700;bottom:16px;left:16px;background:#fff;border:1px solid #e3e7ec;border-radius:11px;padding:10px 13px;max-width:min(88vw,750px);box-shadow:0 3px 14px #0001;font-size:12px;color:#475569}.dot{display:inline-block;width:9px;height:9px;border-radius:100%;margin-right:5px}.marker{border-radius:50%;width:31px;height:31px;display:grid;place-items:center;color:#fff;border:3px solid #fff;box-shadow:0 1px 7px #0005;font-size:12px;font-weight:700}.leaflet-div-icon{background:none;border:none}.leaflet-popup-content{min-width:245px;line-height:1.5}.leaflet-popup-content .device{border-top:1px solid #e8ebee;margin-top:7px;padding-top:7px}.port{display:inline-block;margin:3px 4px 2px 0;border-radius:6px;background:#eff3f7;padding:3px 6px;font-size:12px}.spark-detail-note{font-size:11px;color:#a16207;margin-top:6px}.spark-detail-note:empty{display:none}.muted{color:#718096;font-size:12px}.refresh-note{font-size:11px;color:#64748b}label.mini{font-size:12px;color:#475569}.filters .divider{width:1px;height:25px;background:#e4e9ef;margin:0 2px}@media(max-width:850px){.toolbar{padding:10px}.top{align-items:flex-start}.brand h1{font-size:16px}.filters{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}.search{width:160px;flex:none}.status{left:8px;right:8px;bottom:8px;max-width:none;font-size:11px}.control{min-width:125px;max-width:170px}}
-</style></head><body><div class="app"><div class="toolbar"><div class="top"><div class="brand"><h1>Зарядные станции Кыргызстана</h1><div class="sub">Единая карта SPARK KG и Charge24</div></div><div class="actions"><button class="chip" id="refresh" type="button">↻ Обновить данные</button><button class="chip" id="reset" type="button">Сбросить фильтры</button></div></div><div class="filters" role="group" aria-label="Фильтры зарядных станций"><button class="chip" id="spark" type="button" aria-pressed="true">SPARK KG</button><button class="chip" id="charge24" type="button" aria-pressed="true">Charge24</button><div class="divider"></div><input id="search" class="search" placeholder="Поиск по названию и адресу" aria-label="Поиск по названию и адресу"><select class="control" id="availability" aria-label="Доступность"><option value="all">Любая доступность</option><option value="free">Есть свободный порт</option><option value="occupied">Есть занятый порт</option><option value="allfree">Все порты свободны</option><option value="nofree">Нет свободных</option></select><select class="control" id="connector" aria-label="Разъём"><option value="all">Все разъёмы</option></select><select class="control" id="current" aria-label="Род тока"><option value="all">AC и DC</option><option value="DC">DC (быстрая)</option><option value="AC">AC (медленная)</option><option value="unknown">Неизвестный тип</option></select><select class="control" id="power" aria-label="Мощность"><option value="all">Любая мощность</option><option value="20">от 20 кВт</option><option value="40">от 40 кВт</option><option value="60">от 60 кВт</option><option value="80">от 80 кВт</option><option value="120">от 120 кВт</option><option value="150">от 150 кВт</option><option value="unknown">Не указана</option></select><select class="control" id="station" aria-label="Состояние устройства"><option value="all">Любые станции</option><option value="active">Только активные</option><option value="inactive">Неактивные / заблокированные</option></select><select class="control" id="portstatus" aria-label="Статус порта"><option value="all">Любой статус порта</option><option value="AVAILABLE">Свободен</option><option value="OCCUPIED">Занят / зарядка</option><option value="FAULTED">Неисправен</option><option value="UNAVAILABLE">Недоступен</option><option value="FINISHING">Завершение</option><option value="PREPARING">Подключение</option><option value="UNKNOWN">Неизвестный статус</option></select><select class="control" id="extras" aria-label="Дополнительный фильтр"><option value="all">Без доп. условий</option><option value="pending">Ожидает подключения</option><option value="finished">Зарядка завершена</option><option value="percentage">Показан % заряда</option></select></div><div class="summary" id="summary">Загрузка данных…</div></div><div class="main"><div id="map"></div><div class="status" id="status">Получение данных…</div></div></div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
+
+/* Mobile app shell */
+.mobile-nav,.mobile-sheet,.mobile-shade,.mobile-map-refresh{display:none}
+@media(max-width:850px){
+ html,body{height:100%;overflow:hidden}
+ .app{height:100dvh;height:100svh;overflow:hidden;background:#fff}
+ .toolbar{padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;flex-shrink:0;z-index:900;box-shadow:0 1px 10px #14213b0d}
+ .top{align-items:center;flex-wrap:nowrap}
+ .brand h1{font-size:16px;line-height:1.25;letter-spacing:-.4px}
+ .brand .sub{font-size:11px;margin-top:3px}
+ .actions,.filters,.toolbar .summary{display:none}
+ .main{min-height:0;flex:1}
+ #map{height:100%;width:100%}
+ .status{left:10px;right:auto;bottom:70px;max-width:calc(100% - 20px);font-size:10px;padding:7px 10px;opacity:.94;max-height:60px;overflow:hidden}
+ .mobile-nav{display:flex;position:relative;z-index:1101;flex-shrink:0;height:calc(64px + env(safe-area-inset-bottom,0px));padding:5px 10px env(safe-area-inset-bottom,0px);background:rgba(255,255,255,.98);border-top:1px solid #e7ebf1;box-shadow:0 -3px 20px #1521370b;align-items:stretch}
+ .mobile-tab{flex:1;appearance:none;border:0;background:transparent;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#64748b;font:600 11px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-width:0;touch-action:manipulation}
+ .mobile-tab svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.85;stroke-linecap:round;stroke-linejoin:round}
+ .mobile-tab[aria-selected=true]{color:#166bb5;background:#eef6ff}
+ .mobile-tab:focus-visible,.sheet-close:focus-visible{outline:2px solid #2675bd;outline-offset:-2px}
+ .mobile-map-refresh{display:grid;position:absolute;right:12px;top:14px;z-index:700;border:1px solid #e3e9ef;border-radius:50%;background:#fff;width:46px;height:46px;place-items:center;box-shadow:0 3px 16px #14213b2b;color:#23364d;font-size:22px}
+ .mobile-shade[aria-hidden=false]{display:block;position:absolute;inset:0;z-index:950;background:#12223856}
+ .mobile-sheet{display:flex;flex-direction:column;position:absolute;left:0;right:0;bottom:0;z-index:1000;background:#fff;border-radius:20px 20px 0 0;max-height:min(78dvh,730px);box-shadow:0 -15px 45px #1521372b;overflow:hidden;transform:translateY(110%);visibility:hidden;transition:transform .22s ease,visibility .22s}
+ .mobile-sheet.is-open{transform:translateY(0);visibility:visible}
+ .sheet-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px;flex-shrink:0}
+ .sheet-head strong{font-size:18px}
+ .sheet-close{border:0;border-radius:10px;background:#f1f5f9;color:#25364a;width:36px;height:36px;font-size:24px}
+ .sheet-content{overflow:auto;overscroll-behavior:contain;padding:8px 16px 20px;flex:1;min-height:0}
+ .mobile-sheet .search{width:100%;height:48px;font-size:16px;border-radius:12px}
+ .mobile-sheet .filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0;gap:10px;overflow:visible;padding:0}
+ .mobile-sheet .filters .divider{display:none}
+ .mobile-sheet .filters .control{width:100%;min-width:0;max-width:none;height:46px}
+ .mobile-sheet .filters .chip{min-height:46px}
+ .mobile-sheet .filters #search{grid-column:1/-1}
+ .sheet-actions{display:flex;gap:10px;padding:10px 16px 16px}
+ .sheet-actions .chip{flex:1;min-height:45px}
+ .sheet-actions .primary{background:#166bb5;color:white;border-color:#166bb5}
+ .search-results{padding:12px 0}
+ .result-title{font-size:12px;color:#64748b;margin:4px 2px 8px}
+ .search-result{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px;min-height:58px;padding:10px 4px;border:0;border-bottom:1px solid #edf0f4;background:white;text-align:left;color:#1b2430}
+ .search-result b{font-size:14px;display:block;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;max-width:270px}
+ .search-result small{font-size:12px;color:#64748b}
+ .leaflet-popup-content-wrapper{border-radius:14px}
+ .leaflet-popup-content{min-width:205px;max-width:min(75vw,290px)}
+}
+@media(prefers-reduced-motion:reduce){.mobile-sheet{transition:none}}
+</style></head><body><div class="app"><div class="toolbar"><div class="top"><div class="brand"><h1>Зарядные станции Кыргызстана</h1><div class="sub">Единая карта SPARK KG и Charge24</div></div><div class="actions"><button class="chip" id="refresh" type="button">↻ Обновить данные</button><button class="chip" id="reset" type="button">Сбросить фильтры</button></div></div><div class="filters" role="group" aria-label="Фильтры зарядных станций"><button class="chip" id="spark" type="button" aria-pressed="true">SPARK KG</button><button class="chip" id="charge24" type="button" aria-pressed="true">Charge24</button><div class="divider"></div><input id="search" class="search" placeholder="Поиск по названию и адресу" aria-label="Поиск по названию и адресу"><select class="control" id="availability" aria-label="Доступность"><option value="all">Любая доступность</option><option value="free">Есть свободный порт</option><option value="occupied">Есть занятый порт</option><option value="allfree">Все порты свободны</option><option value="nofree">Нет свободных</option></select><select class="control" id="connector" aria-label="Разъём"><option value="all">Все разъёмы</option></select><select class="control" id="current" aria-label="Род тока"><option value="all">AC и DC</option><option value="DC">DC (быстрая)</option><option value="AC">AC (медленная)</option><option value="unknown">Неизвестный тип</option></select><select class="control" id="power" aria-label="Мощность"><option value="all">Любая мощность</option><option value="20">от 20 кВт</option><option value="40">от 40 кВт</option><option value="60">от 60 кВт</option><option value="80">от 80 кВт</option><option value="120">от 120 кВт</option><option value="150">от 150 кВт</option><option value="unknown">Не указана</option></select><select class="control" id="station" aria-label="Состояние устройства"><option value="all">Любые станции</option><option value="active">Только активные</option><option value="inactive">Неактивные / заблокированные</option></select><select class="control" id="portstatus" aria-label="Статус порта"><option value="all">Любой статус порта</option><option value="AVAILABLE">Свободен</option><option value="OCCUPIED">Занят / зарядка</option><option value="FAULTED">Неисправен</option><option value="UNAVAILABLE">Недоступен</option><option value="FINISHING">Завершение</option><option value="PREPARING">Подключение</option><option value="UNKNOWN">Неизвестный статус</option></select><select class="control" id="extras" aria-label="Дополнительный фильтр"><option value="all">Без доп. условий</option><option value="pending">Ожидает подключения</option><option value="finished">Зарядка завершена</option><option value="percentage">Показан % заряда</option></select></div><div class="summary" id="summary">Загрузка данных…</div></div><div class="main"><div id="map"></div><div class="status" id="status">Получение данных…</div><button class="mobile-map-refresh" id="mobileRefresh" type="button" aria-label="Обновить станции">↻</button><div class="mobile-shade" id="mobileShade" aria-hidden="true"></div><section class="mobile-sheet" id="searchSheet" aria-label="Поиск станций" aria-hidden="true"><div class="sheet-head"><strong>Поиск станций</strong><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть поиск">×</button></div><div class="sheet-content"><div id="mobileSearchSlot"></div><div id="searchResults" class="search-results"></div></div></section><section class="mobile-sheet" id="filterSheet" aria-label="Фильтры станций" aria-hidden="true"><div class="sheet-head"><strong>Фильтры</strong><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть фильтры">×</button></div><div class="sheet-content"><div id="mobileFilterSlot"></div></div><div class="sheet-actions"><button class="chip" id="mobileReset" type="button">Сбросить</button><button class="chip primary" id="applyFilters" type="button">Показать на карте</button></div></section></div><nav class="mobile-nav" aria-label="Навигация"><button class="mobile-tab" data-mobile-tab="map" type="button" aria-selected="true"><svg viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15m6-12v15"/></svg><span>Карта</span></button><button class="mobile-tab" data-mobile-tab="search" type="button" aria-selected="false"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span>Поиск</span></button><button class="mobile-tab" data-mobile-tab="filters" type="button" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 7h16M7 12h10m-7 5h4"/><circle cx="8" cy="7" r="2" fill="white"/><circle cx="15" cy="12" r="2" fill="white"/></svg><span>Фильтры</span></button></nav></div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
 const map=L.map('map',{preferCanvas:true}).setView([41.9,74.6],7);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);const layer=L.layerGroup().addTo(map);let stations=[],meta={},first=true;const filter={spark:true,charge24:true};const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));const statuses={AVAILABLE:'Свободен',OCCUPIED:'Занят',FAULTED:'Ошибка',UNAVAILABLE:'Недоступен',FINISHING:'Завершение',PREPARING:'Подключение',UNKNOWN:'Неизвестно'};
 function canon(s){const x=String(s||'').toUpperCase();if(x==='AVAILABLE'||x==='FREE')return 'AVAILABLE';if(['CHARGING','OCCUPIED'].includes(x))return 'OCCUPIED';if(x==='FAULTED')return 'FAULTED';if(x==='UNAVAILABLE')return 'UNAVAILABLE';if(x==='FINISHING')return 'FINISHING';if(x==='PREPARING')return 'PREPARING';return 'UNKNOWN'}
 function flatten(s){return s.devices?s.devices.flatMap(d=>(d.connectors||[]).map(c=>({device:d,connector:c}))):(s.connectors||[]).map(c=>({device:s,connector:c}))}
@@ -83,7 +128,68 @@ async function enrichSparkPopup(event, site){
   event.popup.once('remove',()=>clearInterval(timer));
 }
 
-function draw(){layer.clearLayers();let shown=0,units=0,ports=0,free=0;for(const s of stations){if(!matches(s))continue;const parts=flatten(s);shown++;units+=(s.devices?s.devices.length:1);ports+=parts.length;free+=parts.filter(isFree).length;L.marker([s.lat,s.lng],{icon:marker(s)}).bindPopup(popup(s),{maxHeight:350,maxWidth:350}).on('popupopen',event=>enrichSparkPopup(event,s)).addTo(layer)}$('summary').textContent=`Найдено площадок: ${shown} · устройств: ${units} · коннекторов: ${ports} · доступных: ${free} · всего SPARK: ${meta.spark?.count||0}, Charge24: ${meta.charge24?.count||0}`}
+const visibleMarkers=new Map();
+function draw(){layer.clearLayers();visibleMarkers.clear();let shown=0,units=0,ports=0,free=0;for(const s of stations){if(!matches(s))continue;const parts=flatten(s);shown++;units+=(s.devices?s.devices.length:1);ports+=parts.length;free+=parts.filter(isFree).length;const markerRef=L.marker([s.lat,s.lng],{icon:marker(s)}).bindPopup(popup(s),{maxHeight:350,maxWidth:350}).on('popupopen',event=>enrichSparkPopup(event,s)).addTo(layer);visibleMarkers.set(s.id,markerRef)}updateSearchResults();$('summary').textContent=`Найдено площадок: ${shown} · устройств: ${units} · коннекторов: ${ports} · доступных: ${free} · всего SPARK: ${meta.spark?.count||0}, Charge24: ${meta.charge24?.count||0}`}
 async function refresh(){const old=$('status');old.textContent='Обновление данных…';try{const r=await fetch('/api/stations');if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();meta=d.meta||{};stations=[...(d.sites||[]),...(d.stations||[]).filter(x=>x.operator==='Charge24')];refreshTypes();draw();old.innerHTML=`<span class="dot" style="background:${meta.spark?.count?'#209769':'#d8a13c'}"></span>SPARK: ${esc(meta.spark?.source||'none')}${meta.spark?.error?' — '+esc(meta.spark.error):''}${meta.spark?.connectorTypesError?' · тип CCS2 не проверен: '+esc(meta.spark.connectorTypesError):''} · <span class="dot" style="background:${meta.charge24?.count?'#209769':'#d8a13c'}"></span>Charge24: ${esc(meta.charge24?.source||'none')}${meta.charge24?.error?' — '+esc(meta.charge24.error):''} <span class="refresh-note">· Кэш 5 мин</span>`;if(first&&stations.length){const bounds=L.latLngBounds(stations.map(s=>[s.lat,s.lng]));if(bounds.isValid())map.fitBounds(bounds,{padding:[24,24]});first=false}}catch(e){old.textContent='Ошибка загрузки: '+e.message}}
-for(const id of ['spark','charge24'])$(id).onclick=()=>{filter[id]=!filter[id];$(id).setAttribute('aria-pressed',String(filter[id]));refreshTypes();draw()};for(const id of ['search','availability','connector','current','power','station','portstatus','extras'])$(id).addEventListener(id==='search'?'input':'change',draw);$('refresh').onclick=refresh;$('reset').onclick=()=>{filter.spark=filter.charge24=true;for(const id of ['spark','charge24'])$(id).setAttribute('aria-pressed','true');$('search').value='';for(const id of ['availability','connector','current','power','station','portstatus','extras'])$(id).value='all';refreshTypes();draw()};refresh();
+for(const id of ['spark','charge24'])$(id).onclick=()=>{filter[id]=!filter[id];$(id).setAttribute('aria-pressed',String(filter[id]));refreshTypes();draw()};for(const id of ['search','availability','connector','current','power','station','portstatus','extras'])$(id).addEventListener(id==='search'?'input':'change',draw);$('refresh').onclick=refresh;$('reset').onclick=()=>{filter.spark=filter.charge24=true;for(const id of ['spark','charge24'])$(id).setAttribute('aria-pressed','true');$('search').value='';for(const id of ['availability','connector','current','power','station','portstatus','extras'])$(id).value='all';refreshTypes();draw()};
+const mobileMQ=window.matchMedia('(max-width:850px)');
+const filterEl=$('search').closest('.filters');
+const desktopFilterParent=filterEl.parentNode;
+const desktopFilterNext=filterEl.nextSibling;
+const desktopSearchParent=$('search').parentNode;
+const desktopSearchNext=$('search').nextSibling;
+let activeSheet=null;
+function updateSearchResults(){
+ const wrap=$('searchResults');if(!wrap)return;
+ wrap.replaceChildren();
+ const query=$('search').value.trim();
+ if(!query){const note=document.createElement('div');note.className='result-title';note.textContent='Введите название станции или адрес';wrap.append(note);return}
+ const entries=stations.filter(s=>matches(s)).slice(0,40);
+ const label=document.createElement('div');label.className='result-title';label.textContent=entries.length?'Результаты поиска'+(entries.length===40?' (первые 40)':''):'Ничего не найдено';wrap.append(label);
+ for(const station of entries){
+   const btn=document.createElement('button');btn.type='button';btn.className='search-result';
+   const details=document.createElement('span'),name=document.createElement('b'),address=document.createElement('small');
+   name.textContent=station.name;address.textContent=station.address||station.operator;details.append(name,address);
+   btn.append(details);const arrow=document.createElement('span');arrow.textContent='›';btn.append(arrow);
+   btn.onclick=()=>{closeSheet();const mark=visibleMarkers.get(station.id);map.setView([station.lat,station.lng],Math.max(map.getZoom(),15),{animate:true});if(mark)mark.openPopup()};
+   wrap.append(btn);
+ }
+}
+function closeSheet(){
+ activeSheet=null;
+ for(const id of ['searchSheet','filterSheet']){const sheet=$(id);sheet.classList.remove('is-open');sheet.setAttribute('aria-hidden','true')}
+ $('mobileShade').setAttribute('aria-hidden','true');
+ for(const tab of document.querySelectorAll('[data-mobile-tab]'))tab.setAttribute('aria-selected',String(tab.dataset.mobileTab==='map'));
+ setTimeout(()=>map.invalidateSize(),50);
+}
+function openSheet(name){
+ if(!mobileMQ.matches)return;
+ if(name==='map'){closeSheet();return}
+ activeSheet=name;
+ for(const id of ['searchSheet','filterSheet']){const sheet=$(id);const selected=id===(name==='search'?'searchSheet':'filterSheet');sheet.classList.toggle('is-open',selected);sheet.setAttribute('aria-hidden',String(!selected))}
+ $('mobileShade').setAttribute('aria-hidden','false');
+ for(const tab of document.querySelectorAll('[data-mobile-tab]'))tab.setAttribute('aria-selected',String(tab.dataset.mobileTab===name));
+ if(name==='search'){updateSearchResults();setTimeout(()=>$('search').focus({preventScroll:true}),180)}
+}
+function syncMobileLayout(){
+ if(mobileMQ.matches){
+   $('mobileSearchSlot').append($('search'));
+   $('mobileFilterSlot').append(filterEl);
+ }else{
+   closeSheet();
+   desktopFilterParent.insertBefore(filterEl,desktopFilterNext);
+   desktopSearchParent.insertBefore($('search'),desktopSearchNext);
+ }
+ map.invalidateSize();
+}
+for(const tab of document.querySelectorAll('[data-mobile-tab]'))tab.addEventListener('click',()=>openSheet(tab.dataset.mobileTab));
+for(const btn of document.querySelectorAll('[data-close-sheet]'))btn.addEventListener('click',closeSheet);
+$('mobileShade').addEventListener('click',closeSheet);
+$('applyFilters').addEventListener('click',closeSheet);
+$('mobileReset').addEventListener('click',()=>$('reset').click());
+$('mobileRefresh').addEventListener('click',()=>refresh());
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&activeSheet)closeSheet()});
+mobileMQ.addEventListener('change',syncMobileLayout);
+syncMobileLayout();
+refresh();
 </script></body></html>
