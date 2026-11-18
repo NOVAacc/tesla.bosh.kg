@@ -6,7 +6,7 @@ export const QUERY = `query ChargingStationsList($page: Page) {
  ChargingStationsList(page: $page) {
   count
   rows { id name active address blacklisted forceBlocked coordinates { latitude longitude }
-   evses { id connectors { id type status pending chargingFinished } } }
+   evses { id connectors { id type status pending chargingFinished activeTransactionBrief { percentage } } } }
  }
 }`;
 // Filter verified from the native SPARK KG application. It matches devices
@@ -94,6 +94,7 @@ export function normalizeStation(station) {
     id: `${station.id}:${ev.id}:${c.id}`,
     evseId: ev.id, connectorId: c.id,
     type: c.type ?? null,
+    percentage: c.activeTransactionBrief?.percentage ?? null,
     status: c.status || 'UNKNOWN', pending: Boolean(c.pending), chargingFinished: Boolean(c.chargingFinished),
     available: Boolean(station.active) && !station.forceBlocked && !station.blacklisted && c.status === 'AVAILABLE' && !c.pending
   })));

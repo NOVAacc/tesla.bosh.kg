@@ -29,7 +29,8 @@ test('SPARK: распознаём CCS2 на уровне станции чере
 });
 
 test('SPARK: тип разъёма привязан к конкретному порту',()=>{
- const raw={rows:[{id:'mixed',name:'Mixed',active:true,coordinates:{latitude:42.8,longitude:74.6},evses:[{id:1,connectors:[{id:1,type:'GBT_DC'},{id:2,type:'C_CCS2'},{id:3}]}]}]};
+ const raw={rows:[{id:'mixed',name:'Mixed',active:true,coordinates:{latitude:42.8,longitude:74.6},evses:[{id:1,connectors:[{id:1,type:'GBT_DC',activeTransactionBrief:{percentage:62}},{id:2,type:'C_CCS2',activeTransactionBrief:{percentage:0}},{id:3}]}]}]};
  const [station]=normalizeAll(raw);
  assert.deepEqual(station.connectors.map(c=>c.type),['GBT_DC','C_CCS2',null]);
+ assert.deepEqual(station.connectors.map(c=>c.percentage),[62,0,null]);
 });
