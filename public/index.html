@@ -225,8 +225,8 @@ function closeStationPanel(){
 }
 function openStationPanel(site){
  if(!mobileMQ.matches)return;
- closeSheet();
  closeStationPanel();
+ closeSheet();
  selectedStation=site;
  renderStationPanel();
  $('stationPanelBody').scrollTop=0;
@@ -272,7 +272,7 @@ function closeSheet(){
 function openSheet(name){
  if(!mobileMQ.matches)return;
  closeStationPanel();
- if(name==='map'){closeSheet();return}
+ if(name==='map'){closeSheet();closeStationPanel();return}
  activeSheet=name;
  for(const id of ['searchSheet','filterSheet']){const sheet=$(id);const selected=id===(name==='search'?'searchSheet':'filterSheet');sheet.classList.toggle('is-open',selected);sheet.setAttribute('aria-hidden',String(!selected))}
  $('mobileShade').setAttribute('aria-hidden','false');
@@ -300,6 +300,7 @@ $('applyFilters').addEventListener('click',closeSheet);
 $('mobileReset').addEventListener('click',()=>$('reset').click());
 $('mobileRefresh').addEventListener('click',()=>refresh());
 document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(activeSheet)closeSheet();else closeStationPanel()}});
+map.on('click',()=>{if(mobileMQ.matches&&selectedStation)closeStationPanel()});
 mobileMQ.addEventListener('change',syncMobileLayout);
 syncMobileLayout();
 refresh();
