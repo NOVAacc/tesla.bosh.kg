@@ -1,5 +1,5 @@
 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Карта зарядных станций Кыргызстана</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><style>
-:root{color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1b2430}*{box-sizing:border-box}body{margin:0;background:#f6f7f9}.app{height:100dvh;display:flex;flex-direction:column}.toolbar{background:white;border-bottom:1px solid #e5e9ef;z-index:900;padding:12px 16px;box-shadow:0 1px 7px #1020300a}.top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.brand h1{font-size:18px;margin:0;letter-spacing:-.35px}.sub{font-size:12px;color:#64748b;margin-top:4px}.actions,.filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.filters{margin-top:12px}.chip,.control,.search{border:1px solid #dce2e9;background:#fff;color:#273547;font:inherit;font-size:13px;border-radius:10px;min-height:37px;padding:7px 10px}.chip{cursor:pointer;white-space:nowrap}.chip[aria-pressed=true]{background:#1e293b;border-color:#1e293b;color:#fff}.search{width:200px}.control{max-width:190px}.control:disabled{opacity:.45}.summary{color:#64748b;font-size:12px;margin-top:9px}.main{position:relative;flex:1;min-height:0}#map{height:100%;width:100%}.status{position:absolute;z-index:700;bottom:16px;left:16px;background:#fff;border:1px solid #e3e7ec;border-radius:11px;padding:10px 13px;max-width:min(88vw,750px);box-shadow:0 3px 14px #0001;font-size:12px;color:#475569}.dot{display:inline-block;width:9px;height:9px;border-radius:100%;margin-right:5px}.marker{border-radius:50%;width:31px;height:31px;display:grid;place-items:center;color:#fff;border:3px solid #fff;box-shadow:0 1px 7px #0005;font-size:12px;font-weight:700}.leaflet-div-icon{background:none;border:none}.leaflet-popup-content{min-width:245px;line-height:1.5}.leaflet-popup-content .device{border-top:1px solid #e8ebee;margin-top:7px;padding-top:7px}.port{display:inline-block;margin:3px 4px 2px 0;border-radius:6px;background:#eff3f7;padding:3px 6px;font-size:12px}.muted{color:#718096;font-size:12px}.refresh-note{font-size:11px;color:#64748b}label.mini{font-size:12px;color:#475569}.filters .divider{width:1px;height:25px;background:#e4e9ef;margin:0 2px}@media(max-width:850px){.toolbar{padding:10px}.top{align-items:flex-start}.brand h1{font-size:16px}.filters{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}.search{width:160px;flex:none}.status{left:8px;right:8px;bottom:8px;max-width:none;font-size:11px}.control{min-width:125px;max-width:170px}}
+:root{color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1b2430}*{box-sizing:border-box}body{margin:0;background:#f6f7f9}.app{height:100dvh;display:flex;flex-direction:column}.toolbar{background:white;border-bottom:1px solid #e5e9ef;z-index:900;padding:12px 16px;box-shadow:0 1px 7px #1020300a}.top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.brand h1{font-size:18px;margin:0;letter-spacing:-.35px}.sub{font-size:12px;color:#64748b;margin-top:4px}.actions,.filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.filters{margin-top:12px}.chip,.control,.search{border:1px solid #dce2e9;background:#fff;color:#273547;font:inherit;font-size:13px;border-radius:10px;min-height:37px;padding:7px 10px}.chip{cursor:pointer;white-space:nowrap}.chip[aria-pressed=true]{background:#1e293b;border-color:#1e293b;color:#fff}.search{width:200px}.control{max-width:190px}.control:disabled{opacity:.45}.summary{color:#64748b;font-size:12px;margin-top:9px}.main{position:relative;flex:1;min-height:0}#map{height:100%;width:100%}.status{position:absolute;z-index:700;bottom:16px;left:16px;background:#fff;border:1px solid #e3e7ec;border-radius:11px;padding:10px 13px;max-width:min(88vw,750px);box-shadow:0 3px 14px #0001;font-size:12px;color:#475569}.dot{display:inline-block;width:9px;height:9px;border-radius:100%;margin-right:5px}.marker{border-radius:50%;width:31px;height:31px;display:grid;place-items:center;color:#fff;border:3px solid #fff;box-shadow:0 1px 7px #0005;font-size:12px;font-weight:700}.leaflet-div-icon{background:none;border:none}.leaflet-popup-content{min-width:245px;line-height:1.5}.leaflet-popup-content .device{border-top:1px solid #e8ebee;margin-top:7px;padding-top:7px}.port{display:inline-block;margin:3px 4px 2px 0;border-radius:6px;background:#eff3f7;padding:3px 6px;font-size:12px}.spark-detail-note{font-size:11px;color:#a16207;margin-top:6px}.spark-detail-note:empty{display:none}.muted{color:#718096;font-size:12px}.refresh-note{font-size:11px;color:#64748b}label.mini{font-size:12px;color:#475569}.filters .divider{width:1px;height:25px;background:#e4e9ef;margin:0 2px}@media(max-width:850px){.toolbar{padding:10px}.top{align-items:flex-start}.brand h1{font-size:16px}.filters{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}.search{width:160px;flex:none}.status{left:8px;right:8px;bottom:8px;max-width:none;font-size:11px}.control{min-width:125px;max-width:170px}}
 </style></head><body><div class="app"><div class="toolbar"><div class="top"><div class="brand"><h1>Зарядные станции Кыргызстана</h1><div class="sub">Единая карта SPARK KG и Charge24</div></div><div class="actions"><button class="chip" id="refresh" type="button">↻ Обновить данные</button><button class="chip" id="reset" type="button">Сбросить фильтры</button></div></div><div class="filters" role="group" aria-label="Фильтры зарядных станций"><button class="chip" id="spark" type="button" aria-pressed="true">SPARK KG</button><button class="chip" id="charge24" type="button" aria-pressed="true">Charge24</button><div class="divider"></div><input id="search" class="search" placeholder="Поиск по названию и адресу" aria-label="Поиск по названию и адресу"><select class="control" id="availability" aria-label="Доступность"><option value="all">Любая доступность</option><option value="free">Есть свободный порт</option><option value="occupied">Есть занятый порт</option><option value="allfree">Все порты свободны</option><option value="nofree">Нет свободных</option></select><select class="control" id="connector" aria-label="Разъём"><option value="all">Все разъёмы</option></select><select class="control" id="current" aria-label="Род тока"><option value="all">AC и DC</option><option value="DC">DC (быстрая)</option><option value="AC">AC (медленная)</option><option value="unknown">Неизвестный тип</option></select><select class="control" id="power" aria-label="Мощность"><option value="all">Любая мощность</option><option value="20">от 20 кВт</option><option value="40">от 40 кВт</option><option value="60">от 60 кВт</option><option value="80">от 80 кВт</option><option value="120">от 120 кВт</option><option value="150">от 150 кВт</option><option value="unknown">Не указана</option></select><select class="control" id="station" aria-label="Состояние устройства"><option value="all">Любые станции</option><option value="active">Только активные</option><option value="inactive">Неактивные / заблокированные</option></select><select class="control" id="portstatus" aria-label="Статус порта"><option value="all">Любой статус порта</option><option value="AVAILABLE">Свободен</option><option value="OCCUPIED">Занят / зарядка</option><option value="FAULTED">Неисправен</option><option value="UNAVAILABLE">Недоступен</option><option value="FINISHING">Завершение</option><option value="PREPARING">Подключение</option><option value="UNKNOWN">Неизвестный статус</option></select><select class="control" id="extras" aria-label="Дополнительный фильтр"><option value="all">Без доп. условий</option><option value="pending">Ожидает подключения</option><option value="finished">Зарядка завершена</option><option value="percentage">Показан % заряда</option></select></div><div class="summary" id="summary">Загрузка данных…</div></div><div class="main"><div id="map"></div><div class="status" id="status">Получение данных…</div></div></div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>
 const map=L.map('map',{preferCanvas:true}).setView([41.9,74.6],7);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);const layer=L.layerGroup().addTo(map);let stations=[],meta={},first=true;const filter={spark:true,charge24:true};const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));const statuses={AVAILABLE:'Свободен',OCCUPIED:'Занят',FAULTED:'Ошибка',UNAVAILABLE:'Недоступен',FINISHING:'Завершение',PREPARING:'Подключение',UNKNOWN:'Неизвестно'};
 function canon(s){const x=String(s||'').toUpperCase();if(x==='AVAILABLE'||x==='FREE')return 'AVAILABLE';if(['CHARGING','OCCUPIED'].includes(x))return 'OCCUPIED';if(x==='FAULTED')return 'FAULTED';if(x==='UNAVAILABLE')return 'UNAVAILABLE';if(x==='FINISHING')return 'FINISHING';if(x==='PREPARING')return 'PREPARING';return 'UNKNOWN'}
@@ -21,30 +21,61 @@ function searchText(s){return [s.name,s.address,...(s.devices||[]).map(d=>d.name
 function matches(s){if(s.operator==='SPARK KG'&&!filter.spark||s.operator==='Charge24'&&!filter.charge24)return false;const q=$('search').value.trim().toLocaleLowerCase();if(q&&!searchText(s).includes(q))return false;const p=flatten(s),free=p.filter(isFree).length,occupied=p.filter(x=>['OCCUPIED','PREPARING','FINISHING'].includes(canon(x.connector.status))).length;const a=$('availability').value;if(a==='free'&&!free||a==='occupied'&&!occupied||a==='allfree'&&(!p.length||free!==p.length)||a==='nofree'&&free>0)return false;const devices=s.devices||[s];const st=$('station').value;if(st==='active'&&!devices.some(active)||st==='inactive'&&!devices.some(d=>!active(d)))return false;const cur=$('current').value;if(cur!=='all'&&!devices.some(d=>cur==='unknown'?!current(d):current(d)===cur))return false;const pow=$('power').value;if(pow!=='all'&&!devices.some(d=>pow==='unknown'?power(d)===null:power(d)!==null&&power(d)>=Number(pow)))return false;const conn=$('connector').value;if(conn!=='all'&&!((conn!=='unknown'&&(s.supportedConnectorTypes||[]).includes(conn))||p.some(x=>conn==='unknown'?!type(x.connector)&&!(x.device.supportedConnectorTypes||[]).length:type(x.connector)===conn)))return false;const ps=$('portstatus').value;if(ps!=='all'&&!p.some(x=>canon(x.connector.status)===ps))return false;const ex=$('extras').value;if(ex==='pending'&&!p.some(x=>x.connector.pending)||ex==='finished'&&!p.some(x=>x.connector.chargingFinished)||ex==='percentage'&&!p.some(x=>chargingPercentage(x.connector)!==null))return false;return true}
 function refreshTypes(){const control=$('connector'),prev=control.value;const types=new Set(['GB/T','CCS2','CHAdeMO','Type 2','Type 1','NACS']);for(const s of stations)if(s.operator==='SPARK KG'?filter.spark:filter.charge24)for(const x of flatten(s))if(type(x.connector))types.add(type(x.connector));control.replaceChildren(new Option('Все разъёмы','all'));for(const t of ['GB/T','CCS2','CHAdeMO','Type 2','Type 1','NACS',...[...types].filter(t=>!['GB/T','CCS2','CHAdeMO','Type 2','Type 1','NACS'].includes(t)).sort((a,b)=>a.localeCompare(b,'ru'))])control.add(new Option(t,t));control.add(new Option('Тип не определён','unknown'));control.value=[...control.options].some(x=>x.value===prev)?prev:'all'}
 function marker(s){const ports=flatten(s),available=ports.some(isFree),occupied=ports.some(x=>['OCCUPIED','PREPARING','FINISHING'].includes(canon(x.connector.status)));const color=available?'#209769':occupied?'#d8a13c':'#8794a5';const name=s.operator==='SPARK KG'?'S':'24';return L.divIcon({html:`<div class="marker" style="background:${color}">${name}</div>`,className:'',iconSize:[31,31],iconAnchor:[15,15]})}
-function popup(s){let p=flatten(s),available=p.filter(isFree).length;let html=`<strong>${esc(s.name)}</strong><div>${esc(s.address||'Адрес не указан')}</div><div class="muted">${esc(s.operator)} · ${available} из ${p.length} портов доступны</div>`;for(const d of s.devices||[s]){const unresolvedTypes=(d.supportedConnectorTypes||[]).filter(t=>!(d.connectors||[]).some(c=>type(c)===t));html+=`<div class="device"><b>${esc(d.name)}</b>${unresolvedTypes.length?' · <small>На устройстве: '+esc(unresolvedTypes.join(', '))+' (порт не определён)</small>':''}<span class="muted"> · ${esc(current(d)||'?')} ${power(d)??'?'} кВт${power(d)&&!d.powerKw?' (по названию)':''}${!active(d)?' · неактивна':''}</span><div>`;for(const c of d.connectors||[]){const percentage=chargingPercentage(c);html+=`<span class="port">${esc(displayType(c))}: ${esc(statuses[canon(c.status)])}${percentage!==null?' · '+esc(percentage)+'%':''}${c.pending?' · ожидание':''}${c.chargingFinished?' · завершена':''}</span>`}html+='</div></div>'}return html}
+function tariffText(t){
+  if(!t||!Number.isFinite(Number(t.amount)))return '';
+  const currency=t.currency==='KGS'?'сом':(t.currency||'');
+  const basis=t.type==='PER_E'?'/кВт·ч':t.type==='PER_T'?'/мин':'';
+  return Number(t.amount).toLocaleString('ru-RU')+' '+esc(currency)+esc(basis);
+}
+function popup(s){
+  let p=flatten(s),available=p.filter(isFree).length;
+  let html=`<strong>${esc(s.name)}</strong><div>${esc(s.address||'Адрес не указан')}</div><div class="muted">${esc(s.operator)} · ${available} из ${p.length} портов доступны</div>`;
+  for(const d of s.devices||[s]){
+    const unresolvedTypes=(d.supportedConnectorTypes||[]).filter(t=>!(d.connectors||[]).some(c=>type(c)===t));
+    html+=`<div class="device"><b>${esc(d.name)}</b>${unresolvedTypes.length?' · <small>На устройстве: '+esc(unresolvedTypes.join(', '))+' (порт не определён)</small>':''}<span class="muted"> · ${esc(current(d)||'?')} ${power(d)??'?'} кВт${power(d)&&!d.powerKw?' (по названию)':''}${!active(d)?' · неактивна':''}</span><div>`;
+    for(const c of d.connectors||[]){
+      const percentage=chargingPercentage(c),price=tariffText(c.tariff);
+      html+=`<span class="port">${esc(displayType(c))}: ${esc(statuses[canon(c.status)])}${percentage!==null?' · '+esc(percentage)+'%':''}${price?' · '+price:''}${c.pending?' · ожидание':''}${c.chargingFinished?' · завершена':''}</span>`;
+    }
+    html+='</div></div>';
+  }
+  if(s.operator==='SPARK KG')html+=`<div class="spark-detail-note">${esc(s.detailError||'')}</div>`;
+  return html;
+}
+
 async function enrichSparkPopup(event, site){
   if(site.operator!=='SPARK KG')return;
+  let refreshing=false;
   const refresh=async()=>{
-    if(!event.popup.isOpen())return;
-    let changed=false;
-    for(const device of site.devices||[site]){
-      const ports=(device.connectors||[]).filter(c=>canon(c.status)==='OCCUPIED'&&!c.chargingFinished);
-      if(!device.sourceId||!ports.length)continue;
-      try{
-        const response=await fetch('/api/stations?sparkCard='+encodeURIComponent(device.sourceId),{cache:'no-store'});
-        if(!response.ok)continue;
-        const {percentages}=await response.json();
-        if(!event.popup.isOpen())return;
-        for(const port of ports){
-          const key=port.evseId+':'+port.connectorId;
-          const raw=percentages?.[key];
-          const pct=raw===null||raw===undefined?null:Number(raw);
-          const next=Number.isFinite(pct)&&pct>=0&&pct<=100?pct:null;
-          if(port.percentage!==next){port.percentage=next;changed=true}
-        }
-      }catch{/* Keep the last known data if the detail API is unavailable. */}
-    }
-    if(changed&&event.popup.isOpen())event.popup.setContent(popup(site));
+    if(!event.popup.isOpen()||refreshing)return;
+    refreshing=true;
+    let changed=false,error='';
+    try{
+      for(const device of site.devices||[site]){
+        if(!device.sourceId)continue;
+        try{
+          const response=await fetch('/api/stations?sparkCard='+encodeURIComponent(device.sourceId),{cache:'no-store'});
+          const data=await response.json();
+          if(!response.ok){
+            error=data.reason==='credential_not_configured'?'Процент и цена SPARK: требуется настроить серверный доступ.':'Процент и цена SPARK временно недоступны.';
+            continue;
+          }
+          if(!event.popup.isOpen())return;
+          for(const port of device.connectors||[]){
+            const detail=data.connectors?.[port.evseId+':'+port.connectorId];
+            if(!detail)continue;
+            const raw=detail.percentage;
+            const pct=raw===null||raw===undefined?null:Number(raw);
+            const next=canon(port.status)==='OCCUPIED'&&!port.chargingFinished&&Number.isFinite(pct)&&pct>=0&&pct<=100?pct:null;
+            if(port.percentage!==next){port.percentage=next;changed=true}
+            if(JSON.stringify(port.tariff??null)!==JSON.stringify(detail.tariff??null)){port.tariff=detail.tariff;changed=true}
+            if(Number(detail.powerKw)>0&&port.powerKw!==detail.powerKw){port.powerKw=detail.powerKw;changed=true}
+          }
+        }catch{error='Не удалось получить детали SPARK.'}
+      }
+      if(site.detailError!==error){site.detailError=error;changed=true}
+      if(changed&&event.popup.isOpen())event.popup.setContent(popup(site));
+    }finally{refreshing=false}
   };
   await refresh();
   if(!event.popup.isOpen())return;
