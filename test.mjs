@@ -77,3 +77,16 @@ test('Voyager tiles: configured CARTO key with OSM fallback',()=>{
  assert.match(html,/osmTiles\.addTo\(map\)/);
  assert.match(workflow,/CARTO_BASEMAP_KEY/);
 });
+
+test('Mobile stations use bottom details panel and visual charging indicators',()=>{
+ const html=fs.readFileSync('public/index.html','utf8');
+ for(const id of ['stationPanel','stationPanelBody','closeStation','stationName','stationOperator','stationAddress'])assert.ok(html.includes('id="'+id+'"'));
+ assert.match(html,/function openStationPanel\(site\)/);
+ assert.match(html,/function closeStationPanel\(\)/);
+ assert.match(html,/class="station-percent"/);
+ assert.match(html,/class="station-battery-fill"/);
+ assert.match(html,/class="station-charge-progress"/);
+ assert.match(html,/if\(mobileMQ\.matches\)\{markerRef\.on\('click',\(\)=>openStationPanel\(s\)\)\}/);
+ assert.match(html,/if\(mobileMQ\.matches\)\{openStationPanel\(station\)\}/);
+ assert.match(html,/startSparkDetails\(site,/);
+});
