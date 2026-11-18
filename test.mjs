@@ -47,3 +47,13 @@ test('SPARK popup requests UUID and refreshes active charging data',()=>{
  assert.match(html,/sparkCard='\+encodeURIComponent\(device.sourceId\)/);
  assert.match(html,/setInterval\(refresh,60000\)/);
 });
+
+test('SPARK card includes prices and explains missing credentials',()=>{
+ const php=fs.readFileSync('public/api/stations.php','utf8');
+ const html=fs.readFileSync('public/index.html','utf8');
+ assert.match(php,/tariff \{ type amount currency \}/);
+ assert.match(php,/function sparkCardDetails\(string \$stationId\)/);
+ assert.match(php,/credential_not_configured/);
+ assert.match(html,/data\.connectors\?/);
+ assert.match(html,/tariffText\(c\.tariff\)/);
+});
