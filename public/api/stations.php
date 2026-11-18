@@ -221,25 +221,29 @@ function loadCached(string $operator, callable $loader, array $fallback = []): a
     return $result;
 }
 
-function sparkCardPercentages(int $seqNo): array
+function sparkCardPercentages(string $stationId): array
 {
     $query = <<<'GRAPHQL'
-query ChargingStationCard($seqNo: Float!) {
-  ChargingStationCard(seqNo: $seqNo) {
-    seqNo
+query ChargingStationCard($id: String) {
+  ChargingStationCard(id: $id) {
+    id
     evses {
-      id power
+      id
       connectors {
-        id evseId type status oldOCPPStatus chargingFinished pending outletType power maxAmps
+        id evseId status chargingFinished
         activeTransactionBrief { percentage estimatedChargingTime }
       }
     }
   }
 }
 GRAPHQL;
-    $card = graphql('https://api.itcharge.ru/graphql/v1', $query, ['seqNo' => $seqNo], [
-        'tenant: spark', 'x-application-version: 2.3.3-ios',
-    ])['ChargingStationCard'] ?? [];
+    $headers = ['tenant: spark', 'x-application-version: 2.3.3-ios'];
+    // Optional server-side credential, never expose it in frontend JavaScript.
+    $token = trim((string) getenv('SPARK_API_TOKEN'));
+    if ($token !== '') {
+        $headers[] = 'Authorization: ' . $token;
+    }
+    $card = graphql('https://api.itcharge.ru/graphql/v1', $query, ['id' => $stationId], $headers)['ChargingStationCard'] ?? [];
     $percentages = [];
     foreach ($card['evses'] ?? [] as $device) {
         foreach ($device['connectors'] ?? [] as $connector) {
@@ -256,19 +260,27 @@ GRAPHQL;
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 if (isset($_GET['sparkCard'])) {
-    $seqNo = filter_input(INPUT_GET, 'sparkCard', FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-    if (!$seqNo) {
+    $stationId = (string) $_GET['sparkCard'];
+    if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iD', $stationId)) {
         http_response_code(400);
-        echo '{"error":"Invalid station number"}';
+        echo '{"error":"Invalid station ID"}';
         exit;
     }
-    $result = loadCached('spark-card-' . $seqNo, static fn (): array => [
-        'percentages' => sparkCardPercentages($seqNo),
-    ]);
-    if ($result['error'] !== null) {
-        http_response_code(502);
+    // Brief cache protects the upstream API while keeping charging percentages fresh.
+    $cachePath = sys_get_temp_dir() . '/tesla-spark-card-' . hash('sha256', $stationId) . '.json';
+    $cached = is_file($cachePath) ? json_decode((string) @file_get_contents($cachePath), true) : null;
+    if (is_array($cached) && isset($cached['checkedAt']) && time() - $cached['checkedAt'] < 45) {
+        echo json_encode(['percentages' => (object) ($cached['percentages'] ?? [])], JSON_THROW_ON_ERROR);
+        exit;
     }
-    echo json_encode(['percentages' => (object) ($result['percentages'] ?? [])], JSON_THROW_ON_ERROR);
+    try {
+        $percentages = sparkCardPercentages($stationId);
+        @file_put_contents($cachePath, json_encode(['checkedAt' => time(), 'percentages' => $percentages], JSON_THROW_ON_ERROR), LOCK_EX);
+        echo json_encode(['percentages' => (object) $percentages], JSON_THROW_ON_ERROR);
+    } catch (Throwable $error) {
+        http_response_code(502);
+        echo '{"error":"SPARK card unavailable"}';
+    }
     exit;
 }
 
