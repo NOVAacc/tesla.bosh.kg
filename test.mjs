@@ -45,7 +45,7 @@ test('SPARK card: API uses station UUID instead of numeric seqNo',()=>{
 test('SPARK popup requests UUID and refreshes active charging data',()=>{
  const html=fs.readFileSync('public/index.html','utf8');
  assert.match(html,/sparkCard='\+encodeURIComponent\(device.sourceId\)/);
- assert.match(html,/setInterval\(refresh,60000\)/);
+ assert.match(html,/setInterval\(update,60000\)/);
 });
 
 test('SPARK card includes prices and explains missing credentials',()=>{
