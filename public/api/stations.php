@@ -28,7 +28,7 @@ function sparkRows(bool $ccs2): array
 {
     $query = $ccs2
         ? 'query ChargingStationsList($page: Page, $connectors: ConnectorType) { ChargingStationsList(page: $page, connectors: $connectors) { count rows { id } } }'
-        : 'query ChargingStationsList($page: Page) { ChargingStationsList(page: $page) { count rows { id name active address blacklisted forceBlocked coordinates { latitude longitude } evses { id connectors { id status pending chargingFinished } } } } }';
+        : 'query ChargingStationsList($page: Page) { ChargingStationsList(page: $page) { count rows { id name active address blacklisted forceBlocked coordinates { latitude longitude } evses { id connectors { id type status pending chargingFinished } } } } }';
     $rows = [];
     $total = null;
     $deadline = microtime(true) + 22;
@@ -78,7 +78,7 @@ function sparkStations(array $rows, array $ccs2 = []): array
                 $connectors[] = [
                     'id' => "$id:{$device['id']}:{$connector['id']}",
                     'evseId' => $device['id'], 'connectorId' => $connector['id'],
-                    'type' => null, 'status' => $status, 'pending' => $pending,
+                    'type' => $connector['type'] ?? null, 'status' => $status, 'pending' => $pending,
                     'chargingFinished' => !empty($connector['chargingFinished']),
                     'available' => $active && !$blocked && $status === 'AVAILABLE' && !$pending,
                 ];
@@ -198,7 +198,7 @@ function groupSites(array $stations): array
 
 function loadCached(string $operator, callable $loader, array $fallback = []): array
 {
-    $path = sys_get_temp_dir() . '/tesla-map-' . hash('sha256', __DIR__) . "-$operator.json";
+    $path = sys_get_temp_dir() . '/tesla-map-' . hash('sha256', __DIR__) . ($operator === 'spark' ? '-spark-v2.json' : "-$operator.json");
     $cached = is_file($path) ? json_decode((string) @file_get_contents($path), true) : null;
     if ($cached && time() - $cached['checkedAt'] < ($cached['error'] ? 30 : 300)) {
         return $cached;

@@ -6,7 +6,7 @@ export const QUERY = `query ChargingStationsList($page: Page) {
  ChargingStationsList(page: $page) {
   count
   rows { id name active address blacklisted forceBlocked coordinates { latitude longitude }
-   evses { id connectors { id status pending chargingFinished } } }
+   evses { id connectors { id type status pending chargingFinished } } }
  }
 }`;
 // Filter verified from the native SPARK KG application. It matches devices
@@ -93,7 +93,7 @@ export function normalizeStation(station) {
   const connectors = (station.evses || []).flatMap(ev => (ev.connectors || []).map(c => ({
     id: `${station.id}:${ev.id}:${c.id}`,
     evseId: ev.id, connectorId: c.id,
-    type: null, // not returned by this query; must not infer CCS2/GBT
+    type: c.type ?? null,
     status: c.status || 'UNKNOWN', pending: Boolean(c.pending), chargingFinished: Boolean(c.chargingFinished),
     available: Boolean(station.active) && !station.forceBlocked && !station.blacklisted && c.status === 'AVAILABLE' && !c.pending
   })));
