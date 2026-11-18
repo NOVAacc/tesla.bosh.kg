@@ -29,7 +29,7 @@ function tariffText(t){
 }
 function popup(s){
   let p=flatten(s),available=p.filter(isFree).length;
-  let html=`<strong>${esc(s.name)}</strong><div>${esc(s.address||'Адрес не указан')}</div><div class="muted">${esc(s.operator)} · ${available} из ${p.length} портов доступны</div>`;
+  let html=`<strong>${esc(s.name)}</strong><div>${esc(s.address||'Адрес не указан')}</div><div class="muted">${esc(s.operator)} · ${available} из ${p.length} портов доступны</div>`;if(s.operator==='Charge24'&&s.price!==undefined&&s.price!==null&&s.price!=='')html+=`<div class="muted">Стоимость: ${esc(s.price)} сом${Number(s.price)>0?'/кВт·ч':''}</div>`;
   for(const d of s.devices||[s]){
     const unresolvedTypes=(d.supportedConnectorTypes||[]).filter(t=>!(d.connectors||[]).some(c=>type(c)===t));
     html+=`<div class="device"><b>${esc(d.name)}</b>${unresolvedTypes.length?' · <small>На устройстве: '+esc(unresolvedTypes.join(', '))+' (порт не определён)</small>':''}<span class="muted"> · ${esc(current(d)||'?')} ${power(d)??'?'} кВт${power(d)&&!d.powerKw?' (по названию)':''}${!active(d)?' · неактивна':''}</span><div>`;
