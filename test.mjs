@@ -67,3 +67,13 @@ test('Mobile navigation: persistent tabs and bottom sheets are wired',()=>{
  assert.match(html,/map\.invalidateSize\(\)/);
  assert.match(html,/visibleMarkers\.set\(s\.id,markerRef\)/);
 });
+
+test('Voyager tiles: configured CARTO key with OSM fallback',()=>{
+ const html=fs.readFileSync('public/index.html','utf8');
+ const workflow=fs.readFileSync('.github/workflows/deploy.yml','utf8');
+ assert.match(html,/rastertiles\/voyager/);
+ assert.match(html,/map-config\.js/);
+ assert.match(html,/tileerror/);
+ assert.match(html,/osmTiles\.addTo\(map\)/);
+ assert.match(workflow,/CARTO_BASEMAP_KEY/);
+});
