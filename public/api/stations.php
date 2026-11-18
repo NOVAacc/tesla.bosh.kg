@@ -81,6 +81,8 @@ function sparkStations(array $rows, array $ccs2 = []): array
                     'type' => $connector['type'] ?? null, 'status' => $status, 'pending' => $pending,
                     'chargingFinished' => !empty($connector['chargingFinished']),
                     'percentage' => $connector['activeTransactionBrief']['percentage'] ?? null,
+                    'tariff' => $connector['tariff'] ?? null,
+                    'powerKw' => $connector['power'] ?? null,
                     'available' => $active && !$blocked && $status === 'AVAILABLE' && !$pending,
                 ];
             }
@@ -221,7 +223,7 @@ function loadCached(string $operator, callable $loader, array $fallback = []): a
     return $result;
 }
 
-function sparkCardPercentages(string $stationId): array
+function sparkCardDetails(string $stationId): array
 {
     $query = <<<'GRAPHQL'
 query ChargingStationCard($id: String) {
@@ -230,8 +232,9 @@ query ChargingStationCard($id: String) {
     evses {
       id
       connectors {
-        id evseId status chargingFinished
+        id evseId type status chargingFinished power
         activeTransactionBrief { percentage estimatedChargingTime }
+        tariff { type amount currency }
       }
     }
   }
@@ -240,21 +243,38 @@ GRAPHQL;
     $headers = ['tenant: spark', 'x-application-version: 2.3.3-ios'];
     // Optional server-side credential, never expose it in frontend JavaScript.
     $token = trim((string) getenv('SPARK_API_TOKEN'));
+    if ($token === '') {
+        // Dedicated private credential file (outside the site's public directory).
+        $privateFile = '/home/g143326/.spark-api-token';
+        if (is_file($privateFile) && is_readable($privateFile)) {
+            $token = trim((string) file_get_contents($privateFile));
+        }
+    }
     if ($token !== '') {
         $headers[] = 'Authorization: ' . $token;
     }
     $card = graphql('https://api.itcharge.ru/graphql/v1', $query, ['id' => $stationId], $headers)['ChargingStationCard'] ?? [];
-    $percentages = [];
+    $connectors = [];
     foreach ($card['evses'] ?? [] as $device) {
         foreach ($device['connectors'] ?? [] as $connector) {
             $percentage = $connector['activeTransactionBrief']['percentage'] ?? null;
-            if (($connector['status'] ?? '') === 'OCCUPIED' && empty($connector['chargingFinished'])
-                && is_numeric($percentage) && $percentage >= 0 && $percentage <= 100) {
-                $percentages[$device['id'] . ':' . $connector['id']] = (float) $percentage;
-            }
+            $occupied = ($connector['status'] ?? '') === 'OCCUPIED' && empty($connector['chargingFinished']);
+            $percent = $occupied && is_numeric($percentage) && (float) $percentage >= 0 && (float) $percentage <= 100
+                ? (float) $percentage : null;
+            $tariff = $connector['tariff'] ?? null;
+            $amount = is_array($tariff) && is_numeric($tariff['amount'] ?? null) ? (float) $tariff['amount'] : null;
+            $connectors[$device['id'] . ':' . $connector['id']] = [
+                'percentage' => $percent,
+                'tariff' => $amount === null ? null : [
+                    'amount' => $amount,
+                    'currency' => $tariff['currency'] ?? 'KGS',
+                    'type' => $tariff['type'] ?? null,
+                ],
+                'powerKw' => is_numeric($connector['power'] ?? null) ? (float) $connector['power'] : null,
+            ];
         }
     }
-    return $percentages;
+    return $connectors;
 }
 
 header('Content-Type: application/json; charset=utf-8');
@@ -270,16 +290,16 @@ if (isset($_GET['sparkCard'])) {
     $cachePath = sys_get_temp_dir() . '/tesla-spark-card-' . hash('sha256', $stationId) . '.json';
     $cached = is_file($cachePath) ? json_decode((string) @file_get_contents($cachePath), true) : null;
     if (is_array($cached) && isset($cached['checkedAt']) && time() - $cached['checkedAt'] < 45) {
-        echo json_encode(['percentages' => (object) ($cached['percentages'] ?? [])], JSON_THROW_ON_ERROR);
+        echo json_encode(['connectors' => (object) ($cached['connectors'] ?? [])], JSON_THROW_ON_ERROR);
         exit;
     }
     try {
-        $percentages = sparkCardPercentages($stationId);
-        @file_put_contents($cachePath, json_encode(['checkedAt' => time(), 'percentages' => $percentages], JSON_THROW_ON_ERROR), LOCK_EX);
-        echo json_encode(['percentages' => (object) $percentages], JSON_THROW_ON_ERROR);
+        $connectors = sparkCardDetails($stationId);
+        @file_put_contents($cachePath, json_encode(['checkedAt' => time(), 'connectors' => $connectors], JSON_THROW_ON_ERROR), LOCK_EX);
+        echo json_encode(['connectors' => (object) $connectors], JSON_THROW_ON_ERROR);
     } catch (Throwable $error) {
         http_response_code(502);
-        echo '{"error":"SPARK card unavailable"}';
+        echo json_encode(['error' => 'SPARK card unavailable', 'reason' => trim((string) getenv('SPARK_API_TOKEN')) === '' && !is_file('/home/g143326/.spark-api-token') ? 'credential_not_configured' : 'upstream_unavailable'], JSON_THROW_ON_ERROR);
     }
     exit;
 }
