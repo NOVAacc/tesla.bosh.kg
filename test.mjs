@@ -99,3 +99,16 @@ test('Mobile station panel closes on map tab, background tap and viewport switch
  assert.match(html,/map\.on\('click',\(\)=>\{if\(mobileMQ\.matches&&selectedStation\)closeStationPanel\(\)\}\)/);
  assert.match(html,/function syncMobileLayout\(\)\{\s*closeStationPanel\(\)/);
 });
+
+test('Nearest list: tabs, geolocation, distance and filtering are wired',()=>{
+ const html=fs.readFileSync('public/index.html','utf8');
+ for(const id of ['stationListView','nearbyLocation','nearbyContent','desktopList'])assert.ok(html.includes('id="'+id+'"'));
+ assert.match(html,/data-mobile-tab="list"/);
+ assert.match(html,/function distanceKm\(a,b\)/);
+ assert.match(html,/function nearbySortedStations\(\)/);
+ assert.match(html,/function setListMode\(enabled\)/);
+ assert.match(html,/navigator\.geolocation\.getCurrentPosition/);
+ assert.match(html,/stations\.filter\(s=>validCoordinates\(s\)&&matches\(s\)\)/);
+ assert.match(html,/distanceKm\(userCoords,a\)-distanceKm\(userCoords,b\)/);
+ assert.match(html,/if\(name==='list'\)\{closeSheet\(\);closeStationPanel\(\);setListMode\(true\);return\}/);
+});
