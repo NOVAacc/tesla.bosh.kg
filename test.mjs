@@ -34,3 +34,16 @@ test('SPARK: тип разъёма привязан к конкретному п
  assert.deepEqual(station.connectors.map(c=>c.type),['GBT_DC','C_CCS2',null]);
  assert.deepEqual(station.connectors.map(c=>c.percentage),[62,0,null]);
 });
+
+test('SPARK card: API uses station UUID instead of numeric seqNo',()=>{
+ const php=fs.readFileSync('public/api/stations.php','utf8');
+ assert.match(php,/query ChargingStationCard\(\$id: String\)/);
+ assert.match(php,/ChargingStationCard\(id: \$id\)/);
+ assert.match(php,/\['id' => \$stationId\]/);
+ assert.doesNotMatch(php,/ChargingStationCard\(seqNo:/);
+});
+test('SPARK popup requests UUID and refreshes active charging data',()=>{
+ const html=fs.readFileSync('public/index.html','utf8');
+ assert.match(html,/sparkCard='\+encodeURIComponent\(device.sourceId\)/);
+ assert.match(html,/setInterval\(refresh,60000\)/);
+});
