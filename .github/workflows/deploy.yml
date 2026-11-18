@@ -1,0 +1,61 @@
+name: Deploy tesla.bosh.kg
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tesla-bosh-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - name: Install FTPS client
+        run: sudo apt-get update && sudo apt-get install -y lftp
+      - name: Upload app and restart Passenger
+        env:
+          FTPS_HOST: ${{ secrets.FTPS_HOST }}
+          FTPS_USER: ${{ secrets.FTPS_USER }}
+          LFTP_PASSWORD: ${{ secrets.FTPS_PASSWORD }}
+          FTPS_APP_DIR: ${{ vars.FTPS_APP_DIR }}
+        run: |
+          set -euo pipefail
+          : "${FTPS_HOST:?}" "${FTPS_USER:?}" "${LFTP_PASSWORD:?}" "${FTPS_APP_DIR:?}"
+          [[ "$FTPS_HOST" =~ ^[A-Za-z0-9.-]+(:[0-9]+)?$ ]]
+          [[ "$FTPS_APP_DIR" =~ ^/?([A-Za-z0-9_-]+/)*tesla-map$ ]]
+          release_dir="$(mktemp -d)"
+          cp app.cjs server.mjs spark.mjs charge24.mjs package.json "$release_dir/"
+          cp -r data public "$release_dir/"
+          date -u > "$release_dir/restart.txt"
+          lftp --env-password -u "$FTPS_USER" -e "
+            set cmd:fail-exit yes
+            set ftp:ssl-force yes
+            set ftp:ssl-protect-data yes
+            set ssl:verify-certificate yes
+            set net:timeout 20
+            set net:max-retries 2
+            cd $FTPS_APP_DIR
+            mirror --reverse --exclude '^restart[.]txt$' $release_dir .
+            mkdir -p tmp
+            put $release_dir/restart.txt -o tmp/restart.txt
+            bye
+          " "ftp://$FTPS_HOST"
+      - name: Check the published site
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 3 --max-time 20 https://tesla.bosh.kg/ | grep -F 'Зарядные станции Кыргызстана' > /dev/null
+          curl --fail --silent --show-error --retry 2 --max-time 90 https://tesla.bosh.kg/api/stations |
+            jq -e '(.stations | length) > 0 and (.meta.spark != null) and (.meta.charge24 != null)' > /dev/null

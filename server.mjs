@@ -1,0 +1,40 @@
+import http from 'node:http';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {loadFromApi,loadCcs2Ids,assignStationTypes,normalizeAll,groupSites} from './spark.mjs';
+import {loadCharge24,normalizeCharge24} from './charge24.mjs';
+const root=path.dirname(fileURLToPath(import.meta.url));
+process.chdir(root);
+const PORT=Number(process.env.PORT||3080);
+const CACHE_MS=5*60*1000;
+const cache={spark:{value:null,at:0,error:null,source:'snapshot'},charge24:{value:null,at:0,error:null,source:'none'}};
+let requests={};
+async function cached(name, loader, fallback) {
+ const c=cache[name];
+ if(c.value && Date.now()-c.at<CACHE_MS)return c;
+ if(requests[name])return requests[name];
+ requests[name]=(async()=>{
+  try {const value=await loader();c.value=value;c.at=Date.now();c.error=null;c.source='live';}
+  catch(e){c.error=String(e.message||e);if(!c.value && fallback){try{c.value=await fallback();c.at=0;c.source='snapshot'}catch{}}}
+  return c;
+ })(); try{return await requests[name]}finally{delete requests[name]}
+}
+async function loadSpark(){return await cached('spark',async()=>{let raw=await loadFromApi();let ccs2Warning=null;try{const ids=await loadCcs2Ids();raw=assignStationTypes(raw,ids)}catch(e){ccs2Warning=String(e.message||e)}cache.spark.connectorTypesError=ccs2Warning;await fs.writeFile(path.join(root,'data/spark-snapshot.json'),JSON.stringify(raw));return normalizeAll(raw)},async()=>normalizeAll(JSON.parse(await fs.readFile(path.join(root,'data/spark-snapshot.json'),'utf8'))));}
+async function loadCharge(){return await cached('charge24',async()=>{const raw=await loadCharge24();const normalized=normalizeCharge24(raw);if(!normalized.length)throw new Error('Charge24: не получены координаты');await fs.writeFile(path.join(root,'data/charge24-snapshot.json'),JSON.stringify(raw));return normalized},async()=>normalizeCharge24(JSON.parse(await fs.readFile(path.join(root,'data/charge24-snapshot.json'),'utf8'))));}
+const send=(res,code,obj)=>{res.writeHead(code,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(obj))};
+http.createServer(async(req,res)=>{
+ try{
+  const url=new URL(req.url,'http://localhost');
+  if(url.pathname==='/api/stations'){
+    const [s,c]=await Promise.all([loadSpark(),loadCharge()]);
+    return send(res,200,{stations:[...(s.value||[]),...(c.value||[])],sites:groupSites(s.value||[]),meta:{spark:{count:s.value?.length||0,source:s.source,error:s.error,connectorTypesError:s.connectorTypesError||null,updatedAt:s.at?new Date(s.at).toISOString():null},charge24:{count:c.value?.length||0,source:c.source,error:c.error,updatedAt:c.at?new Date(c.at).toISOString():null}}});
+  }
+  if(url.pathname==='/api/health') return send(res,200,cache);
+  const p=url.pathname==='/'?'index.html':url.pathname.slice(1);
+  if(p.includes('..')) return send(res,403,{error:'forbidden'});
+  const content=await fs.readFile(path.join(root,'public',p));
+  const type=p.endsWith('.html')?'text/html; charset=utf-8':p.endsWith('.js')?'application/javascript':'text/plain';
+  res.writeHead(200,{'content-type':type});res.end(content);
+ }catch(e){ if(e.code==='ENOENT')send(res,404,{error:'not found'});else send(res,500,{error:String(e.message||e)})}
+}).listen(PORT,()=>console.log('Общая карта: http://localhost:'+PORT));

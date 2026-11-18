@@ -1,0 +1,5 @@
+.env
+.env.*
+node_modules/
+tmp/
+data/charge24-snapshot.json
