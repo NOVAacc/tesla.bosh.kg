@@ -51,7 +51,7 @@ jobs:
             set net:timeout 20
             set net:max-retries 2
             open --env-password -u $FTPS_USER ftp://$FTPS_HOST
-            cd /public_html/tesla.bosh.kg || cd /tesla.bosh.kg
+            cd /
             mirror --reverse $release_dir .
             bye
           "
