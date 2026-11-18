@@ -52,7 +52,7 @@ jobs:
             set net:max-retries 2
             open --env-password -u $FTPS_USER ftp://$FTPS_HOST
             cd /
-            mkdir -p /api
+            cd /api || mkdir /api
             put $release_dir/api/spark-snapshot.json -o /api/spark-snapshot.json
             put $release_dir/api/stations.php -o /api/stations.php
             put $release_dir/.htaccess -o /.htaccess
