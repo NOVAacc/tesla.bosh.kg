@@ -4,7 +4,7 @@ Existing charging endpoints remain unchanged.
 
 ## Install
 1. In Fornex phpMyAdmin, choose the dedicated MySQL database and import database/001_accounts.sql. Do not import into the BOSH main database.
-2. Configure DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD as PHP process environment variables, or set EV_PRIVATE_ENV to a fully qualified path of a private .env file outside the publicly served website directory. Never commit .env and never expose it over HTTP. GitHub repository secrets are CI-only and are not inherited by PHP.
+2. For the g143326 Fornex account create /home/g143326/.tesla-ev.env (outside public_html) with DB_HOST="localhost", DB_PORT="3306", DB_DATABASE="...", DB_USERNAME="...", DB_PASSWORD="...". Restrict permissions to 600 and ensure the PHP account can read it. Do NOT place this file inside the website document root, upload it through GitHub, or send its contents in chat. EV_PRIVATE_ENV may override the path when the server environment supports it. GitHub repository secrets are CI-only and are not inherited by PHP.
 3. Ensure PHP 8.1+ with pdo_mysql and mbstring; force HTTPS.
 4. Validate /api/account.php?action=me returns user:null and a csrf value, then categories. Existing /api/stations must stay functional.
 5. Configure SMTP and email verification before allowing registration. Public registration currently deliberately returns 503; no user accounts can be created using the public endpoint. Admin bootstrap must be done manually through a secure one-time CLI procedure (not yet implemented).
