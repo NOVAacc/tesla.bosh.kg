@@ -1,0 +1,67 @@
+name: Apply EV database migrations (SSH)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tesla-bosh-production
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_mysql
+      - name: Validate migration runner
+        run: php -l tools/migrate.php
+      - name: Configure SSH with verified host key
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ vars.SSH_PORT }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KEY_PASSPHRASE: ${{ secrets.SSH_KEY_PASSPHRASE }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          : "${SSH_HOST:?Configure SSH_HOST repository secret}" "${SSH_PRIVATE_KEY:?}" "${SSH_KNOWN_HOSTS:?Configure verified SSH_KNOWN_HOSTS secret}"
+          [[ "$SSH_HOST" =~ ^[A-Za-z0-9.-]+$ ]]
+          SSH_PORT="${SSH_PORT:-22}"
+          [[ "$SSH_PORT" =~ ^[0-9]{1,5}$ ]]
+          echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
+          echo "SSH_HOST=$SSH_HOST" >> "$GITHUB_ENV"
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$RUNNER_TEMP/deploy_key"
+          chmod 600 "$RUNNER_TEMP/deploy_key"
+          printf '#!/bin/sh\nprintf "%%s\\n" "$SSH_KEY_PASSPHRASE"\n' > "$RUNNER_TEMP/ssh-askpass"
+          chmod 700 "$RUNNER_TEMP/ssh-askpass"
+          export SSH_ASKPASS="$RUNNER_TEMP/ssh-askpass"
+          export SSH_ASKPASS_REQUIRE=force
+          export DISPLAY=:0
+          eval "$(ssh-agent -s)"
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
+          ssh-add "$RUNNER_TEMP/deploy_key" </dev/null
+          rm -f "$RUNNER_TEMP/deploy_key" "$RUNNER_TEMP/ssh-askpass"
+          ssh-add -l
+      - name: Upload migrations outside the public web directory
+        run: |
+          set -euo pipefail
+          tar -czf - -C "$GITHUB_WORKSPACE" database tools/migrate.php |
+            ssh -p "$SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" -o ConnectTimeout=12 "g143326@$SSH_HOST" \
+              'umask 077; mkdir -p /home/g143326/.tesla-migrations && tar -xz -C /home/g143326/.tesla-migrations'
+      - name: Apply pending MySQL migrations on Fornex
+        run: |
+          set -euo pipefail
+          ssh -p "$SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" -o ConnectTimeout=12 "g143326@$SSH_HOST" \
+            '/opt/cpanel/ea-php83/root/usr/bin/php /home/g143326/.tesla-migrations/tools/migrate.php'
