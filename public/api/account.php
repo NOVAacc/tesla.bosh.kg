@@ -5,6 +5,7 @@ header('Referrer-Policy: no-referrer');
 header('X-Frame-Options: DENY');
 if (!in_array($_SERVER['REQUEST_METHOD'] ?? '', ['GET','POST'], true)) ev_response(405,['error'=>'method_not_allowed']);
 const EV_VEHICLE_LIMIT = 3;
+const EV_CONNECTORS = ['CCS2','GB/T','NACS','Type2','CHAdeMO'];
 ev_session();
 $action = $_GET['action'] ?? 'me';
 try {
@@ -12,7 +13,14 @@ try {
     if ($action === 'me') ev_response(200,['user'=>ev_user(),'csrf'=>$_SESSION['csrf']]);
     if ($action === 'vehicles') {
       $u=ev_require_user(); $s=ev_db()->prepare('SELECT id,make,model,model_year,connector,is_primary FROM user_vehicles WHERE user_id=? ORDER BY is_primary DESC,id DESC');
-      $s->execute([$u['id']]); ev_response(200,['vehicles'=>$s->fetchAll(),'limit'=>EV_VEHICLE_LIMIT]);
+      $s->execute([$u['id']]);
+      $vehicles=$s->fetchAll();
+      foreach ($vehicles as &$vehicle) {
+        $vehicle['connectors']=$vehicle['connector'] ? explode(',', $vehicle['connector']) : [];
+        $vehicle['connector']=$vehicle['connectors'][0] ?? null;
+      }
+      unset($vehicle);
+      ev_response(200,['vehicles'=>$vehicles,'limit'=>EV_VEHICLE_LIMIT]);
     }
     if ($action === 'vehicle_catalog') {
       $s=ev_db()->query('SELECT b.id AS make_id,b.name AS make,m.id AS model_id,m.name AS model
@@ -61,49 +69,78 @@ try {
     $_SESSION=[]; session_regenerate_id(true); $_SESSION['csrf']=bin2hex(random_bytes(32));
     ev_response(200,['ok'=>true,'csrf'=>$_SESSION['csrf']]);
   }
-  if ($action === 'vehicle_add') {
+  if ($action === 'vehicle_add' || $action === 'vehicle_update') {
     $u=ev_require_user();
+    $editing=$action === 'vehicle_update';
+    $id=$data['id']??null;
     $makeId=$data['make_id']??null; $modelId=$data['model_id']??null;
-    $year=$data['year']??null; $connector=$data['connector']??null;
-    if (!is_int($makeId) || $makeId<1 || !is_int($modelId) || $modelId<1
+    $keepModel=$editing && $makeId===null && $modelId===null;
+    $year=$data['year']??null;
+    $legacyConnector=$data['connector']??null;
+    $connectors=array_key_exists('connectors',$data) ? $data['connectors'] : ($legacyConnector===null ? [] : [$legacyConnector]);
+    if (($editing && (!is_int($id) || $id<1))
+        || (!$keepModel && (!is_int($makeId) || $makeId<1 || !is_int($modelId) || $modelId<1))
         || ($year!==null && (!is_int($year) || $year<1990 || $year>2100))
-        || ($connector!==null && !in_array($connector,['CCS2','GB/T','NACS','Type2','CHAdeMO'],true))) {
-      ev_response(422,['error'=>'invalid_vehicle','message'=>'Проверьте марку, модель, год выпуска и разъём.']);
+        || !is_array($connectors) || !array_is_list($connectors) || count($connectors)>count(EV_CONNECTORS)) {
+      ev_response(422,['error'=>'invalid_vehicle','message'=>'Проверьте марку, модель, год выпуска и разъёмы.']);
     }
+    foreach ($connectors as $connector) {
+      if (!in_array($connector,EV_CONNECTORS,true)) {
+        ev_response(422,['error'=>'invalid_vehicle','message'=>'Выберите разъёмы из списка.']);
+      }
+    }
+    $connector=$connectors ? implode(',',array_unique($connectors)) : null;
     $db=ev_db();
     $db->beginTransaction();
     try {
-      // Serialize additions from different sessions of the same user.
+      // Serialize writes from different sessions of the same user.
       $owner=$db->prepare('SELECT id FROM users WHERE id=? FOR UPDATE');
       $owner->execute([$u['id']]);
       if (!$owner->fetchColumn()) {
         $db->rollBack();
         ev_response(401,['error'=>'unauthorized']);
       }
-      $count=$db->prepare('SELECT COUNT(*) FROM user_vehicles WHERE user_id=?');
-      $count->execute([$u['id']]);
-      if ((int)$count->fetchColumn()>=EV_VEHICLE_LIMIT) {
-        $db->rollBack();
-        ev_response(409,['error'=>'vehicle_limit','message'=>'Можно сохранить до '.EV_VEHICLE_LIMIT.' автомобилей.']);
+      if ($editing) {
+        $existing=$db->prepare('SELECT make,model FROM user_vehicles WHERE id=? AND user_id=?');
+        $existing->execute([$id,$u['id']]);
+        $vehicle=$existing->fetch();
+        if (!$vehicle) {
+          $db->rollBack();
+          ev_response(404,['error'=>'vehicle_not_found','message'=>'Автомобиль не найден.']);
+        }
+      } else {
+        $count=$db->prepare('SELECT COUNT(*) FROM user_vehicles WHERE user_id=?');
+        $count->execute([$u['id']]);
+        if ((int)$count->fetchColumn()>=EV_VEHICLE_LIMIT) {
+          $db->rollBack();
+          ev_response(409,['error'=>'vehicle_limit','message'=>'Можно сохранить до '.EV_VEHICLE_LIMIT.' автомобилей.']);
+        }
       }
-      $catalog=$db->prepare('SELECT b.name AS make,m.name AS model
-        FROM vehicle_models m JOIN vehicle_makes b ON b.id=m.make_id
-        WHERE m.id=? AND b.id=? AND m.is_active=1 AND b.is_active=1');
-      $catalog->execute([$modelId,$makeId]);
-      $vehicle=$catalog->fetch();
-      if (!$vehicle) {
-        $db->rollBack();
-        ev_response(422,['error'=>'invalid_vehicle_model','message'=>'Выбранная модель недоступна. Выберите модель из списка.']);
+      if (!$keepModel) {
+        $catalog=$db->prepare('SELECT b.name AS make,m.name AS model
+          FROM vehicle_models m JOIN vehicle_makes b ON b.id=m.make_id
+          WHERE m.id=? AND b.id=? AND m.is_active=1 AND b.is_active=1');
+        $catalog->execute([$modelId,$makeId]);
+        $vehicle=$catalog->fetch();
+        if (!$vehicle) {
+          $db->rollBack();
+          ev_response(422,['error'=>'invalid_vehicle_model','message'=>'Выбранная модель недоступна. Выберите модель из списка.']);
+        }
       }
-      $s=$db->prepare('INSERT INTO user_vehicles(user_id,make,model,model_year,connector) VALUES(?,?,?,?,?)');
-      $s->execute([$u['id'],$vehicle['make'],$vehicle['model'],$year,$connector]);
-      $id=(int)$db->lastInsertId();
+      if ($editing) {
+        $s=$db->prepare('UPDATE user_vehicles SET make=?,model=?,model_year=?,connector=? WHERE id=? AND user_id=?');
+        $s->execute([$vehicle['make'],$vehicle['model'],$year,$connector,$id,$u['id']]);
+      } else {
+        $s=$db->prepare('INSERT INTO user_vehicles(user_id,make,model,model_year,connector) VALUES(?,?,?,?,?)');
+        $s->execute([$u['id'],$vehicle['make'],$vehicle['model'],$year,$connector]);
+        $id=(int)$db->lastInsertId();
+      }
       $db->commit();
     } catch (Throwable $e) {
       if ($db->inTransaction()) $db->rollBack();
       throw $e;
     }
-    ev_response(201,['id'=>$id]);
+    ev_response($editing?200:201,['id'=>$id]);
   }
   if ($action === 'business_apply') {
     $u=ev_require_user(); $name=trim((string)($data['name']??'')); $cat=$data['category_id']??null;

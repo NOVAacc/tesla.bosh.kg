@@ -4,6 +4,7 @@
 <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1b2634;background:#f5f6f8}*{box-sizing:border-box}body{margin:0}a{color:inherit}header{background:#ffffffd9;backdrop-filter:blur(16px);border-bottom:1px solid #e7e9ed;padding:16px max(20px,calc((100vw - 1000px)/2));display:flex;align-items:center;justify-content:space-between;gap:10px}header strong{font-size:18px;letter-spacing:-.5px}header a{font-size:14px;text-decoration:none;color:#475569}main{max-width:1000px;margin:38px auto;padding:0 18px 60px}.heading{font-size:30px;letter-spacing:-1px;margin:0 0 8px}.subtitle{color:#6b7280;margin:0 0 26px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{border:1px solid #e4e6eb;border-radius:22px;background:#fff;padding:24px;box-shadow:0 7px 25px #14253a08}.card h2{font-size:19px;margin:0 0 12px;letter-spacing:-.4px}.card p{color:#657080;font-size:14px;line-height:1.5}.span{grid-column:span 2}label{display:block;color:#475569;font-size:13px;margin-top:13px;margin-bottom:5px}input,select{width:100%;border:1px solid #d8dce3;border-radius:12px;padding:12px;background:#fff;font:inherit;font-size:15px;min-height:46px}button{border:0;background:#202c39;color:#fff;border-radius:12px;padding:12px 17px;min-height:44px;font:inherit;font-weight:600;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#edf0f4;color:#1f2937}.buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.notice{background:#f4f5f7;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.5;color:#536174}.message{min-height:18px;margin-top:12px;color:#a23d39;font-size:14px}.pill{display:inline-flex;padding:5px 9px;background:#ecf5ee;color:#14743d;border-radius:99px;font-size:12px}.item{padding:12px 0;border-top:1px solid #eef0f2;font-size:14px}.item small{color:#657080}.hidden{display:none!important}@media(max-width:690px){main{margin:26px auto}.grid{grid-template-columns:1fr}.span{grid-column:span 1}.heading{font-size:25px}.card{padding:19px}header{padding:14px 18px}}
 @media(max-width:850px){main{padding-bottom:calc(var(--dock-clearance) + 24px)}}
+.vehicle-connectors{border:0;padding:0;margin:16px 0 0;min-width:0}.vehicle-connectors legend{padding:0;color:#475569;font-size:13px}.vehicle-connectors p{margin:4px 0 8px}.vehicle-connectors div{display:flex;flex-wrap:wrap;gap:8px}.vehicle-connectors label{display:flex;align-items:center;gap:7px;margin:0;border:1px solid #d8dce3;border-radius:10px;padding:6px 9px;min-height:44px;cursor:pointer}.vehicle-connectors input{width:17px;min-height:0;height:17px;margin:0;accent-color:#202c39}.vehicle-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}.vehicle-row button{padding:8px 12px;font-size:13px}
 </style></head><body>
 <header><strong>EV Карта</strong><a href="/">← Вернуться к карте</a></header>
 <main><h1 class="heading">Личный кабинет</h1><p class="subtitle">Автомобили, EV-сервисы и будущие возможности единой платформы.</p>
@@ -13,7 +14,7 @@
 </div>
 <div id="authenticated" class="grid hidden">
 <section class="card span"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h2 id="displayName">Мой профиль</h2><p id="userEmail"></p><span id="roleBadge" class="pill">Пользователь</span></div><button type="button" class="secondary" id="logout">Выйти</button></div></section>
-<section class="card"><h2>Мои автомобили</h2><div id="vehicleList"><p>Загрузка…</p></div><p id="vehicleCount" role="status"></p><form id="vehicleForm" class="hidden"><label for="make">Марка</label><select id="make" required disabled><option value="">Загрузка марок…</option></select><label for="model">Модель</label><select id="model" required disabled><option value="">Сначала выберите марку</option></select><label for="year">Год выпуска</label><input id="year" type="number" min="1990" max="2100" placeholder="2022"><label for="connector">Разъём</label><select id="connector"><option value="">Не выбран</option><option>CCS2</option><option>GB/T</option><option>NACS</option><option>Type2</option><option>CHAdeMO</option></select><div class="buttons"><button id="vehicleSubmit" type="submit" disabled>Добавить автомобиль</button></div></form><div id="vehicleMsg" class="message" role="status"></div></section>
+<section class="card"><h2>Мои автомобили</h2><div id="vehicleList"><p>Загрузка…</p></div><p id="vehicleCount" role="status"></p><form id="vehicleForm" class="hidden"><label for="make">Марка</label><select id="make" required disabled><option value="">Загрузка марок…</option></select><label for="model">Модель</label><select id="model" required disabled><option value="">Сначала выберите марку</option></select><label for="year">Год выпуска</label><input id="year" type="number" min="1990" max="2100" placeholder="2022"><fieldset class="vehicle-connectors" aria-describedby="connectorHint"><legend>Разъёмы</legend><p id="connectorHint">Отметьте разъёмы автомобиля и переходников.</p><div><label><input type="checkbox" name="connectors" value="CCS2">CCS2</label><label><input type="checkbox" name="connectors" value="GB/T">GB/T</label><label><input type="checkbox" name="connectors" value="NACS">NACS</label><label><input type="checkbox" name="connectors" value="Type2">Type 2</label><label><input type="checkbox" name="connectors" value="CHAdeMO">CHAdeMO</label></div></fieldset><div class="buttons"><button id="vehicleSubmit" type="submit" disabled>Добавить автомобиль</button><button id="vehicleCancel" type="button" class="secondary hidden">Отмена</button></div></form><div id="vehicleMsg" class="message" role="status"></div></section>
 <section class="card"><h2>Разместить EV-компанию</h2><p>Подайте заявку на добавление автосервиса, магазина или автосалона. Компания появится в каталоге только после модерации.</p><form id="businessForm"><label for="businessName">Название компании</label><input id="businessName" required maxlength="150"><label for="businessCategory">Категория</label><select id="businessCategory" required><option value="">Загрузка категорий…</option></select><div class="buttons"><button type="submit">Отправить заявку</button></div><div id="businessMsg" class="message" role="status"></div></form></section>
 <section class="card span"><h2>Единый кошелёк</h2><div class="notice">Платежи и баланс ещё не запущены. Мы не принимаем пополнения до подключения лицензированного платёжного партнёра.</div></section>
 </div><p id="globalMsg" class="message" role="status" aria-live="polite"></p></main>
@@ -40,19 +41,41 @@ async function api(action,data){
 }
 function showUser(u){$('guest').classList.toggle('hidden',!!u);$('authenticated').classList.toggle('hidden',!u);if(u){$('displayName').textContent=u.display_name||'Мой профиль';$('userEmail').textContent=u.email;$('roleBadge').textContent=({user:'Пользователь',business:'Компания',admin:'Администратор'})[u.role]||'Пользователь';}}
 let vehicleMakes=[];
-let addingVehicle=false;
+let savingVehicle=false;
+let editingVehicle=null;
+let vehicleLimitReached=false;
+const connectorInputs=[...$('vehicleForm').querySelectorAll('input[name="connectors"]')];
 function syncVehicleSubmit(){
- $('vehicleSubmit').disabled=addingVehicle||!$('model').value||$('model').disabled;
+ $('vehicleSubmit').disabled=savingVehicle||(!editingVehicle||$('make').value!=='')&&!$('model').value;
 }
 function syncVehicleModels(){
  const models=vehicleMakes.find(make=>String(make.id)===$('make').value)?.models||[];
  $('model').replaceChildren(new Option(models.length?'Выберите модель':'Сначала выберите марку',''));
  for(const model of models)$('model').add(new Option(model.name,String(model.id)));
  $('model').disabled=!models.length;
+ $('model').required=models.length>0;
  syncVehicleSubmit();
+}
+function showVehicleForm(vehicle=null){
+ editingVehicle=vehicle;
+ const form=$('vehicleForm');
+ form.reset();
+ $('make').selectedIndex=0;
+ $('make').options[0].text=vehicle?`Оставить ${vehicle.make} ${vehicle.model}`:(vehicleMakes.length?'Выберите марку':'Загрузка марок…');
+ $('make').required=!vehicle;
+ $('year').value=vehicle?.model_year??'';
+ for(const input of connectorInputs)input.checked=vehicle?.connectors.includes(input.value)??false;
+ $('vehicleSubmit').textContent=vehicle?'Сохранить изменения':'Добавить автомобиль';
+ $('vehicleCancel').classList.toggle('hidden',!vehicle);
+ form.classList.toggle('hidden',!vehicle&&vehicleLimitReached);
+ syncVehicleModels();
 }
 $('make').addEventListener('change',syncVehicleModels);
 $('model').addEventListener('change',syncVehicleSubmit);
+$('vehicleCancel').addEventListener('click',()=>{
+ if(savingVehicle)return;
+ showVehicleForm();$('vehicleMsg').textContent='';
+});
 async function loadVehicles(){
  const {vehicles,limit}=await api('vehicles');
  const root=$('vehicleList');
@@ -61,50 +84,64 @@ async function loadVehicles(){
   const p=document.createElement('p');p.textContent='Пока нет автомобилей';root.append(p);
  }
  for(const v of vehicles){
-  const el=document.createElement('div');el.className='item';
-  el.textContent=[v.make,v.model,v.model_year||'',v.connector||''].filter(Boolean).join(' · ');
-  root.append(el);
+  const vehicle={...v,connectors:v.connectors??(v.connector?[v.connector]:[])};
+  const el=document.createElement('div');el.className='item vehicle-row';
+  const details=document.createElement('span');
+  const name=[v.make,v.model].join(' ');
+  details.textContent=[name,v.model_year,vehicle.connectors.join(', ')].filter(Boolean).join(' · ');
+  const edit=document.createElement('button');edit.type='button';edit.className='secondary';
+  edit.textContent='Редактировать';edit.setAttribute('aria-label',`Редактировать ${name}`);
+  edit.addEventListener('click',()=>{
+   if(savingVehicle)return;
+   $('vehicleMsg').textContent='';showVehicleForm(vehicle);
+   ($('make').disabled?$('year'):$('make')).focus();
+  });
+  el.append(details,edit);root.append(el);
  }
- const atLimit=vehicles.length>=limit;
- $('vehicleCount').textContent=atLimit?`Достигнут лимит: до ${limit} автомобилей.`:`Автомобили: ${vehicles.length} из ${limit}`;
- $('vehicleForm').classList.toggle('hidden',atLimit);
- if(atLimit||vehicleMakes.length)return;
+ vehicleLimitReached=vehicles.length>=limit;
+ $('vehicleCount').textContent=vehicleLimitReached?`Достигнут лимит: до ${limit} автомобилей.`:`Автомобили: ${vehicles.length} из ${limit}`;
+ $('vehicleForm').classList.toggle('hidden',vehicleLimitReached&&!editingVehicle);
+ if(vehicleMakes.length)return;
  try{
   const {makes}=await api('vehicle_catalog');
   vehicleMakes=makes;
-  $('make').replaceChildren(new Option(makes.length?'Выберите марку':'Каталог пока пуст',''));
+  const hint=editingVehicle?$('make').options[0].text:(makes.length?'Выберите марку':'Каталог пока пуст');
+  $('make').replaceChildren(new Option(hint,''));
   for(const make of makes)$('make').add(new Option(make.name,String(make.id)));
   $('make').disabled=!makes.length;
  }catch(e){
-  $('vehicleMsg').textContent='Не удалось загрузить каталог. Обновите страницу.';
+  $('vehicleMsg').textContent='Не удалось загрузить каталог. Обновите страницу, чтобы выбрать другую модель.';
  }
 }
 async function boot(){try{const r=await api('me');csrf=r.csrf;showUser(r.user);if(r.user)await loadVehicles();const {categories}=await api('categories');const s=$('businessCategory');s.replaceChildren();for(const c of categories){const o=document.createElement('option');o.value=String(c.id);o.textContent=c.name_ru;s.append(o);}}catch(e){$('globalMsg').textContent='Не удалось загрузить кабинет: '+e.message;}}
 $('login').addEventListener('submit',async e=>{e.preventDefault();$('loginMsg').textContent='';try{const r=await api('login',{email:$('email').value,password:$('password').value});csrf=r.csrf;$('password').value='';showUser(r.user);await loadVehicles();}catch(err){$('loginMsg').textContent=err.message;}});
-$('logout').addEventListener('click',async()=>{try{const r=await api('logout',{});csrf=r.csrf;showUser(null);$('password').value='';}catch(err){$('globalMsg').textContent=err.message;}});
+$('logout').addEventListener('click',async()=>{try{const r=await api('logout',{});csrf=r.csrf;showUser(null);vehicleLimitReached=false;showVehicleForm();$('vehicleMsg').textContent='';$('password').value='';}catch(err){$('globalMsg').textContent=err.message;}});
 $('vehicleForm').addEventListener('submit',async e=>{
  e.preventDefault();
- if(addingVehicle||$('vehicleSubmit').disabled)return;
- addingVehicle=true;syncVehicleSubmit();
+ if(savingVehicle||$('vehicleSubmit').disabled)return;
+ const vehicle=editingVehicle;
+ savingVehicle=true;syncVehicleSubmit();
  $('vehicleMsg').textContent='';
  try{
-  await api('vehicle_add',{
-   make_id:Number($('make').value),
-   model_id:Number($('model').value),
+  await api(vehicle?'vehicle_update':'vehicle_add',{
+   ...(vehicle?{id:Number(vehicle.id)}:{}),
+   make_id:$('make').value?Number($('make').value):null,
+   model_id:$('model').value?Number($('model').value):null,
    year:$('year').value?Number($('year').value):null,
-   connector:$('connector').value||null
+   connectors:connectorInputs.filter(input=>input.checked).map(input=>input.value)
   });
-  $('vehicleForm').reset();syncVehicleModels();
-  $('vehicleMsg').textContent='Автомобиль добавлен';
-  await loadVehicles().catch(()=>{$('vehicleMsg').textContent='Автомобиль добавлен. Обновите страницу, чтобы увидеть его в списке.'});
+  showVehicleForm();
+  const message=vehicle?'Изменения сохранены.':'Автомобиль добавлен.';
+  $('vehicleMsg').textContent=message;
+  await loadVehicles().catch(()=>{$('vehicleMsg').textContent=message+' Обновите страницу, чтобы увидеть изменения.'});
  }catch(err){
   $('vehicleMsg').textContent=err.message;
   if(err.code==='vehicle_limit'){
-   $('vehicleForm').classList.add('hidden');
+   vehicleLimitReached=true;showVehicleForm();
    await loadVehicles().catch(()=>{});
   }
  }finally{
-  addingVehicle=false;syncVehicleSubmit();
+  savingVehicle=false;syncVehicleSubmit();
  }
 });
 $('businessForm').addEventListener('submit',async e=>{e.preventDefault();$('businessMsg').textContent='';try{await api('business_apply',{name:$('businessName').value.trim(),category_id:Number($('businessCategory').value)});$('businessForm').reset();$('businessMsg').textContent='Заявка отправлена на модерацию';}catch(err){$('businessMsg').textContent=err.message;}});
