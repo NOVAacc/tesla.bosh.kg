@@ -167,6 +167,73 @@ GRAPHQL;
     throw new RuntimeException('Получен неполный список Charge24');
 }
 
+function wewayStations(): array
+{
+    $curl = curl_init('https://users.weway.tech/api/v1/stations/?page=1&size=100');
+    curl_setopt_array($curl, [
+        CURLOPT_HTTPGET => true,
+        CURLOPT_HTTPHEADER => ['Accept: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 4,
+        CURLOPT_TIMEOUT => 12,
+    ]);
+    $body = curl_exec($curl);
+    $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+    curl_close($curl);
+    if ($body === false || $status !== 200) {
+        throw new RuntimeException("WeWay HTTP $status");
+    }
+    $payload = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+    $rows = $payload['items'] ?? null;
+    if (!is_array($rows) || !is_int($payload['total'] ?? null)
+        || count($rows) !== $payload['total'] || ($payload['pages'] ?? null) !== 1) {
+        throw new RuntimeException('WeWay: неполный каталог');
+    }
+    $stations = [];
+    foreach ($rows as $row) {
+        $lat = $row['latitude'] ?? null;
+        $lng = $row['longitude'] ?? null;
+        if (!is_numeric($lat) || !is_numeric($lng) || $lat < 39 || $lat > 44 || $lng < 69 || $lng > 81) {
+            continue;
+        }
+        $active = ($row['online'] ?? false) === true && ($row['state'] ?? null) === 1;
+        $connectors = [];
+        foreach ($row['connectors'] ?? [] as $group) {
+            foreach ($group['items'] ?? [] as $connector) {
+                $portStatus = strtoupper((string) ($connector['status'] ?? 'UNKNOWN'));
+                $connectors[] = [
+                    'id' => (string) ($connector['ocpp_16_id'] ?? ''),
+                    'connectorId' => $connector['ocpp_16_id'] ?? null,
+                    'type' => $group['connector_type'] ?? null,
+                    'status' => $portStatus, 'percentage' => null,
+                    'powerKw' => is_numeric($connector['power'] ?? null) ? (float) $connector['power'] : null,
+                    'position' => $connector['position'] ?? null,
+                    'available' => $active && $portStatus === 'AVAILABLE',
+                ];
+            }
+        }
+        $promotions = $row['promotions'] ?? [];
+        $restricted = false;
+        foreach ($promotions as $promotion) {
+            if (preg_match('/только для сотрудников|ограничен.*доступ/ui', (string) $promotion)) {
+                $restricted = true;
+                break;
+            }
+        }
+        $powers = array_column($connectors, 'powerKw');
+        $stations[] = stationWithConnectors([
+            'id' => 'weway:' . (string) ($row['identity'] ?? $row['id']),
+            'sourceId' => (string) ($row['identity'] ?? ''),
+            'operator' => 'WeWay', 'name' => $row['name'] ?? 'Зарядная станция',
+            'address' => $row['address'] ?? '', 'lat' => (float) $lat, 'lng' => (float) $lng,
+            'active' => $active, 'blocked' => !$active, 'restricted' => $restricted,
+            'promotions' => $promotions,
+            'powerKw' => $powers ? (max($powers) ?: null) : null,
+        ], $connectors);
+    }
+    return $stations;
+}
+
 function stationWithConnectors(array $station, array $connectors): array
 {
     return $station + [
@@ -315,11 +382,13 @@ $spark = loadCached('spark', static function (): array {
     }
 }, $fallback);
 $charge = loadCached('charge24', static fn (): array => ['stations' => chargeStations()]);
+$weway = loadCached('weway', static fn (): array => ['stations' => wewayStations()]);
 $spark['count'] = count($spark['stations']);
 $charge['count'] = count($charge['stations']);
-$stations = array_merge($spark['stations'], $charge['stations']);
+$weway['count'] = count($weway['stations']);
+$stations = array_merge($spark['stations'], $charge['stations'], $weway['stations']);
 $sites = groupSites($spark['stations']);
-unset($spark['stations'], $spark['checkedAt'], $charge['stations'], $charge['checkedAt']);
+unset($spark['stations'], $spark['checkedAt'], $charge['stations'], $charge['checkedAt'], $weway['stations'], $weway['checkedAt']);
 echo json_encode([
-    'stations' => $stations, 'sites' => $sites, 'meta' => ['spark' => $spark, 'charge24' => $charge],
+    'stations' => $stations, 'sites' => $sites, 'meta' => ['spark' => $spark, 'charge24' => $charge, 'weway' => $weway],
 ], JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);
