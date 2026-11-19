@@ -167,6 +167,90 @@ GRAPHQL;
     throw new RuntimeException('Получен неполный список Charge24');
 }
 
+function evionStations(): array
+{
+    $curl = curl_init('https://electrifly.ru/api/location/list');
+    curl_setopt_array($curl, [
+        CURLOPT_HTTPGET => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json, text/plain, */*',
+            'protocol: kg.evion.app|1.10.1|211|ios|27.3',
+            'User-Agent: kg.evion.app',
+            'Accept-Language: ru',
+        ],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 4,
+        CURLOPT_TIMEOUT => 15,
+    ]);
+    $body = curl_exec($curl);
+    $httpStatus = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+    curl_close($curl);
+    if ($body === false || $httpStatus !== 200) {
+        throw new RuntimeException("EVION HTTP $httpStatus");
+    }
+    $rows = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+    if (!is_array($rows) || !array_is_list($rows)) {
+        throw new RuntimeException('EVION: некорректный список локаций');
+    }
+    if (!$rows) {
+        throw new RuntimeException('EVION: пустой каталог');
+    }
+    $stations = [];
+    foreach ($rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $lat = $row['coordinates']['latitude'] ?? null;
+        $lng = $row['coordinates']['longitude'] ?? null;
+        if (!is_numeric($lat) || !is_numeric($lng) || $lat < 39 || $lat > 44 || $lng < 69 || $lng > 81) {
+            continue;
+        }
+        $connectors = [];
+        foreach ($row['evses'] ?? [] as $evse) {
+            foreach ($evse['connectors'] ?? [] as $connector) {
+                $status = strtoupper((string) ($connector['status'] ?? 'UNKNOWN'));
+                $ocppStatus = strtoupper((string) ($connector['ocppStatus'] ?? ''));
+                $emergency = !empty($evse['emergency']);
+                $available = $status === 'AVAILABLE' && $ocppStatus === 'AVAILABLE' && !$emergency;
+                $tariffs = array_values(array_filter(array_map(
+                    static fn ($tariff) => is_array($tariff) ? ($tariff['text'] ?? null) : null,
+                    $connector['tariffs'] ?? []
+                )));
+                $connectors[] = [
+                    'id' => (string) ($connector['_id'] ?? ''),
+                    'connectorId' => $connector['_id'] ?? null,
+                    'evseId' => $evse['_id'] ?? null,
+                    'type' => $connector['standard'] ?? null,
+                    'status' => $emergency ? 'UNAVAILABLE' : ($ocppStatus === 'FINISHING' ? 'FINISHING' : ($ocppStatus === 'PREPARING' ? 'PREPARING' : $status)),
+                    'ocppStatus' => $connector['ocppStatus'] ?? null,
+                    'percentage' => null,
+                    'powerKw' => is_numeric($connector['power'] ?? null) ? (float) $connector['power'] : null,
+                    'tariff' => $tariffs ? implode(', ', $tariffs) : null,
+                    'available' => $available,
+                ];
+            }
+        }
+        if (!$connectors) {
+            continue;
+        }
+        $powers = array_column($connectors, 'powerKw');
+        $stations[] = stationWithConnectors([
+            'id' => 'evion:' . (string) ($row['_id'] ?? ''),
+            'sourceId' => (string) ($row['_id'] ?? ''),
+            'operator' => 'EVION',
+            'name' => $row['name'] ?? 'EVION',
+            'address' => $row['address'] ?? '',
+            'lat' => (float) $lat, 'lng' => (float) $lng,
+            'active' => true, 'blocked' => false,
+            'powerKw' => $powers ? (max($powers) ?: null) : null,
+        ], $connectors);
+    }
+    if (!$stations) {
+        throw new RuntimeException('EVION: нет станций с корректными координатами и разъёмами');
+    }
+    return $stations;
+}
+
 function wewayStations(): array
 {
     $curl = curl_init('https://users.weway.tech/api/v1/stations/?page=1&size=100');
@@ -383,12 +467,14 @@ $spark = loadCached('spark', static function (): array {
 }, $fallback);
 $charge = loadCached('charge24', static fn (): array => ['stations' => chargeStations()]);
 $weway = loadCached('weway', static fn (): array => ['stations' => wewayStations()]);
+$evion = loadCached('evion', static fn (): array => ['stations' => evionStations()]);
 $spark['count'] = count($spark['stations']);
 $charge['count'] = count($charge['stations']);
 $weway['count'] = count($weway['stations']);
-$stations = array_merge($spark['stations'], $charge['stations'], $weway['stations']);
+$evion['count'] = count($evion['stations']);
+$stations = array_merge($spark['stations'], $charge['stations'], $weway['stations'], $evion['stations']);
 $sites = groupSites($spark['stations']);
-unset($spark['stations'], $spark['checkedAt'], $charge['stations'], $charge['checkedAt'], $weway['stations'], $weway['checkedAt']);
+unset($spark['stations'], $spark['checkedAt'], $charge['stations'], $charge['checkedAt'], $weway['stations'], $weway['checkedAt'], $evion['stations'], $evion['checkedAt']);
 echo json_encode([
-    'stations' => $stations, 'sites' => $sites, 'meta' => ['spark' => $spark, 'charge24' => $charge, 'weway' => $weway],
+    'stations' => $stations, 'sites' => $sites, 'meta' => ['spark' => $spark, 'charge24' => $charge, 'weway' => $weway, 'evion' => $evion],
 ], JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);
