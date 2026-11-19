@@ -20,3 +20,5 @@ jobs:
           php -l public/api/stations.php
           php -l public/api/account-bootstrap.php
           php -l public/api/account.php
+          php -l public/api/google-start.php
+          php -l public/api/google-callback.php
