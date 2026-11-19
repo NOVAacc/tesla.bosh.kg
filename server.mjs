@@ -4,11 +4,12 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {loadFromApi,loadCcs2Ids,assignStationTypes,normalizeAll,groupSites} from './spark.mjs';
 import {loadCharge24,normalizeCharge24} from './charge24.mjs';
+import {loadWeWay,normalizeWeWay} from './weway.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 process.chdir(root);
 const PORT=Number(process.env.PORT||3080);
 const CACHE_MS=5*60*1000;
-const cache={spark:{value:null,at:0,error:null,source:'snapshot'},charge24:{value:null,at:0,error:null,source:'none'}};
+const cache={spark:{value:null,at:0,error:null,source:'snapshot'},charge24:{value:null,at:0,error:null,source:'none'},weway:{value:null,at:0,error:null,source:'none'}};
 let requests={};
 async function cached(name, loader, fallback) {
  const c=cache[name];
@@ -21,14 +22,15 @@ async function cached(name, loader, fallback) {
  })(); try{return await requests[name]}finally{delete requests[name]}
 }
 async function loadSpark(){return await cached('spark',async()=>{let raw=await loadFromApi();let ccs2Warning=null;try{const ids=await loadCcs2Ids();raw=assignStationTypes(raw,ids)}catch(e){ccs2Warning=String(e.message||e)}cache.spark.connectorTypesError=ccs2Warning;await fs.writeFile(path.join(root,'data/spark-snapshot.json'),JSON.stringify(raw));return normalizeAll(raw)},async()=>normalizeAll(JSON.parse(await fs.readFile(path.join(root,'data/spark-snapshot.json'),'utf8'))));}
+async function loadWeWayStations(){return await cached('weway',async()=>normalizeWeWay(await loadWeWay()));}
 async function loadCharge(){return await cached('charge24',async()=>{const raw=await loadCharge24();const normalized=normalizeCharge24(raw);if(!normalized.length)throw new Error('Charge24: не получены координаты');await fs.writeFile(path.join(root,'data/charge24-snapshot.json'),JSON.stringify(raw));return normalized},async()=>normalizeCharge24(JSON.parse(await fs.readFile(path.join(root,'data/charge24-snapshot.json'),'utf8'))));}
 const send=(res,code,obj)=>{res.writeHead(code,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(obj))};
 http.createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname==='/api/stations'){
-    const [s,c]=await Promise.all([loadSpark(),loadCharge()]);
-    return send(res,200,{stations:[...(s.value||[]),...(c.value||[])],sites:groupSites(s.value||[]),meta:{spark:{count:s.value?.length||0,source:s.source,error:s.error,connectorTypesError:s.connectorTypesError||null,updatedAt:s.at?new Date(s.at).toISOString():null},charge24:{count:c.value?.length||0,source:c.source,error:c.error,updatedAt:c.at?new Date(c.at).toISOString():null}}});
+    const [s,c,w]=await Promise.all([loadSpark(),loadCharge(),loadWeWayStations()]);
+    return send(res,200,{stations:[...(s.value||[]),...(c.value||[]),...(w.value||[])],sites:groupSites(s.value||[]),meta:{spark:{count:s.value?.length||0,source:s.source,error:s.error,connectorTypesError:s.connectorTypesError||null,updatedAt:s.at?new Date(s.at).toISOString():null},charge24:{count:c.value?.length||0,source:c.source,error:c.error,updatedAt:c.at?new Date(c.at).toISOString():null},weway:{count:w.value?.length||0,source:w.source,error:w.error,updatedAt:w.at?new Date(w.at).toISOString():null}}});
   }
   if(url.pathname==='/api/health') return send(res,200,cache);
   const p=url.pathname==='/'?'index.html':url.pathname.slice(1);
