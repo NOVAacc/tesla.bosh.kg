@@ -69,3 +69,7 @@ jobs:
           cmp public/index.html "$published"
           curl --fail --silent --show-error --retry 2 --max-time 90 https://tesla.bosh.kg/api/stations |
             jq -e '(.stations | length) > 0 and (.meta.spark != null) and (.meta.charge24 != null)' > /dev/null
+          curl --fail --silent --show-error --retry 2 --max-time 90 'https://tesla.bosh.kg/api/stations?view=map' |
+            jq -e '(.sites | length) > 0 and (.stations | length) > 0 and ([.stations[] | select(.operator == "SPARK KG")] | length) == 0 and (.meta | keys) == ["charge24", "evion", "spark", "weway"]' > /dev/null
+          snapshot_status="$(curl --silent --show-error --max-time 20 --output /dev/null --write-out '%{http_code}' https://tesla.bosh.kg/api/spark-snapshot.json)"
+          [[ "$snapshot_status" == 403 || "$snapshot_status" == 404 ]]

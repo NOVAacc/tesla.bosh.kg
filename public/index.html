@@ -286,9 +286,10 @@ function popup(s){
 
 function startSparkDetails(site,isVisible,render){
   if(site.operator!=='SPARK KG')return ()=>{};
+  const controller=new AbortController();
   let stopped=false,busy=false;
   async function update(){
-    if(stopped||!isVisible()||busy)return;
+    if(stopped||!isVisible()||document.hidden||busy)return;
     busy=true;
     let changed=false,error='';
     try{
@@ -296,9 +297,9 @@ function startSparkDetails(site,isVisible,render){
         if(stopped||!isVisible())return;
         if(!device.sourceId)continue;
         try{
-          const response=await fetch('/api/stations?sparkCard='+encodeURIComponent(device.sourceId),{cache:'no-store'});
+          const response=await fetch('/api/stations?sparkCard='+encodeURIComponent(device.sourceId),{signal:controller.signal});
           const data=await response.json();
-          if(!response.ok){error=data.reason==='credential_not_configured'?'Для данных SPARK требуется серверный доступ.':'Данные SPARK временно недоступны.';continue}
+          if(!response.ok){error='Данные SPARK временно недоступны.';continue}
           for(const port of device.connectors||[]){
             const detail=data.connectors?.[port.evseId+':'+port.connectorId];
             if(!detail)continue;
@@ -318,7 +319,7 @@ function startSparkDetails(site,isVisible,render){
   }
   update();
   const timer=setInterval(update,60000);
-  return ()=>{stopped=true;clearInterval(timer)};
+  return ()=>{stopped=true;controller.abort();clearInterval(timer)};
 }
 function enrichSparkPopup(event,site){
   const popupRef=event.popup;
@@ -466,9 +467,10 @@ function setListMode(enabled){
 }
 
 const visibleMarkers=new Map();
-function draw(){closeStationPanel();layer.clearLayers();visibleMarkers.clear();let shown=0,units=0,ports=0,free=0;for(const s of stations){if(!matches(s))continue;const parts=flatten(s);shown++;units+=(s.devices?s.devices.length:1);ports+=parts.length;free+=parts.filter(isFree).length;const markerRef=L.marker([s.lat,s.lng],{icon:marker(s)}).addTo(layer);if(mobileMQ.matches){markerRef.on('click',()=>openStationPanel(s))}else{markerRef.bindPopup(popup(s),{maxHeight:350,maxWidth:350}).on('popupopen',event=>enrichSparkPopup(event,s))}visibleMarkers.set(s.id,markerRef)}updateSearchResults();renderStationList();$('summary').textContent=`Найдено площадок: ${shown} · устройств: ${units} · коннекторов: ${ports} · доступных: ${free} · всего SPARK: ${meta.spark?.count||0}, Charge24: ${meta.charge24?.count||0}, WeWay: ${meta.weway?.count||0}, EVION: ${meta.evion?.count||0}`}
-async function refresh(){const old=$('status');old.textContent='Обновление данных…';try{const r=await fetch('/api/stations');if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();meta=d.meta||{};stations=[...(d.sites||[]),...(d.stations||[]).filter(x=>x.operator==='Charge24'||x.operator==='WeWay'||x.operator==='EVION')];refreshTypes();draw();old.innerHTML=`<span class="dot" style="background:${meta.spark?.count?'#209769':'#d8a13c'}"></span>SPARK: ${esc(meta.spark?.source||'none')}${meta.spark?.error?' — '+esc(meta.spark.error):''}${meta.spark?.connectorTypesError?' · тип CCS2 не проверен: '+esc(meta.spark.connectorTypesError):''} · <span class="dot" style="background:${meta.charge24?.count?'#209769':'#d8a13c'}"></span>Charge24: ${esc(meta.charge24?.source||'none')}${meta.charge24?.error?' — '+esc(meta.charge24.error):''} · <span class="dot" style="background:${meta.weway?.count?'#209769':'#d8a13c'}"></span>WeWay: ${esc(meta.weway?.source||'none')}${meta.weway?.error?' — '+esc(meta.weway.error):''} · <span class="dot" style="background:${meta.evion?.count?'#209769':'#d8a13c'}"></span>EVION: ${esc(meta.evion?.source||'none')}${meta.evion?.error?' — '+esc(meta.evion.error):''} <span class="refresh-note">· Кэш 5 мин</span>`;if(first&&stations.length){const bounds=L.latLngBounds(stations.map(s=>[s.lat,s.lng]));if(bounds.isValid())map.fitBounds(bounds,{padding:[24,24]});first=false}}catch(e){old.textContent='Ошибка загрузки: '+e.message}}
-for(const id of ['spark','charge24','weway','evion'])$(id).onclick=()=>{filter[id]=!filter[id];$(id).setAttribute('aria-pressed',String(filter[id]));refreshTypes();draw()};for(const id of ['search','availability','current','power','station','portstatus','extras'])$(id).addEventListener(id==='search'?'input':'change',draw);$('refresh').onclick=refresh;$('reset').onclick=()=>{filter.spark=filter.charge24=filter.weway=filter.evion=true;selectedConnectorTypes.clear();for(const id of ['spark','charge24','weway'])$(id).setAttribute('aria-pressed','true');$('search').value='';for(const id of ['availability','current','power','station','portstatus','extras'])$(id).value='all';refreshTypes();draw()};
+function draw(){closeStationPanel();layer.clearLayers();visibleMarkers.clear();let shown=0,units=0,ports=0,free=0;for(const s of stations){if(!matches(s))continue;const parts=flatten(s);shown++;units+=(s.devices?s.devices.length:1);ports+=parts.length;free+=parts.filter(isFree).length;const markerRef=L.marker([s.lat,s.lng],{icon:marker(s)}).addTo(layer);if(mobileMQ.matches){markerRef.on('click',()=>openStationPanel(s))}else{markerRef.bindPopup(()=>popup(s),{maxHeight:350,maxWidth:350}).on('popupopen',event=>enrichSparkPopup(event,s))}visibleMarkers.set(s.id,markerRef)}updateSearchResults();renderStationList();$('summary').textContent=`Найдено площадок: ${shown} · устройств: ${units} · коннекторов: ${ports} · доступных: ${free} · всего SPARK: ${meta.spark?.count||0}, Charge24: ${meta.charge24?.count||0}, WeWay: ${meta.weway?.count||0}, EVION: ${meta.evion?.count||0}`}
+let refreshing=false;
+async function refresh(){if(refreshing)return;refreshing=true;const old=$('status');old.textContent='Обновление данных…';try{const r=await fetch('/api/stations?view=map');if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();meta=d.meta||{};stations=[...(d.sites||[]),...(d.stations||[]).filter(x=>x.operator==='Charge24'||x.operator==='WeWay'||x.operator==='EVION')];refreshTypes();draw();old.innerHTML=`<span class="dot" style="background:${meta.spark?.count?'#209769':'#d8a13c'}"></span>SPARK: ${esc(meta.spark?.source||'none')}${meta.spark?.error?' — '+esc(meta.spark.error):''}${meta.spark?.connectorTypesError?' · тип CCS2 не проверен: '+esc(meta.spark.connectorTypesError):''} · <span class="dot" style="background:${meta.charge24?.count?'#209769':'#d8a13c'}"></span>Charge24: ${esc(meta.charge24?.source||'none')}${meta.charge24?.error?' — '+esc(meta.charge24.error):''} · <span class="dot" style="background:${meta.weway?.count?'#209769':'#d8a13c'}"></span>WeWay: ${esc(meta.weway?.source||'none')}${meta.weway?.error?' — '+esc(meta.weway.error):''} · <span class="dot" style="background:${meta.evion?.count?'#209769':'#d8a13c'}"></span>EVION: ${esc(meta.evion?.source||'none')}${meta.evion?.error?' — '+esc(meta.evion.error):''} <span class="refresh-note">· Кэш 5 мин</span>`;if(first&&stations.length){const bounds=L.latLngBounds(stations.map(s=>[s.lat,s.lng]));if(bounds.isValid())map.fitBounds(bounds,{padding:[24,24]});first=false}}catch(e){old.textContent='Ошибка загрузки: '+e.message}finally{refreshing=false}}
+for(const id of ['spark','charge24','weway','evion'])$(id).onclick=()=>{filter[id]=!filter[id];$(id).setAttribute('aria-pressed',String(filter[id]));refreshTypes();draw()};for(const id of ['search','availability','current','power','station','portstatus','extras'])$(id).addEventListener(id==='search'?'input':'change',draw);$('refresh').onclick=refresh;$('reset').onclick=()=>{filter.spark=filter.charge24=filter.weway=filter.evion=true;selectedConnectorTypes.clear();for(const id of ['spark','charge24','weway','evion'])$(id).setAttribute('aria-pressed','true');$('search').value='';for(const id of ['availability','current','power','station','portstatus','extras'])$(id).value='all';refreshTypes();draw()};
 $('connectorPickerButton').onclick=()=>{const picker=$('connectorPicker'),open=!picker.classList.contains('is-open');picker.classList.toggle('is-open',open);$('connectorPickerButton').setAttribute('aria-expanded',String(open))};
 document.addEventListener('click',event=>{if(!$('connectorPicker').contains(event.target)){$('connectorPicker').classList.remove('is-open');$('connectorPickerButton').setAttribute('aria-expanded','false')}});
 $('connectorPicker').addEventListener('keydown',event=>{if(event.key==='Escape'){$('connectorPicker').classList.remove('is-open');$('connectorPickerButton').setAttribute('aria-expanded','false');$('connectorPickerButton').focus()}});

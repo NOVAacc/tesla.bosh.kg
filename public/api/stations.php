@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+ini_set('display_errors', '0');
 
 function graphql(string $url, string $query, array $variables, array $headers = []): array
 {
@@ -404,28 +405,74 @@ function groupSites(array $stations): array
     return array_values($groups);
 }
 
-function loadCached(string $operator, callable $loader, array $fallback = []): array
+function cachePath(string $key): string
 {
-    $path = sys_get_temp_dir() . '/tesla-map-' . hash('sha256', __DIR__) . ($operator === 'spark' ? '-spark-v4.json' : "-$operator.json");
-    $cached = is_file($path) ? json_decode((string) @file_get_contents($path), true) : null;
-    if ($cached && time() - $cached['checkedAt'] < ($cached['error'] ? 30 : 300)) {
+    return sys_get_temp_dir() . '/tesla-map-' . hash('sha256', __DIR__) . "-$key.json";
+}
+
+function readCache(string $path): ?array
+{
+    $data = json_decode((string) @file_get_contents($path), true);
+    return is_array($data) && isset($data['checkedAt']) ? $data : null;
+}
+
+function isFresh(?array $data, int $ttl): bool
+{
+    return $data !== null && time() - $data['checkedAt'] < (!empty($data['error']) ? 30 : $ttl);
+}
+
+function loadCached(string $key, callable $loader, ?callable $fallback = null, int $ttl = 300): array
+{
+    $path = cachePath($key);
+    $cached = readCache($path);
+    if (isFresh($cached, $ttl)) {
         return $cached;
     }
-    try {
-        $result = $loader() + ['source' => 'live', 'updatedAt' => gmdate(DATE_ATOM), 'error' => null];
-    } catch (Throwable $error) {
-        $result = $cached ?? ['stations' => $fallback, 'source' => $fallback ? 'snapshot' : 'none', 'updatedAt' => null];
-        $result['error'] = $error->getMessage();
-    }
-    $result['checkedAt'] = time();
-    $temp = @tempnam(sys_get_temp_dir(), 'tesla-map-');
-    if ($temp !== false) {
-        if (@file_put_contents($temp, json_encode($result, JSON_INVALID_UTF8_SUBSTITUTE)) && @rename($temp, $path)) {
-            return $result;
+    $lock = @fopen($path . '.lock', 'c');
+    if ($lock !== false && !flock($lock, LOCK_EX | ($cached !== null ? LOCK_NB : 0))) {
+        fclose($lock);
+        if ($cached !== null) {
+            return $cached;
         }
-        @unlink($temp);
+        $lock = false;
     }
-    return $result;
+    try {
+        $cached = readCache($path) ?? $cached;
+        if (isFresh($cached, $ttl)) {
+            return $cached;
+        }
+        try {
+            $result = $loader() + ['source' => 'live', 'updatedAt' => gmdate(DATE_ATOM), 'error' => null];
+        } catch (Throwable $error) {
+            $stations = $cached === null && $fallback !== null ? $fallback() : [];
+            $result = $cached ?? ['stations' => $stations, 'source' => $stations ? 'snapshot' : 'none', 'updatedAt' => null];
+            $result['error'] = 'Данные временно недоступны';
+        }
+        $result['checkedAt'] = time();
+        $temp = @tempnam(sys_get_temp_dir(), 'tesla-map-');
+        if ($temp !== false) {
+            try {
+                if (@file_put_contents($temp, json_encode($result, JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE))) {
+                    @rename($temp, $path);
+                }
+            } finally {
+                if (is_file($temp)) {
+                    @unlink($temp);
+                }
+            }
+        }
+        return $result;
+    } finally {
+        if ($lock !== false) {
+            fclose($lock);
+        }
+    }
+}
+
+function sparkSnapshot(): array
+{
+    $snapshot = json_decode((string) @file_get_contents(__DIR__ . '/spark-snapshot.json'), true);
+    return sparkStations($snapshot['rows'] ?? []);
 }
 
 function sparkCardDetails(string $stationId): array
@@ -485,40 +532,40 @@ GRAPHQL;
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 if (isset($_GET['sparkCard'])) {
-    $stationId = (string) $_GET['sparkCard'];
+    $stationId = is_string($_GET['sparkCard']) ? strtolower($_GET['sparkCard']) : '';
     if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iD', $stationId)) {
         http_response_code(400);
         echo '{"error":"Invalid station ID"}';
         exit;
     }
-    // Brief cache protects the upstream API while keeping charging percentages fresh.
-    $cachePath = sys_get_temp_dir() . '/tesla-spark-card-' . hash('sha256', $stationId) . '.json';
-    $cached = is_file($cachePath) ? json_decode((string) @file_get_contents($cachePath), true) : null;
-    if (is_array($cached) && isset($cached['checkedAt']) && time() - $cached['checkedAt'] < 45) {
-        echo json_encode(['connectors' => (object) ($cached['connectors'] ?? [])], JSON_THROW_ON_ERROR);
+    $sparkCatalog = readCache(cachePath('spark-v4'));
+    $knownIds = array_column($sparkCatalog['stations'] ?? [], 'sourceId');
+    if (!in_array($stationId, $knownIds, true)
+        && !in_array($stationId, array_column(sparkSnapshot(), 'sourceId'), true)) {
+        http_response_code(404);
+        echo '{"error":"Station not found"}';
         exit;
     }
-    try {
-        $connectors = sparkCardDetails($stationId);
-        @file_put_contents($cachePath, json_encode(['checkedAt' => time(), 'connectors' => $connectors], JSON_THROW_ON_ERROR), LOCK_EX);
-        echo json_encode(['connectors' => (object) $connectors], JSON_THROW_ON_ERROR);
-    } catch (Throwable $error) {
+    $card = loadCached("spark-card-$stationId", static function () use ($stationId): array {
+        return ['connectors' => sparkCardDetails($stationId)];
+    }, null, 45);
+    if (!empty($card['error'])) {
         http_response_code(502);
-        echo json_encode(['error' => 'SPARK card unavailable', 'reason' => trim((string) getenv('SPARK_API_TOKEN')) === '' && !is_file('/home/g143326/.spark-api-token') ? 'credential_not_configured' : 'upstream_unavailable'], JSON_THROW_ON_ERROR);
+        echo '{"error":"SPARK card unavailable"}';
+    } else {
+        echo json_encode(['connectors' => (object) $card['connectors']], JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);
     }
     exit;
 }
 
-$snapshot = json_decode((string) file_get_contents(__DIR__ . '/spark-snapshot.json'), true);
-$fallback = sparkStations($snapshot['rows'] ?? []);
-$spark = loadCached('spark', static function (): array {
+$spark = loadCached('spark-v4', static function (): array {
     $rows = sparkRows(false);
     try {
         return ['stations' => sparkStations($rows, sparkRows(true)), 'connectorTypesError' => null];
     } catch (Throwable $error) {
-        return ['stations' => sparkStations($rows), 'connectorTypesError' => $error->getMessage()];
+        return ['stations' => sparkStations($rows), 'connectorTypesError' => 'Данные временно недоступны'];
     }
-}, $fallback);
+}, 'sparkSnapshot');
 $charge = loadCached('charge24', static fn (): array => ['stations' => chargeStations()]);
 $weway = loadCached('weway', static fn (): array => ['stations' => wewayStations()]);
 $evion = loadCached('evion', static fn (): array => ['stations' => evionStations()]);
@@ -526,9 +573,22 @@ $spark['count'] = count($spark['stations']);
 $charge['count'] = count($charge['stations']);
 $weway['count'] = count($weway['stations']);
 $evion['count'] = count($evion['stations']);
-$stations = array_merge($spark['stations'], $charge['stations'], $weway['stations'], $evion['stations']);
+$stations = array_merge(
+    ($_GET['view'] ?? null) === 'map' ? [] : $spark['stations'],
+    $charge['stations'], $weway['stations'], $evion['stations']
+);
 $sites = groupSites($spark['stations']);
 unset($spark['stations'], $spark['checkedAt'], $charge['stations'], $charge['checkedAt'], $weway['stations'], $weway['checkedAt'], $evion['stations'], $evion['checkedAt']);
+// Old cache entries may still contain upstream diagnostics.
+foreach ([&$spark, &$charge, &$weway, &$evion] as &$provider) {
+    if (!empty($provider['error'])) {
+        $provider['error'] = 'Данные временно недоступны';
+    }
+}
+unset($provider);
+if (!empty($spark['connectorTypesError'])) {
+    $spark['connectorTypesError'] = 'Данные временно недоступны';
+}
 echo json_encode([
     'stations' => $stations, 'sites' => $sites, 'meta' => ['spark' => $spark, 'charge24' => $charge, 'weway' => $weway, 'evion' => $evion],
 ], JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);
