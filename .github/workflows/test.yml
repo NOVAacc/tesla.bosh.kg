@@ -1,8 +1,8 @@
-name: Validate map
+name: Validate map and EV account APIs
 on:
   pull_request:
   push:
-    branches: [feature/weway-public-catalog]
+    branches: [feature/weway-public-catalog, feature/ev-accounts-foundation]
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -15,4 +15,8 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
-      - run: php -l public/api/stations.php
+          extensions: pdo_mysql, mbstring
+      - run: |
+          php -l public/api/stations.php
+          php -l public/api/account-bootstrap.php
+          php -l public/api/account.php
