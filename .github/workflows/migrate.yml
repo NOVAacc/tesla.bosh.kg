@@ -2,6 +2,12 @@ name: Apply EV database migrations (SSH)
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'database/**'
+      - 'tools/migrate.php'
+      - '.github/workflows/migrate.yml'
 
 permissions:
   contents: read
@@ -25,21 +31,21 @@ jobs:
         run: php -l tools/migrate.php
       - name: Configure SSH with verified host key
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ vars.SSH_PORT }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_KEY_PASSPHRASE: ${{ secrets.SSH_KEY_PASSPHRASE }}
-          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
-          : "${SSH_HOST:?Configure SSH_HOST repository secret}" "${SSH_PRIVATE_KEY:?}" "${SSH_KNOWN_HOSTS:?Configure verified SSH_KNOWN_HOSTS secret}"
-          [[ "$SSH_HOST" =~ ^[A-Za-z0-9.-]+$ ]]
-          SSH_PORT="${SSH_PORT:-22}"
-          [[ "$SSH_PORT" =~ ^[0-9]{1,5}$ ]]
+          : "${SSH_PRIVATE_KEY:?Missing SSH_PRIVATE_KEY secret}"
+          SSH_HOST="hostde44.fornex.host"
+          SSH_PORT="20022"
           echo "SSH_PORT=$SSH_PORT" >> "$GITHUB_ENV"
           echo "SSH_HOST=$SSH_HOST" >> "$GITHUB_ENV"
           install -m 700 -d "$HOME/.ssh"
-          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          # Pin the ED25519 fingerprint observed from the user's Mac on 2026-11-19.
+          # Never trust an arbitrary ssh-keyscan result without comparing this fingerprint.
+          ssh-keyscan -T 12 -p "$SSH_PORT" -t ed25519 "$SSH_HOST" 2>/dev/null > "$HOME/.ssh/known_hosts"
+          actual="$(ssh-keygen -lf "$HOME/.ssh/known_hosts" -E sha256 | awk '{print $2}')"
+          [[ "$actual" == "SHA256:jP178AGu1yc/dG/xpQ6x+Fcrid2O2RYUxGtfBmPDEo8" ]] || { echo "SSH server fingerprint differs; refusing connection"; exit 1; }
           chmod 600 "$HOME/.ssh/known_hosts"
           printf '%s\n' "$SSH_PRIVATE_KEY" > "$RUNNER_TEMP/deploy_key"
           chmod 600 "$RUNNER_TEMP/deploy_key"
