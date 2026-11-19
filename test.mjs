@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {normalizeAll,groupSites,loadCcs2Ids,assignStationTypes} from './spark.mjs';import {normalizeCharge24,loadCharge24} from './charge24.mjs';
 import {loadWeWay,normalizeWeWay} from './weway.mjs';
-import {loadEvion,normalizeEvion} from './evion.mjs';
+import {loadEvion,loadEvionActive,normalizeEvion,attachEvionPercentages} from './evion.mjs';
 const data=JSON.parse(fs.readFileSync('data/spark-snapshot.json','utf8'));
 test('SPARK: все 388 устройства',()=>assert.equal(normalizeAll(data).length,388));
 test('SPARK: площадки',()=>assert.ok(groupSites(normalizeAll(data)).length>100));
@@ -168,4 +168,29 @@ test('EVION: production PHP and client include network and filters',()=>{
  assert.match(php,/'evion' => \$evion/);
  assert.match(html,/id="evion"/);assert.match(html,/filter\.evion/);
  assert.match(html,/x\.operator==='EVION'/);
+});
+
+test('EVION active session matches exact connector and correct location, no customer information',async()=>{
+ let url;
+ const sessions=await loadEvionActive({fetcher:async(u)=>{url=u;return {ok:true,json:async()=>[
+  {completed:false,startTime:100,soc:63,location:{_id:'loc1'},connector:{_id:'portA'},owner:{name:'private phone'}},
+  {completed:false,startTime:200,soc:79,location:{_id:'loc1'},connector:{_id:'portA'}},
+  {completed:false,startTime:300,soc:99,location:{_id:'loc2'},connector:{_id:'portA'}},
+  {completed:true,startTime:400,soc:100,location:{_id:'loc1'},connector:{_id:'portA'}},
+  {completed:false,startTime:350,soc:150,location:{_id:'loc1'},connector:{_id:'portA'}}]}}});
+ assert.match(url,/transaction\/active\/list/);
+ const rows=[{_id:'loc1',coordinates:{latitude:42.8,longitude:74.6},evses:[{connectors:[{_id:'portA',status:'CHARGING',ocppStatus:'Charging'},{_id:'portB',status:'AVAILABLE',ocppStatus:'Available'}]}]},
+  {_id:'loc2',coordinates:{latitude:42.8,longitude:74.7},evses:[{connectors:[{_id:'portA',status:'AVAILABLE',ocppStatus:'Available'}]}]}];
+ const result=attachEvionPercentages(normalizeEvion(rows),sessions);
+ assert.equal(result[0].connectors[0].percentage,79);
+ assert.equal(result[0].connectors[1].percentage,null);
+ assert.equal(result[1].connectors[0].percentage,null);
+ assert.doesNotMatch(JSON.stringify(result),/private phone|owner|account/);
+});
+test('EVION production backend matches charging sessions without exposing personal data',()=>{
+ const php=fs.readFileSync('public/api/stations.php','utf8');
+ assert.match(php,/function evionActivePercentages\(\)/);
+ assert.match(php,/electrifly.ru\/api\/transaction\/active\/list/);
+ assert.match(php,/\$activePercentages/);
+ assert.doesNotMatch(php,/'owner' => |'account' => /);
 });
