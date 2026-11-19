@@ -67,6 +67,10 @@ jobs:
           published="$(mktemp)"
           curl --fail --silent --show-error --retry 3 --max-time 20 "https://tesla.bosh.kg/?deploy=$GITHUB_SHA" -o "$published"
           cmp public/index.html "$published"
+          for asset in account.html mobile-nav.css; do
+            curl --fail --silent --show-error --retry 3 --max-time 20 "https://tesla.bosh.kg/$asset?deploy=$GITHUB_SHA" -o "$published"
+            cmp "public/$asset" "$published"
+          done
           curl --fail --silent --show-error --retry 2 --max-time 90 https://tesla.bosh.kg/api/stations |
             jq -e '(.stations | length) > 0 and (.meta.spark != null) and (.meta.charge24 != null)' > /dev/null
           curl --fail --silent --show-error --retry 2 --max-time 90 'https://tesla.bosh.kg/api/stations?view=map' |

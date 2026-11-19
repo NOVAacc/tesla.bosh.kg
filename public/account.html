@@ -1,7 +1,9 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>Мой кабинет — EV карта</title>
+<link rel="stylesheet" href="/mobile-nav.css">
 <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1b2634;background:#f5f6f8}*{box-sizing:border-box}body{margin:0}a{color:inherit}header{background:#ffffffd9;backdrop-filter:blur(16px);border-bottom:1px solid #e7e9ed;padding:16px max(20px,calc((100vw - 1000px)/2));display:flex;align-items:center;justify-content:space-between;gap:10px}header strong{font-size:18px;letter-spacing:-.5px}header a{font-size:14px;text-decoration:none;color:#475569}main{max-width:1000px;margin:38px auto;padding:0 18px 60px}.heading{font-size:30px;letter-spacing:-1px;margin:0 0 8px}.subtitle{color:#6b7280;margin:0 0 26px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{border:1px solid #e4e6eb;border-radius:22px;background:#fff;padding:24px;box-shadow:0 7px 25px #14253a08}.card h2{font-size:19px;margin:0 0 12px;letter-spacing:-.4px}.card p{color:#657080;font-size:14px;line-height:1.5}.span{grid-column:span 2}label{display:block;color:#475569;font-size:13px;margin-top:13px;margin-bottom:5px}input,select{width:100%;border:1px solid #d8dce3;border-radius:12px;padding:12px;background:#fff;font:inherit;font-size:15px;min-height:46px}button{border:0;background:#202c39;color:#fff;border-radius:12px;padding:12px 17px;min-height:44px;font:inherit;font-weight:600;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#edf0f4;color:#1f2937}.buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.notice{background:#f4f5f7;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.5;color:#536174}.message{min-height:18px;margin-top:12px;color:#a23d39;font-size:14px}.pill{display:inline-flex;padding:5px 9px;background:#ecf5ee;color:#14743d;border-radius:99px;font-size:12px}.item{padding:12px 0;border-top:1px solid #eef0f2;font-size:14px}.item small{color:#657080}.hidden{display:none!important}@media(max-width:690px){main{margin:26px auto}.grid{grid-template-columns:1fr}.span{grid-column:span 1}.heading{font-size:25px}.card{padding:19px}header{padding:14px 18px}}
+@media(max-width:850px){main{padding-bottom:calc(var(--dock-clearance) + 24px)}}
 </style></head><body>
 <header><strong>EV Карта</strong><a href="/">← Вернуться к карте</a></header>
 <main><h1 class="heading">Личный кабинет</h1><p class="subtitle">Автомобили, EV-сервисы и будущие возможности единой платформы.</p>
@@ -15,6 +17,15 @@
 <section class="card"><h2>Разместить EV-компанию</h2><p>Подайте заявку на добавление автосервиса, магазина или автосалона. Компания появится в каталоге только после модерации.</p><form id="businessForm"><label for="businessName">Название компании</label><input id="businessName" required maxlength="150"><label for="businessCategory">Категория</label><select id="businessCategory" required><option value="">Загрузка категорий…</option></select><div class="buttons"><button type="submit">Отправить заявку</button></div><div id="businessMsg" class="message" role="status"></div></form></section>
 <section class="card span"><h2>Единый кошелёк</h2><div class="notice">Платежи и баланс ещё не запущены. Мы не принимаем пополнения до подключения лицензированного платёжного партнёра.</div></section>
 </div><p id="globalMsg" class="message" role="status" aria-live="polite"></p></main>
+<nav class="mobile-nav" aria-label="Навигация по зарядным станциям">
+  <div class="mobile-view-switch" role="group" aria-label="Вид зарядных станций">
+    <a class="mobile-tab" href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 10-7 10s-7-5-7-10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg><span>Карта</span></a>
+    <a class="mobile-tab" href="/?panel=list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h14"/></svg><span>Списком</span></a>
+  </div>
+  <a class="mobile-tab" href="/?panel=search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg><span>Поиск</span></a>
+  <a class="mobile-tab" href="/?panel=filters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h4m4 0h8M4 16h10m4 0h2"/><circle cx="10" cy="8" r="2"/><circle cx="16" cy="16" r="2"/></svg><span>Фильтры</span></a>
+  <a class="mobile-tab" href="/account.html" aria-label="Личный кабинет" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg><span>Кабинет</span></a>
+</nav>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);

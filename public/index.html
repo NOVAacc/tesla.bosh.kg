@@ -1,4 +1,5 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Карта зарядных станций Кыргызстана</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><style>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Карта зарядных станций Кыргызстана</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><link rel="stylesheet" href="/mobile-nav.css">
+<style>
 :root{color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1b2430}*{box-sizing:border-box}body{margin:0;background:#f6f7f9}.app{height:100dvh;display:flex;flex-direction:column}.toolbar{background:white;border-bottom:1px solid #e5e9ef;z-index:900;padding:12px 16px;box-shadow:0 1px 7px #1020300a}.top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.brand h1{font-size:18px;margin:0;letter-spacing:-.35px}.sub{font-size:12px;color:#64748b;margin-top:4px}.actions,.filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.filters{margin-top:12px}.chip,.control,.search{border:1px solid #dce2e9;background:#fff;color:#273547;font:inherit;font-size:13px;border-radius:10px;min-height:37px;padding:7px 10px}.chip{cursor:pointer;white-space:nowrap}.chip[aria-pressed=true]{background:#1e293b;border-color:#1e293b;color:#fff}.search{width:200px}.control{max-width:190px}.control:disabled{opacity:.45}.summary{color:#64748b;font-size:12px;margin-top:9px}.main{position:relative;flex:1;min-height:0}#map{height:100%;width:100%}.status{position:absolute;z-index:700;bottom:16px;left:16px;background:#fff;border:1px solid #e3e7ec;border-radius:11px;padding:10px 13px;max-width:min(88vw,750px);box-shadow:0 3px 14px #0001;font-size:12px;color:#475569}.dot{display:inline-block;width:9px;height:9px;border-radius:100%;margin-right:5px}.marker{border-radius:50%;width:31px;height:31px;display:grid;place-items:center;color:#fff;border:3px solid #fff;box-shadow:0 1px 7px #0005;font-size:12px;font-weight:700}.leaflet-div-icon{background:none;border:none}.leaflet-popup-content{min-width:245px;line-height:1.5}.leaflet-popup-content .device{border-top:1px solid #e8ebee;margin-top:7px;padding-top:7px}.port{display:inline-block;margin:3px 4px 2px 0;border-radius:6px;background:#eff3f7;padding:3px 6px;font-size:12px}.spark-detail-note{font-size:11px;color:#a16207;margin-top:6px}.spark-detail-note:empty{display:none}.muted{color:#718096;font-size:12px}.refresh-note{font-size:11px;color:#64748b}label.mini{font-size:12px;color:#475569}.filters .divider{width:1px;height:25px;background:#e4e9ef;margin:0 2px}@media(max-width:850px){.toolbar{padding:10px}.top{align-items:flex-start}.brand h1{font-size:16px}.filters{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}.search{width:160px;flex:none}.status{left:8px;right:8px;bottom:8px;max-width:none;font-size:11px}.control{min-width:125px;max-width:170px}}
 
 /* Subtle Grayscale palette on the basemap only. */
@@ -24,7 +25,7 @@
 .nearby-pill.busy{background:#fff3df;color:#976009}
 .nearby-empty{padding:30px 12px;text-align:center;color:#64748b}
 /* Mobile app shell */
-.mobile-nav,.mobile-sheet,.mobile-shade,.mobile-map-refresh,.station-panel{display:none}
+.mobile-sheet,.mobile-shade,.mobile-map-refresh,.station-panel{display:none}
 .station-panel{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 .station-grip{width:38px;height:5px;background:#dbe1e8;border-radius:8px;margin:9px auto 4px;flex-shrink:0}
 .station-panel-header{display:flex;gap:12px;align-items:flex-start;padding:10px 18px 12px}
@@ -77,25 +78,13 @@
  .station-list-view{z-index:750}
  .main:has(.station-list-view.is-open) .status,.main:has(.station-list-view.is-open) .mobile-map-refresh{display:none}
  .main:has(.station-panel.is-open) .mobile-map-refresh{display:none}
- .app{position:relative;--dock-bottom:max(10px,env(safe-area-inset-bottom,0px));--dock-clearance:calc(74px + var(--dock-bottom))}
- .mobile-nav{display:flex;align-items:center;gap:5px;position:absolute;z-index:1101;left:50%;bottom:var(--dock-bottom);transform:translateX(-50%);width:min(calc(100% - 20px),420px);padding:6px;border:1px solid #fff;border-radius:999px;background:#f7f9fc;box-shadow:inset 0 1px 2px #fff,0 1px 3px #17243926,0 7px 24px #17243924}
- @supports ((-webkit-backdrop-filter:blur(18px)) or (backdrop-filter:blur(18px))){
-  .mobile-nav{background:linear-gradient(155deg,#ffffffd9,#f1f5fa91);-webkit-backdrop-filter:blur(18px) saturate(1.45);backdrop-filter:blur(18px) saturate(1.45)}
- }
- .mobile-view-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));position:relative;isolation:isolate;flex:2.45;min-width:0;padding:3px;border-radius:999px;background:#33476315;box-shadow:inset 0 1px 2px #14213b14}
- .mobile-view-switch::before{content:"";position:absolute;z-index:-1;inset:3px auto 3px 3px;width:calc(50% - 3px);border-radius:999px;background:#ffffffea;box-shadow:inset 0 0 0 1px #fff,0 2px 5px #14213b24;transition:transform .22s cubic-bezier(.22,.8,.35,1)}
- .mobile-view-switch:has([data-mobile-tab=list][aria-pressed=true])::before{transform:translateX(100%)}
- .mobile-tab{flex:1;appearance:none;border:0;background:transparent;border-radius:999px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#334155;font:600 11px/1.15 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-width:44px;min-height:44px;padding:0 3px;white-space:nowrap;touch-action:manipulation}
- .mobile-tab svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
- .mobile-tab[aria-pressed=true],.mobile-tab[aria-expanded=true]{color:#0755a5}
- .mobile-tab[aria-expanded=true]{background:#ffffffa6}
- .mobile-tab:focus-visible,.sheet-close:focus-visible{outline:2px solid #2675bd;outline-offset:-2px}
+ .app{position:relative}
+ .mobile-nav{position:absolute}
+ .sheet-close:focus-visible{outline:2px solid #2675bd;outline-offset:-2px}
  .station-panel{bottom:var(--dock-clearance)}
  .station-list-view{padding-bottom:var(--dock-clearance)}
  .status{bottom:var(--dock-clearance)}
  #map .leaflet-bottom{bottom:var(--dock-clearance)}
- @media(prefers-reduced-motion:reduce){.mobile-view-switch::before{transition:none}}
- @media(prefers-reduced-transparency:reduce){.mobile-nav{background:#f7f9fc;-webkit-backdrop-filter:none;backdrop-filter:none}}
  .mobile-map-refresh{display:grid;position:absolute;right:12px;top:14px;z-index:700;border:1px solid #e3e9ef;border-radius:50%;background:#fff;width:46px;height:46px;place-items:center;box-shadow:0 3px 16px #14213b2b;color:#23364d;font-size:22px}
  .mobile-shade[aria-hidden=false]{display:block;position:absolute;inset:0;z-index:950;background:#12223856}
  .mobile-sheet{display:flex;flex-direction:column;position:absolute;left:0;right:0;bottom:var(--dock-clearance);z-index:1000;background:#fff;border-radius:20px 20px 0 0;max-height:min(78dvh,730px);box-shadow:0 -15px 45px #1521372b;overflow:hidden;transform:translateY(110%);visibility:hidden;transition:transform .22s ease,visibility .22s}
@@ -581,5 +570,8 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(activeSh
 map.on('click',()=>{if(mobileMQ.matches&&selectedStation)closeStationPanel()});
 mobileMQ.addEventListener('change',syncMobileLayout);
 syncMobileLayout();
+const initialPanel=new URLSearchParams(window.location.search).get('panel');
+if(initialPanel==='list')setListMode(true);
+if(initialPanel==='search'||initialPanel==='filters')openSheet(initialPanel);
 refresh();
 </script></body></html>
