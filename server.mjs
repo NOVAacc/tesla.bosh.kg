@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {loadFromApi,loadCcs2Ids,assignStationTypes,normalizeAll,groupSites} from './spark.mjs';
 import {loadCharge24,normalizeCharge24} from './charge24.mjs';
 import {loadWeWay,normalizeWeWay} from './weway.mjs';
-import {loadEvion,normalizeEvion} from './evion.mjs';
+import {loadEvion,loadEvionActive,normalizeEvion,attachEvionPercentages} from './evion.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 process.chdir(root);
 const PORT=Number(process.env.PORT||3080);
@@ -24,7 +24,7 @@ async function cached(name, loader, fallback) {
 }
 async function loadSpark(){return await cached('spark',async()=>{let raw=await loadFromApi();let ccs2Warning=null;try{const ids=await loadCcs2Ids();raw=assignStationTypes(raw,ids)}catch(e){ccs2Warning=String(e.message||e)}cache.spark.connectorTypesError=ccs2Warning;await fs.writeFile(path.join(root,'data/spark-snapshot.json'),JSON.stringify(raw));return normalizeAll(raw)},async()=>normalizeAll(JSON.parse(await fs.readFile(path.join(root,'data/spark-snapshot.json'),'utf8'))));}
 async function loadWeWayStations(){return await cached('weway',async()=>normalizeWeWay(await loadWeWay()));}
-async function loadEvionStations(){return await cached('evion',async()=>normalizeEvion(await loadEvion()));}
+async function loadEvionStations(){return await cached('evion',async()=>{const rows=await loadEvion();const normalized=normalizeEvion(rows);let sessions=[];try{sessions=await loadEvionActive()}catch{}return attachEvionPercentages(normalized,sessions)});}
 async function loadCharge(){return await cached('charge24',async()=>{const raw=await loadCharge24();const normalized=normalizeCharge24(raw);if(!normalized.length)throw new Error('Charge24: не получены координаты');await fs.writeFile(path.join(root,'data/charge24-snapshot.json'),JSON.stringify(raw));return normalized},async()=>normalizeCharge24(JSON.parse(await fs.readFile(path.join(root,'data/charge24-snapshot.json'),'utf8'))));}
 const send=(res,code,obj)=>{res.writeHead(code,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(obj))};
 http.createServer(async(req,res)=>{
