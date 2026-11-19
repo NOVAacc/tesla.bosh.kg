@@ -109,7 +109,17 @@
 .filter-group{display:contents}
 .filter-heading,.filter-row>span,.connector-cards{display:none}
 .filter-row{display:contents}
-@media(min-width:851px){#availability{order:1}#connector{order:2}#current,#power,#station,#portstatus,#extras{order:3}}
+#connector{display:none!important}
+.connector-picker{position:relative;min-width:170px}
+.connector-picker-button{width:100%;text-align:left;cursor:pointer;min-height:37px}
+.connector-picker-options{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:1200;min-width:215px;max-height:300px;overflow-y:auto;background:#fff;border:1px solid #dce2e9;box-shadow:0 8px 24px #15263d25;border-radius:14px;padding:6px}
+.connector-picker.is-open .connector-picker-options{display:block}
+.connector-picker-option{display:flex;gap:9px;align-items:center;width:100%;min-height:38px;border:0;background:transparent;padding:8px 10px;border-radius:9px;text-align:left;color:#273547;font:inherit;font-size:13px;cursor:pointer}
+.connector-picker-option:hover,.connector-picker-option[aria-pressed=true]{background:#eef4f8}
+.connector-picker-check{display:inline-flex;width:17px;height:17px;border-radius:5px;border:1px solid #afbac8;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.connector-picker-option[aria-pressed=true] .connector-picker-check{background:#1e293b;border-color:#1e293b}
+@media(min-width:851px){#availability{order:1}.connector-picker{order:2}#current,#power,#station,#portstatus,#extras{order:3}}
+@media(max-width:850px){.connector-picker{display:none!important}}
 @media(max-width:850px){
  #filterSheet{background:#f5f5f3;color:#181818;border-radius:28px 28px 0 0}
  #filterSheet .sheet-head{display:grid;grid-template-columns:1fr auto 1fr;padding:14px 16px 10px}
@@ -142,7 +152,7 @@
 </div><div class="divider"></div><input id="search" class="search" placeholder="Поиск по названию и адресу" aria-label="Поиск по названию и адресу">
 <div class="filter-group">
 <h3 class="filter-heading" id="connectorHeading">Разъёмы</h3>
-<select class="control" id="connector" aria-label="Разъём"><option value="all">Все разъёмы</option></select>
+<select class="control" id="connector" aria-label="Разъём" hidden><option value="all">Все разъёмы</option></select><div class="connector-picker" id="connectorPicker"><button class="control connector-picker-button" id="connectorPickerButton" type="button" aria-expanded="false" aria-controls="connectorPickerOptions">Все разъёмы ▾</button><div class="connector-picker-options" id="connectorPickerOptions" role="group" aria-label="Выберите типы разъёмов"></div></div>
 <div class="connector-cards" id="connectorCards" role="group" aria-labelledby="connectorHeading"></div>
 </div>
 <div class="filter-group">
@@ -164,7 +174,7 @@ if(cartoKey){
  positronTiles.on('tileerror',()=>{if(++failures>=3&&map.hasLayer(positronTiles)){map.removeLayer(positronTiles);osmTiles.addTo(map);baseTiles=osmTiles;}});
  baseTiles=positronTiles;
 }
-baseTiles.addTo(map);const layer=L.layerGroup().addTo(map);let stations=[],meta={},first=true;const filter={spark:true,charge24:true,weway:true};const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));const statuses={AVAILABLE:'Свободен',OCCUPIED:'Занят',FAULTED:'Ошибка',UNAVAILABLE:'Недоступен',FINISHING:'Завершение',PREPARING:'Подключение',UNKNOWN:'Неизвестно'};
+baseTiles.addTo(map);const layer=L.layerGroup().addTo(map);let stations=[],meta={},first=true;const filter={spark:true,charge24:true,weway:true};const selectedConnectorTypes=new Set();const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));const statuses={AVAILABLE:'Свободен',OCCUPIED:'Занят',FAULTED:'Ошибка',UNAVAILABLE:'Недоступен',FINISHING:'Завершение',PREPARING:'Подключение',UNKNOWN:'Неизвестно'};
 function canon(s){const x=String(s||'').toUpperCase();if(x==='AVAILABLE'||x==='FREE')return 'AVAILABLE';if(['CHARGING','OCCUPIED'].includes(x))return 'OCCUPIED';if(x==='FAULTED')return 'FAULTED';if(x==='UNAVAILABLE')return 'UNAVAILABLE';if(x==='FINISHING')return 'FINISHING';if(x==='PREPARING')return 'PREPARING';return 'UNKNOWN'}
 function flatten(s){return s.devices?s.devices.flatMap(d=>(d.connectors||[]).map(c=>({device:d,connector:c}))):(s.connectors||[]).map(c=>({device:s,connector:c}))}
 function power(d){let n=Number(d.powerKw);if(Number.isFinite(n)&&n>0)return n;const portPowers=(d.connectors||[]).map(c=>Number(c.powerKw)).filter(n=>Number.isFinite(n)&&n>0);if(portPowers.length)return Math.max(...portPowers);const m=String(d.name||'').match(/\b(AC|DC)\s*(\d+(?:[.,]\d+)?)/i);return m?Number(m[2].replace(',','.')):null}
@@ -181,7 +191,7 @@ function chargingPercentage(connector){
 function active(d){return d.active!==false&&!d.blocked}
 function isFree(x){return active(x.device)&&x.connector.available===true&&!x.connector.pending}
 function searchText(s){return [s.name,s.address,...(s.devices||[]).map(d=>d.name)].join(' ').toLocaleLowerCase()}
-function matches(s){if(s.operator==='SPARK KG'&&!filter.spark||s.operator==='Charge24'&&!filter.charge24||s.operator==='WeWay'&&!filter.weway)return false;const q=$('search').value.trim().toLocaleLowerCase();if(q&&!searchText(s).includes(q))return false;const p=flatten(s),free=p.filter(isFree).length,occupied=p.filter(x=>['OCCUPIED','PREPARING','FINISHING'].includes(canon(x.connector.status))).length;const a=$('availability').value;if(a==='free'&&!free||a==='occupied'&&!occupied||a==='allfree'&&(!p.length||free!==p.length)||a==='nofree'&&free>0)return false;const devices=s.devices||[s];const st=$('station').value;if(st==='active'&&!devices.some(active)||st==='inactive'&&!devices.some(d=>!active(d)))return false;const cur=$('current').value;if(cur!=='all'&&!devices.some(d=>cur==='unknown'?!current(d):current(d)===cur))return false;const pow=$('power').value;if(pow!=='all'&&!devices.some(d=>pow==='unknown'?power(d)===null:power(d)!==null&&power(d)>=Number(pow)))return false;const conn=$('connector').value;if(conn!=='all'&&!((conn!=='unknown'&&(s.supportedConnectorTypes||[]).includes(conn))||p.some(x=>conn==='unknown'?!type(x.connector)&&!(x.device.supportedConnectorTypes||[]).length:type(x.connector)===conn)))return false;const ps=$('portstatus').value;if(ps!=='all'&&!p.some(x=>canon(x.connector.status)===ps))return false;const ex=$('extras').value;if(ex==='pending'&&!p.some(x=>x.connector.pending)||ex==='finished'&&!p.some(x=>x.connector.chargingFinished)||ex==='percentage'&&!p.some(x=>chargingPercentage(x.connector)!==null))return false;return true}
+function matches(s){if(s.operator==='SPARK KG'&&!filter.spark||s.operator==='Charge24'&&!filter.charge24||s.operator==='WeWay'&&!filter.weway)return false;const q=$('search').value.trim().toLocaleLowerCase();if(q&&!searchText(s).includes(q))return false;const p=flatten(s),free=p.filter(isFree).length,occupied=p.filter(x=>['OCCUPIED','PREPARING','FINISHING'].includes(canon(x.connector.status))).length;const a=$('availability').value;if(a==='free'&&!free||a==='occupied'&&!occupied||a==='allfree'&&(!p.length||free!==p.length)||a==='nofree'&&free>0)return false;const devices=s.devices||[s];const st=$('station').value;if(st==='active'&&!devices.some(active)||st==='inactive'&&!devices.some(d=>!active(d)))return false;const cur=$('current').value;if(cur!=='all'&&!devices.some(d=>cur==='unknown'?!current(d):current(d)===cur))return false;const pow=$('power').value;if(pow!=='all'&&!devices.some(d=>pow==='unknown'?power(d)===null:power(d)!==null&&power(d)>=Number(pow)))return false;if(selectedConnectorTypes.size&&![...selectedConnectorTypes].some(conn=>(conn!=='unknown'&&(s.supportedConnectorTypes||[]).includes(conn))||p.some(x=>conn==='unknown'?!type(x.connector)&&!(x.device.supportedConnectorTypes||[]).length:type(x.connector)===conn)))return false;const ps=$('portstatus').value;if(ps!=='all'&&!p.some(x=>canon(x.connector.status)===ps))return false;const ex=$('extras').value;if(ex==='pending'&&!p.some(x=>x.connector.pending)||ex==='finished'&&!p.some(x=>x.connector.chargingFinished)||ex==='percentage'&&!p.some(x=>chargingPercentage(x.connector)!==null))return false;return true}
 const connectorPins={
  'GB/T':[[10,11],[22,11],[16,16],[10,21],[22,21]],
  CCS2:[[12,9],[20,9],[16,14],[11,25],[21,25]],
@@ -214,15 +224,42 @@ function renderConnectorCards(){
      label.textContent=option.textContent;
      card.append(label);
      card.onclick=()=>{
-       control.value=card.value;
-       control.dispatchEvent(new Event('change',{bubbles:true}));
+       toggleConnectorType(card.value);
      };
      return card;
    }));
  }
- for(const card of cards.children)card.setAttribute('aria-pressed',String(card.value===control.value));
+ for(const card of cards.children)card.setAttribute('aria-pressed',String(card.value==='all'?!selectedConnectorTypes.size:selectedConnectorTypes.has(card.value)));
+ renderConnectorPicker();
 }
-function refreshTypes(){const control=$('connector'),prev=control.value;const types=new Set(['GB/T','CCS2','CHAdeMO','Type 2','Type 1','NACS']);for(const s of stations)if(s.operator==='SPARK KG'?filter.spark:s.operator==='WeWay'?filter.weway:filter.charge24)for(const x of flatten(s))if(type(x.connector))types.add(type(x.connector));control.replaceChildren(new Option('Все разъёмы','all'));for(const t of ['GB/T','CCS2','CHAdeMO','Type 2','Type 1','NACS',...[...types].filter(t=>!['GB/T','CCS2','CHAdeMO','Type 2','Type 1','NACS'].includes(t)).sort((a,b)=>a.localeCompare(b,'ru'))])control.add(new Option(t,t));control.add(new Option('Тип не определён','unknown'));control.value=[...control.options].some(x=>x.value===prev)?prev:'all';renderConnectorCards()}
+function renderConnectorPicker(){
+ const button=$('connectorPickerButton'),wrap=$('connectorPickerOptions'),labels=[...selectedConnectorTypes];
+ button.textContent=labels.length?(labels.length<=2?labels.join(', '):'Разъёмы: '+labels.length)+' ▾':'Все разъёмы ▾';
+ wrap.replaceChildren(...[...$('connector').options].map(option=>{
+  const row=document.createElement('button');row.type='button';row.className='connector-picker-option';
+  const checked=option.value==='all'?!labels.length:selectedConnectorTypes.has(option.value);
+  row.setAttribute('aria-pressed',String(checked));
+  const check=document.createElement('span');check.className='connector-picker-check';check.setAttribute('aria-hidden','true');check.textContent=checked?'✓':'';
+  const name=document.createElement('span');name.textContent=option.textContent;row.append(check,name);
+  row.onclick=()=>toggleConnectorType(option.value);return row;
+ }));
+}
+function toggleConnectorType(value){
+ if(value==='all')selectedConnectorTypes.clear();
+ else if(selectedConnectorTypes.has(value))selectedConnectorTypes.delete(value);
+ else selectedConnectorTypes.add(value);
+ renderConnectorCards();draw();
+}
+function refreshTypes(){
+ const control=$('connector');
+ const types=new Set(['GB/T','CCS2','CHAdeMO','Type 2','Type 1','NACS']);
+ for(const s of stations)if(s.operator==='SPARK KG'?filter.spark:s.operator==='WeWay'?filter.weway:filter.charge24)
+  for(const x of flatten(s))if(type(x.connector))types.add(type(x.connector));
+ control.replaceChildren(new Option('Все разъёмы','all'));
+ for(const t of ['GB/T','CCS2','CHAdeMO','Type 2','Type 1','NACS',...[...types].filter(t=>!['GB/T','CCS2','CHAdeMO','Type 2','Type 1','NACS'].includes(t)).sort((a,b)=>a.localeCompare(b,'ru'))])control.add(new Option(t,t));
+ control.add(new Option('Тип не определён','unknown'));
+ renderConnectorCards();
+}
 function marker(s){const color=s.operator==='SPARK KG'?'#209769':s.operator==='Charge24'?'#b8860b':s.operator==='WeWay'?'#d32f2f':'#8794a5';const name=s.operator==='SPARK KG'?'S':s.operator==='WeWay'?'W':'24';return L.divIcon({html:`<div class="marker" style="background:${color}">${name}</div>`,className:'',iconSize:[31,31],iconAnchor:[15,15]})}
 function tariffText(t){
   if(!t||!Number.isFinite(Number(t.amount)))return '';
@@ -430,8 +467,10 @@ function setListMode(enabled){
 const visibleMarkers=new Map();
 function draw(){closeStationPanel();layer.clearLayers();visibleMarkers.clear();let shown=0,units=0,ports=0,free=0;for(const s of stations){if(!matches(s))continue;const parts=flatten(s);shown++;units+=(s.devices?s.devices.length:1);ports+=parts.length;free+=parts.filter(isFree).length;const markerRef=L.marker([s.lat,s.lng],{icon:marker(s)}).addTo(layer);if(mobileMQ.matches){markerRef.on('click',()=>openStationPanel(s))}else{markerRef.bindPopup(popup(s),{maxHeight:350,maxWidth:350}).on('popupopen',event=>enrichSparkPopup(event,s))}visibleMarkers.set(s.id,markerRef)}updateSearchResults();renderStationList();$('summary').textContent=`Найдено площадок: ${shown} · устройств: ${units} · коннекторов: ${ports} · доступных: ${free} · всего SPARK: ${meta.spark?.count||0}, Charge24: ${meta.charge24?.count||0}, WeWay: ${meta.weway?.count||0}`}
 async function refresh(){const old=$('status');old.textContent='Обновление данных…';try{const r=await fetch('/api/stations');if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();meta=d.meta||{};stations=[...(d.sites||[]),...(d.stations||[]).filter(x=>x.operator==='Charge24'||x.operator==='WeWay')];refreshTypes();draw();old.innerHTML=`<span class="dot" style="background:${meta.spark?.count?'#209769':'#d8a13c'}"></span>SPARK: ${esc(meta.spark?.source||'none')}${meta.spark?.error?' — '+esc(meta.spark.error):''}${meta.spark?.connectorTypesError?' · тип CCS2 не проверен: '+esc(meta.spark.connectorTypesError):''} · <span class="dot" style="background:${meta.charge24?.count?'#209769':'#d8a13c'}"></span>Charge24: ${esc(meta.charge24?.source||'none')}${meta.charge24?.error?' — '+esc(meta.charge24.error):''} · <span class="dot" style="background:${meta.weway?.count?'#209769':'#d8a13c'}"></span>WeWay: ${esc(meta.weway?.source||'none')}${meta.weway?.error?' — '+esc(meta.weway.error):''} <span class="refresh-note">· Кэш 5 мин</span>`;if(first&&stations.length){const bounds=L.latLngBounds(stations.map(s=>[s.lat,s.lng]));if(bounds.isValid())map.fitBounds(bounds,{padding:[24,24]});first=false}}catch(e){old.textContent='Ошибка загрузки: '+e.message}}
-for(const id of ['spark','charge24','weway'])$(id).onclick=()=>{filter[id]=!filter[id];$(id).setAttribute('aria-pressed',String(filter[id]));refreshTypes();draw()};for(const id of ['search','availability','connector','current','power','station','portstatus','extras'])$(id).addEventListener(id==='search'?'input':'change',draw);$('refresh').onclick=refresh;$('reset').onclick=()=>{filter.spark=filter.charge24=filter.weway=true;for(const id of ['spark','charge24','weway'])$(id).setAttribute('aria-pressed','true');$('search').value='';for(const id of ['availability','connector','current','power','station','portstatus','extras'])$(id).value='all';refreshTypes();draw()};
-$('connector').addEventListener('change',renderConnectorCards);
+for(const id of ['spark','charge24','weway'])$(id).onclick=()=>{filter[id]=!filter[id];$(id).setAttribute('aria-pressed',String(filter[id]));refreshTypes();draw()};for(const id of ['search','availability','current','power','station','portstatus','extras'])$(id).addEventListener(id==='search'?'input':'change',draw);$('refresh').onclick=refresh;$('reset').onclick=()=>{filter.spark=filter.charge24=filter.weway=true;selectedConnectorTypes.clear();for(const id of ['spark','charge24','weway'])$(id).setAttribute('aria-pressed','true');$('search').value='';for(const id of ['availability','current','power','station','portstatus','extras'])$(id).value='all';refreshTypes();draw()};
+$('connectorPickerButton').onclick=()=>{const picker=$('connectorPicker'),open=!picker.classList.contains('is-open');picker.classList.toggle('is-open',open);$('connectorPickerButton').setAttribute('aria-expanded',String(open))};
+document.addEventListener('click',event=>{if(!$('connectorPicker').contains(event.target)){$('connectorPicker').classList.remove('is-open');$('connectorPickerButton').setAttribute('aria-expanded','false')}});
+$('connectorPicker').addEventListener('keydown',event=>{if(event.key==='Escape'){$('connectorPicker').classList.remove('is-open');$('connectorPickerButton').setAttribute('aria-expanded','false');$('connectorPickerButton').focus()}});
 const mobileMQ=window.matchMedia('(max-width:850px)');
 const filterEl=$('search').closest('.filters');
 const desktopFilterParent=filterEl.parentNode;
