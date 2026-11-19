@@ -1,4 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {normalizeAll,groupSites,loadCcs2Ids,assignStationTypes} from './spark.mjs';import {normalizeCharge24,loadCharge24} from './charge24.mjs';
+import {loadWeWay,normalizeWeWay} from './weway.mjs';
 const data=JSON.parse(fs.readFileSync('data/spark-snapshot.json','utf8'));
 test('SPARK: все 388 устройства',()=>assert.equal(normalizeAll(data).length,388));
 test('SPARK: площадки',()=>assert.ok(groupSites(normalizeAll(data)).length>100));
@@ -111,4 +112,36 @@ test('Nearest list: tabs, geolocation, distance and filtering are wired',()=>{
  assert.match(html,/stations\.filter\(s=>validCoordinates\(s\)&&matches\(s\)\)/);
  assert.match(html,/distanceKm\(userCoords,a\)-distanceKm\(userCoords,b\)/);
  assert.match(html,/if\(name==='list'\)\{closeSheet\(\);closeStationPanel\(\);setListMode\(true\);return\}/);
+});
+
+test('WeWay: public catalog requires no credentials and all rows',async()=>{
+ let opts,url;const data={page:1,size:100,pages:1,total:1,items:[{id:30,identity:'Ww330',name:'Киркомстром',latitude:'42.868758',longitude:'74.509578',state:1,online:true,promotions:[],connectors:[{connector_type:'GB/T (DC)',items:[{ocpp_16_id:1,status:'Available',power:80},{ocpp_16_id:2,status:'Charging',power:80}]}]}]};
+ const rows=await loadWeWay({fetcher:async(u,o)=>{url=u;opts=o;return {ok:true,json:async()=>data}}});
+ assert.match(url,/size=100/);assert.deepEqual(opts.headers,{accept:'application/json'});
+ const [station]=normalizeWeWay(rows);
+ assert.equal(station.id,'weway:Ww330');
+ assert.equal(station.availableConnectors,1);
+ assert.equal(station.connectors[0].type,'GB/T (DC)');
+ assert.equal(station.connectors[1].status,'CHARGING');
+ assert.equal(station.connectors[1].percentage,null);
+ assert.equal(station.powerKw,80);
+});
+test('WeWay: offline and restricted stations are not presented as free',()=>{
+ const [station]=normalizeWeWay([{id:1,identity:'ww1',name:'Private',latitude:'42.8',longitude:'74.6',online:false,state:1,promotions:['Станция доступна только для сотрудников'],connectors:[{connector_type:'Tesla NACS',items:[{ocpp_16_id:1,status:'Available',power:120}]}]}]);
+ assert.equal(station.active,false);assert.equal(station.restricted,true);
+ assert.equal(station.connectors[0].available,false);
+ assert.equal(station.availableConnectors,0);
+});
+test('WeWay: incomplete catalog must fail instead of appearing complete',async()=>{
+ await assert.rejects(loadWeWay({fetcher:async()=>({ok:true,json:async()=>({pages:2,total:41,items:[{}]})})}),/неполный каталог/);
+});
+test('WeWay: production PHP and frontend include operator',()=>{
+ const php=fs.readFileSync('public/api/stations.php','utf8');
+ const html=fs.readFileSync('public/index.html','utf8');
+ assert.match(php,/function wewayStations\(\)/);
+ assert.match(php,/size=100/);
+ assert.match(php,/'weway' => \$weway/);
+ assert.match(html,/id="weway"/);
+ assert.match(html,/filter\.weway/);
+ assert.match(html,/x\.operator==='Charge24'\|\|x\.operator==='WeWay'/);
 });
