@@ -167,6 +167,52 @@ GRAPHQL;
     throw new RuntimeException('Получен неполный список Charge24');
 }
 
+function evionActivePercentages(): array
+{
+    $curl = curl_init('https://electrifly.ru/api/transaction/active/list');
+    curl_setopt_array($curl, [
+        CURLOPT_HTTPGET => true,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json, text/plain, */*',
+            'protocol: kg.evion.app|1.10.1|211|ios|27.3',
+            'User-Agent: kg.evion.app',
+            'Accept-Language: ru',
+        ],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 4,
+        CURLOPT_TIMEOUT => 12,
+    ]);
+    $body = curl_exec($curl);
+    $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+    curl_close($curl);
+    if ($body === false || $status !== 200) {
+        throw new RuntimeException("EVION sessions HTTP $status");
+    }
+    $sessions = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+    if (!is_array($sessions) || !array_is_list($sessions)) {
+        throw new RuntimeException('EVION: некорректные данные активных сессий');
+    }
+    $percentages = [];
+    foreach ($sessions as $session) {
+        if (!is_array($session) || ($session['completed'] ?? null) !== false) {
+            continue;
+        }
+        $connectorId = $session['connector']['_id'] ?? null;
+        $locationId = $session['location']['_id'] ?? null;
+        $soc = $session['soc'] ?? $session['socEnd'] ?? null;
+        if (!is_string($connectorId) || $connectorId === '' || !is_string($locationId) || $locationId === ''
+            || !is_numeric($soc) || (float) $soc < 0 || (float) $soc > 100) {
+            continue;
+        }
+        $key = $locationId . ':' . $connectorId;
+        $startedAt = is_numeric($session['startTime'] ?? null) ? (float) $session['startTime'] : 0;
+        if (!isset($percentages[$key]) || $startedAt > $percentages[$key]['start']) {
+            $percentages[$key] = ['start' => $startedAt, 'percent' => (float) $soc];
+        }
+    }
+    return $percentages;
+}
+
 function evionStations(): array
 {
     $curl = curl_init('https://electrifly.ru/api/location/list');
@@ -194,6 +240,12 @@ function evionStations(): array
     }
     if (!$rows) {
         throw new RuntimeException('EVION: пустой каталог');
+    }
+    // Session endpoint may be unavailable independently; station statuses still load.
+    try {
+        $activePercentages = evionActivePercentages();
+    } catch (Throwable $error) {
+        $activePercentages = [];
     }
     $stations = [];
     foreach ($rows as $row) {
@@ -223,7 +275,9 @@ function evionStations(): array
                     'type' => $connector['standard'] ?? null,
                     'status' => $emergency ? 'UNAVAILABLE' : ($ocppStatus === 'FINISHING' ? 'FINISHING' : ($ocppStatus === 'PREPARING' ? 'PREPARING' : $status)),
                     'ocppStatus' => $connector['ocppStatus'] ?? null,
-                    'percentage' => null,
+                    'percentage' => in_array($status, ['CHARGING', 'OCCUPIED'], true) && !$emergency
+                        && isset($activePercentages[(string) ($row['_id'] ?? '') . ':' . (string) ($connector['_id'] ?? '')])
+                        ? $activePercentages[(string) ($row['_id'] ?? '') . ':' . (string) ($connector['_id'] ?? '')]['percent'] : null,
                     'powerKw' => is_numeric($connector['power'] ?? null) ? (float) $connector['power'] : null,
                     'tariff' => $tariffs ? implode(', ', $tariffs) : null,
                     'available' => $available,
