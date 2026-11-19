@@ -1,11 +1,12 @@
 <?php
 declare(strict_types=1);
 // Secret settings are read from PHP process environment, or a private file OUTSIDE webroot.
-// To configure a private env file use EV_PRIVATE_ENV=/absolute/path/to/.env in server environment.
+// For this Fornex account, the default private file is /home/g143326/.tesla-ev.env (outside public_html).
+// EV_PRIVATE_ENV can override its path. Never put credentials inside the deployed website.
 // GitHub Actions secrets are NOT automatically available to PHP at request time.
 function ev_config(): array {
   $config = [];
-  $file = getenv('EV_PRIVATE_ENV');
+  $file = getenv('EV_PRIVATE_ENV') ?: '/home/g143326/.tesla-ev.env';
   if ($file && is_file($file) && is_readable($file)) {
     foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
       $line = trim($line);
