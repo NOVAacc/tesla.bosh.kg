@@ -1,5 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import {normalizeAll,groupSites,loadCcs2Ids,assignStationTypes} from './spark.mjs';import {normalizeCharge24,loadCharge24} from './charge24.mjs';
 import {loadWeWay,normalizeWeWay} from './weway.mjs';
+import {loadEvion,normalizeEvion} from './evion.mjs';
 const data=JSON.parse(fs.readFileSync('data/spark-snapshot.json','utf8'));
 test('SPARK: все 388 устройства',()=>assert.equal(normalizeAll(data).length,388));
 test('SPARK: площадки',()=>assert.ok(groupSites(normalizeAll(data)).length>100));
@@ -144,4 +145,27 @@ test('WeWay: production PHP and frontend include operator',()=>{
  assert.match(html,/id="weway"/);
  assert.match(html,/filter\.weway/);
  assert.match(html,/x\.operator==='Charge24'\|\|x\.operator==='WeWay'/);
+});
+
+test('EVION: public location list, live availability, tariffs and emergency flag',async()=>{
+ let url,headers;
+ const rows=await loadEvion({fetcher:async(u,o)=>{url=u;headers=o.headers;return {ok:true,json:async()=>[{_id:'loc1',name:'EVION Test',address:'Бишкек',coordinates:{latitude:42.86,longitude:74.61},evses:[{_id:'evse1',emergency:false,connectors:[{_id:'a',standard:'GBT_DC',status:'AVAILABLE',ocppStatus:'Available',power:80,tariffs:[{text:'14 сом/кВт⋅ч'}]},{_id:'b',standard:'GBT_DC',status:'CHARGING',ocppStatus:'Charging',power:80}]}]}]}}});
+ assert.match(url,/electrifly.ru\/api\/location\/list/);
+ assert.match(headers.protocol,/kg.evion.app/);
+ const [station]=normalizeEvion(rows);
+ assert.equal(station.operator,'EVION');assert.equal(station.availableConnectors,1);
+ assert.equal(station.connectors[0].tariff,'14 сом/кВт⋅ч');
+ assert.equal(station.connectors[0].type,'GBT_DC');
+ assert.equal(station.connectors[1].percentage,null);
+ const emergency=normalizeEvion([{_id:'loc2',coordinates:{latitude:42.8,longitude:74.6},evses:[{emergency:true,connectors:[{status:'AVAILABLE',ocppStatus:'Available'}]}]}]);
+ assert.equal(emergency[0].connectors[0].available,false);
+ assert.equal(emergency[0].connectors[0].status,'UNAVAILABLE');
+});
+test('EVION: production PHP and client include network and filters',()=>{
+ const php=fs.readFileSync('public/api/stations.php','utf8');
+ const html=fs.readFileSync('public/index.html','utf8');
+ assert.match(php,/function evionStations\(\)/);assert.match(php,/electrifly.ru\/api\/location\/list/);
+ assert.match(php,/'evion' => \$evion/);
+ assert.match(html,/id="evion"/);assert.match(html,/filter\.evion/);
+ assert.match(html,/x\.operator==='EVION'/);
 });
