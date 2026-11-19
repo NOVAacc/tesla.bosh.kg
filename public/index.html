@@ -260,7 +260,7 @@ function refreshTypes(){
  control.add(new Option('Тип не определён','unknown'));
  renderConnectorCards();
 }
-function marker(s){const color=s.operator==='SPARK KG'?'#209769':s.operator==='Charge24'?'#b8860b':s.operator==='WeWay'?'#d32f2f':s.operator==='EVION'?'#8054c7':'#8794a5';const name=s.operator==='SPARK KG'?'S':s.operator==='WeWay'?'W':s.operator==='EVION'?'E':'24';return L.divIcon({html:`<div class="marker" style="background:${color}">${name}</div>`,className:'',iconSize:[31,31],iconAnchor:[15,15]})}
+function marker(s){const color=s.operator==='SPARK KG'?'#209769':s.operator==='Charge24'?'#b8860b':s.operator==='WeWay'?'#d32f2f':s.operator==='EVION'?'#146b45':'#8794a5';const name=s.operator==='SPARK KG'?'S':s.operator==='WeWay'?'W':s.operator==='EVION'?'E':'24';return L.divIcon({html:`<div class="marker" style="background:${color}">${name}</div>`,className:'',iconSize:[31,31],iconAnchor:[15,15]})}
 function tariffText(t){
   if(typeof t==='string')return esc(t);
   if(!t||!Number.isFinite(Number(t.amount)))return '';
