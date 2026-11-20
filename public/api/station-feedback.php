@@ -20,6 +20,23 @@ try {
   $message = trim($message);
   if (mb_strlen($message) < 10 || mb_strlen($message) > 1000) ev_response(422, ['error'=>'invalid_message']);
   $db = ev_db();
+  // Install the additive feedback table on first submission when the DB user has DDL permissions.
+  // Existing charging data and account tables are untouched.
+  $db->exec("CREATE TABLE IF NOT EXISTS station_feedback (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id BIGINT UNSIGNED NOT NULL,
+    station_hash BINARY(32) NOT NULL,
+    station_id VARCHAR(1024) NOT NULL,
+    feedback_type ENUM('broken','incorrect_info','access','other') NOT NULL,
+    message VARCHAR(1000) NOT NULL,
+    status ENUM('new','reviewing','resolved','dismissed') NOT NULL DEFAULT 'new',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_station_feedback (station_hash, created_at),
+    KEY idx_user_feedback (user_id, created_at),
+    KEY idx_status_feedback (status, created_at),
+    CONSTRAINT fk_station_feedback_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
   $db->beginTransaction();
   try {
     // Serialize feedback submissions by this user across browsers and tabs.
