@@ -103,3 +103,53 @@ async function loadNetworks() {
 
 refresh.addEventListener('click', loadNetworks);
 loadNetworks();
+
+const feedbackTypes = {broken:'Не работает',incorrect_info:'Неверные данные',access:'Проблема доступа',other:'Другое'};
+const feedbackStatuses = {new:'Новое',reviewing:'В работе',resolved:'Решено',dismissed:'Отклонено'};
+let feedbackPageIndex = 1;
+let feedbackRequest = 0;
+function feedbackCard(item) {
+  const card = textElement('article','','card feedback-card');
+  const top = textElement('div','','feedback-top');
+  top.append(textElement('strong', 'Обращение №'+item.id), textElement('span',feedbackStatuses[item.status] || item.status,'feedback-state'));
+  card.append(top);
+  const station = textElement('p', 'Станция: '+item.station_id,'feedback-station');
+  const info = textElement('p', (feedbackTypes[item.feedback_type] || item.feedback_type) + ' · ' + (item.created_at || ''),'muted');
+  const person = textElement('p', 'Отправитель: '+(item.display_name || item.email || 'Пользователь')+(item.display_name && item.email?' · '+item.email:''),'muted');
+  const message = textElement('p',item.message,'feedback-message');
+  card.append(station,info,person,message);
+  return card;
+}
+async function loadFeedback(page=1) {
+  const request=++feedbackRequest;
+  const status=document.getElementById('feedbackStatus');
+  const cards=document.getElementById('feedbackCards');
+  const prev=document.getElementById('feedbackPrev');
+  const next=document.getElementById('feedbackNext');
+  const refresh=document.getElementById('refreshFeedback');
+  prev.disabled=next.disabled=refresh.disabled=true;
+  status.textContent='Загрузка сообщений…';
+  try {
+    const response=await fetch('/api/root-feedback.php?page='+page,{cache:'no-store'});
+    if(!response.ok)throw Error('Feedback unavailable');
+    const data=await response.json();
+    if(request!==feedbackRequest)return;
+    feedbackPageIndex=data.page;
+    cards.replaceChildren(...data.items.map(feedbackCard));
+    status.textContent=data.total===0?'Сообщений пока нет.':'Всего сообщений: '+data.total.toLocaleString('ru-RU');
+    document.getElementById('feedbackPage').textContent=data.total?'Страница '+data.page+' из '+Math.ceil(data.total/data.perPage):'';
+    prev.disabled=page<=1;
+    next.disabled=page*data.perPage>=data.total;
+  } catch {
+    if(request!==feedbackRequest)return;
+    status.textContent='Не удалось загрузить сообщения. Проверьте подключение к базе данных.';
+    cards.replaceChildren();
+    document.getElementById('feedbackPage').textContent='';
+  } finally {
+    if(request===feedbackRequest)refresh.disabled=false;
+  }
+}
+document.getElementById('refreshFeedback').addEventListener('click',()=>loadFeedback(feedbackPageIndex));
+document.getElementById('feedbackPrev').addEventListener('click',()=>loadFeedback(Math.max(1,feedbackPageIndex-1)));
+document.getElementById('feedbackNext').addEventListener('click',()=>loadFeedback(feedbackPageIndex+1));
+loadFeedback();
