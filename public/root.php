@@ -28,7 +28,7 @@ if ($allowed && !$comments) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Панель управления · EV Карта</title>
-  <link rel="stylesheet" href="/root.css">
+  <link rel="stylesheet" href="/root.css?v=<?= hash_file('sha256', __DIR__.'/root.css') ?>">
 </head>
 <body>
 <main>
