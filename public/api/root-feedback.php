@@ -13,11 +13,15 @@ try {
   if ($page === false) ev_response(422, ['error'=>'invalid_page']);
   $perPage = 30;
   $db = ev_db();
-  // The report table is created by the feedback endpoint on the first successful submission.
-  // If there are no submissions yet, do not expose SQL errors in the admin UI.
-  $table = $db->query("SHOW TABLES LIKE 'station_feedback'")->fetchColumn();
-  if (!$table) ev_response(200, ['items'=>[], 'total'=>0, 'page'=>1, 'perPage'=>$perPage]);
-  $total = (int)$db->query('SELECT COUNT(*) FROM station_feedback')->fetchColumn();
+  // Query the table directly: SHOW TABLES may be restricted by hosting permissions.
+  try {
+    $total = (int)$db->query('SELECT COUNT(*) FROM station_feedback')->fetchColumn();
+  } catch (PDOException $error) {
+    if ($error->getCode() === '42S02' || (int)($error->errorInfo[1] ?? 0) === 1146) {
+      ev_response(200, ['items'=>[], 'total'=>0, 'page'=>1, 'perPage'=>$perPage, 'tableMissing'=>true]);
+    }
+    throw $error;
+  }
   $offset = ($page - 1) * $perPage;
   $q = $db->prepare('SELECT f.id,f.station_id,f.feedback_type,f.message,f.status,f.created_at,
       u.email, u.display_name
