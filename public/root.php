@@ -51,7 +51,7 @@ if ($allowed) {
       <div id="feedbackCards" class="feedback-cards"></div>
       <div class="feedback-pages"><button id="feedbackPrev" type="button" disabled>Назад</button><span id="feedbackPage"></span><button id="feedbackNext" type="button" disabled>Вперёд</button></div>
     </section>
-    <script src="/root.js" type="module"></script>
+    <script src="/root.js?v=<?= hash_file('sha256', __DIR__.'/root.js') ?>" type="module"></script>
   <?php else: ?>
     <section class="card">
       <h2><?= $user ? 'Доступ закрыт' : 'Войдите в аккаунт владельца' ?></h2>

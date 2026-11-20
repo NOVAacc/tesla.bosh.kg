@@ -162,14 +162,18 @@ async function loadFeedback(page=1) {
     const response=await fetch('/api/root-feedback.php?page='+page,{cache:'no-store'});
     if(!response.ok){
       if(response.status===403)throw Error('Доступ запрещён. Войдите под аккаунтом владельца.');
-      if(response.status===503)throw Error('Ошибка чтения базы данных (503).');
+      if(response.status===503){
+        const failure=await response.json().catch(()=>null);
+        if(failure?.error==='feedback_storage_unavailable')throw Error('Хранилище обращений ещё не подключено.');
+        throw Error('Ошибка чтения базы данных (503).');
+      }
       throw Error('Сервер вернул HTTP '+response.status+'.');
     }
     const data=await response.json();
     if(request!==feedbackRequest)return;
     feedbackPageIndex=data.page;
     cards.replaceChildren(...data.items.map(feedbackCard));
-    status.textContent=data.tableMissing?'Таблица сообщений ещё не создана: успешных сохранений пока нет.':data.total===0?'В базе нет сохранённых обращений.':'Всего сообщений: '+data.total.toLocaleString('ru-RU');
+    status.textContent=data.total===0?'В базе нет сохранённых обращений.':'Всего сообщений: '+data.total.toLocaleString('ru-RU');
     document.getElementById('feedbackPage').textContent=data.total?'Страница '+data.page+' из '+Math.ceil(data.total/data.perPage):'';
     prev.disabled=page<=1;
     next.disabled=page*data.perPage>=data.total;

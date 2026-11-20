@@ -40,8 +40,14 @@ p{line-height:1.5;color:#555;overflow-wrap:anywhere}#status{min-height:25px}h1{f
   try{
    const response=await fetch('/api/station-feedback.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csrf:account.csrf,stationId,type:document.getElementById('type').value,message:document.getElementById('message').value})});
    const result=await response.json();
-   if(response.status===201){status.textContent='Сообщение принято. Спасибо!';form.hidden=true;return}
-   status.textContent=result.message||(response.status===429?'Слишком много сообщений.':'Не удалось отправить сообщение.');
+   if(response.status===201&&result.ok===true&&Number.isInteger(result.id)){status.textContent='Сообщение №'+result.id+' сохранено. Спасибо!';form.hidden=true;return}
+   status.textContent=result.message||({
+    unauthorized:'Войдите снова, чтобы отправить сообщение.',
+    invalid_csrf:'Сессия изменилась. Обновите страницу и повторите отправку.',
+    invalid_message:'Введите от 10 до 1000 символов.',
+    invalid_feedback:'Откройте форму заново из карточки станции.',
+    service_unavailable:'Сервис обращений временно недоступен. Сообщение не сохранено.'
+   }[result.error]||'Не удалось отправить сообщение.');
   }catch{status.textContent='Ошибка сети. Попробуйте позже.'}
   finally{button.disabled=false}
  });

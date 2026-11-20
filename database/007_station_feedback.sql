@@ -1,4 +1,4 @@
--- Apply manually to the same database used by account.php before enabling station feedback.
+-- Keep existing feedback when upgrading a database that already has the table.
 CREATE TABLE IF NOT EXISTS station_feedback (
  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
  user_id BIGINT UNSIGNED NOT NULL,

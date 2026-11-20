@@ -18,7 +18,7 @@ try {
     $total = (int)$db->query('SELECT COUNT(*) FROM station_feedback')->fetchColumn();
   } catch (PDOException $error) {
     if ($error->getCode() === '42S02' || (int)($error->errorInfo[1] ?? 0) === 1146) {
-      ev_response(200, ['items'=>[], 'total'=>0, 'page'=>1, 'perPage'=>$perPage, 'tableMissing'=>true]);
+      ev_response(503, ['error'=>'feedback_storage_unavailable']);
     }
     throw $error;
   }
