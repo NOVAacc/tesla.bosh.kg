@@ -48,34 +48,34 @@ function textElement(tag, text, className) {
   return element;
 }
 
-function networkCard(name, stations, meta) {
+function networkCard(name, snapshot) {
   const card = textElement('article', '', 'card');
   card.append(textElement('h3', name));
-  if (meta?.source === 'none' || (!meta && !stations.length)) {
+  if (!snapshot || snapshot.unavailable) {
     card.append(textElement('p', 'Данные сети временно недоступны.', 'muted'));
     return card;
   }
-  if (meta?.source === 'snapshot' || meta?.error) {
-    card.append(textElement('p', 'Последние сохранённые данные', 'muted'));
-  }
-  const {counts, tariffs, priced} = summarize(stations);
+  if (snapshot.stale) card.append(textElement('p', 'Последние сохранённые данные', 'muted'));
   const stats = document.createElement('dl');
-  for (const [label, amount] of [['Всего зарядок', stations.length], ['Рабочие', counts.working], ['Не работают', counts.inactive], ['Статус неизвестен', counts.unknown]]) {
+  for (const [label, amount] of [
+    ['Всего зарядок', snapshot.total],
+    ['Рабочие', snapshot.counts.working],
+    ['Не работают', snapshot.counts.inactive],
+    ['Статус неизвестен', snapshot.counts.unknown]
+  ]) {
     const item = document.createElement('div');
-    item.append(textElement('dt', label), textElement('dd', amount.toLocaleString('ru-RU')));
+    item.append(textElement('dt', label), textElement('dd', Number(amount).toLocaleString('ru-RU')));
     stats.append(item);
   }
   card.append(stats);
-  if (!priced) {
+  if (!snapshot.priced) {
     card.append(textElement('p', 'Тарифы в данных сети отсутствуют.', 'muted'));
     return card;
   }
   const details = document.createElement('details');
   const list = document.createElement('ul');
-  for (const [price, count] of [...tariffs].sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ru', {numeric:true}))) {
-    list.append(textElement('li', price + ' · зарядок: ' + count));
-  }
-  details.append(textElement('summary', 'Тарифы · данные по ' + priced + ' из ' + stations.length), list);
+  for (const [price, count] of snapshot.tariffs) list.append(textElement('li', price+' · зарядок: '+count));
+  details.append(textElement('summary', 'Тарифы · данные по '+snapshot.priced+' из '+snapshot.total), list);
   card.append(details);
   return card;
 }
@@ -83,26 +83,55 @@ function networkCard(name, stations, meta) {
 const status = document.getElementById('networkStatus');
 const refresh = document.getElementById('refreshNetworks');
 const cards = document.getElementById('networkCards');
+const networkCacheKey = 'ev-root-networks-v1';
 
+function renderNetworkSnapshot(snapshot) {
+  cards.replaceChildren(...operators.map(([key,name]) => networkCard(name, snapshot.networks[key])));
+  const date = new Date(snapshot.savedAt);
+  status.textContent = 'Последнее ручное обновление: ' + date.toLocaleString('ru-RU');
+}
+function loadCachedNetworks() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(networkCacheKey) || 'null');
+    if (!cached || !Number.isFinite(cached.savedAt) || !cached.networks ||
+        !operators.every(([key]) => cached.networks[key])) throw Error('No cache');
+    renderNetworkSnapshot(cached);
+  } catch {
+    status.textContent = 'Статистика ещё не загружена в этом браузере. Нажмите «Обновить».';
+  }
+}
 async function loadNetworks() {
   refresh.disabled = true;
-  status.textContent = 'Загрузка статистики…';
+  status.textContent = 'Обновление статистики по запросу…';
   try {
     const response = await fetch('/api/stations', {cache: 'no-store'});
     if (!response.ok) throw Error('Stations unavailable');
-    const {stations, meta} = await response.json();
-    cards.replaceChildren(...operators.map(([key,name]) =>
-      networkCard(name, stations.filter(station => station.operator === name), meta?.[key])));
-    status.textContent = '';
+    const {stations,meta} = await response.json();
+    if (!Array.isArray(stations)) throw Error('Invalid stations response');
+    const networks = {};
+    for (const [key,name] of operators) {
+      const entries = stations.filter(station => station.operator === name);
+      const summary = summarize(entries);
+      networks[key] = {
+        total: entries.length,
+        counts: summary.counts,
+        tariffs: [...summary.tariffs].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ru',{numeric:true})),
+        priced:summary.priced,
+        stale: Boolean(meta?.[key]?.source === 'snapshot' || meta?.[key]?.error),
+        unavailable: Boolean(meta?.[key]?.source === 'none' || (!meta?.[key] && !entries.length))
+      };
+    }
+    const snapshot = {savedAt:Date.now(),networks};
+    try { localStorage.setItem(networkCacheKey, JSON.stringify(snapshot)); } catch {}
+    renderNetworkSnapshot(snapshot);
   } catch {
-    status.textContent = 'Не удалось обновить статистику зарядных сетей.';
+    status.textContent = 'Не удалось обновить статистику. Сохранённые данные остаются без изменений.';
   } finally {
     refresh.disabled = false;
   }
 }
-
 refresh.addEventListener('click', loadNetworks);
-loadNetworks();
+loadCachedNetworks();
 
 const feedbackTypes = {broken:'Не работает',incorrect_info:'Неверные данные',access:'Проблема доступа',other:'Другое'};
 const feedbackStatuses = {new:'Новое',reviewing:'В работе',resolved:'Решено',dismissed:'Отклонено'};
@@ -131,18 +160,22 @@ async function loadFeedback(page=1) {
   status.textContent='Загрузка сообщений…';
   try {
     const response=await fetch('/api/root-feedback.php?page='+page,{cache:'no-store'});
-    if(!response.ok)throw Error('Feedback unavailable');
+    if(!response.ok){
+      if(response.status===403)throw Error('Доступ запрещён. Войдите под аккаунтом владельца.');
+      if(response.status===503)throw Error('Ошибка чтения базы данных (503).');
+      throw Error('Сервер вернул HTTP '+response.status+'.');
+    }
     const data=await response.json();
     if(request!==feedbackRequest)return;
     feedbackPageIndex=data.page;
     cards.replaceChildren(...data.items.map(feedbackCard));
-    status.textContent=data.total===0?'Сообщений пока нет.':'Всего сообщений: '+data.total.toLocaleString('ru-RU');
+    status.textContent=data.tableMissing?'Таблица сообщений ещё не создана: успешных сохранений пока нет.':data.total===0?'В базе нет сохранённых обращений.':'Всего сообщений: '+data.total.toLocaleString('ru-RU');
     document.getElementById('feedbackPage').textContent=data.total?'Страница '+data.page+' из '+Math.ceil(data.total/data.perPage):'';
     prev.disabled=page<=1;
     next.disabled=page*data.perPage>=data.total;
-  } catch {
+  } catch (error) {
     if(request!==feedbackRequest)return;
-    status.textContent='Не удалось загрузить сообщения. Проверьте подключение к базе данных.';
+    status.textContent='Не удалось загрузить сообщения. '+(error?.message || 'Ошибка сети.');
     cards.replaceChildren();
     document.getElementById('feedbackPage').textContent='';
   } finally {
