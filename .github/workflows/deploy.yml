@@ -30,6 +30,7 @@ jobs:
       - run: |
           php -l public/api/stations.php
           php -l public/api/account.php
+          php -l public/api/station-feedback.php
           php -l public/api/root-access.php
           php -l public/root.php
           php -l public/api/google-start.php
