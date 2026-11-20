@@ -17,12 +17,14 @@ try {
     $id = $_GET['stationId'] ?? null;
     $before = filter_var($_GET['before'] ?? PHP_INT_MAX, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
     if (!valid_feedback_station($id) || $before === false) ev_response(422, ['error'=>'invalid_feedback']);
-    $query = ev_db()->prepare("SELECT id, feedback_type, message, created_at FROM station_feedback
-      WHERE station_hash=UNHEX(SHA2(?,256)) AND is_public=1 AND status<>'dismissed' AND id<?
-      ORDER BY id DESC LIMIT 21");
+    $query = ev_db()->prepare("SELECT f.id, f.feedback_type, f.message, f.created_at,
+      SUBSTRING_INDEX(TRIM(u.display_name), ' ', 1) AS author_name
+      FROM station_feedback f INNER JOIN users u ON u.id=f.user_id
+      WHERE f.station_hash=UNHEX(SHA2(?,256)) AND f.is_public=1 AND f.status<>'dismissed' AND f.id<?
+      ORDER BY f.id DESC LIMIT 11");
     $query->execute([$id,$before]);
     $items = $query->fetchAll();
-    $hasMore = count($items) > 20;
+    $hasMore = count($items) > 10;
     if ($hasMore) array_pop($items);
     ev_response(200, ['items'=>$items,'address'=>cachedStationAddress($id),'before'=>$hasMore ? (string)end($items)['id'] : null]);
   }

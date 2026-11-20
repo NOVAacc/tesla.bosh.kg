@@ -8,32 +8,38 @@ a{color:inherit}label{display:block;margin:18px 0 8px;font-weight:600}select,tex
 textarea{min-height:130px;resize:vertical}button{margin-top:20px;border:0;border-radius:100px;padding:14px 24px;background:#181818;color:white;font:inherit;cursor:pointer;width:100%}button:disabled{opacity:.5}
 p{line-height:1.5;color:#555;overflow-wrap:anywhere}#status{min-height:25px}h1{font-size:25px;letter-spacing:-.04em}
 body.embedded{padding:0;background:#fff}.embedded main{margin:0;max-width:none;padding:16px}.embedded .back-link,.embedded h1{display:none}
-.comment-list{display:grid;gap:6px}.comment{border-radius:10px;background:#f4f4f4;padding:8px 10px}.comment p{margin:3px 0 0;font-size:13px;white-space:pre-wrap}.comment small{color:#505050}.comment-title{font-size:17px;margin:0 0 8px}
+.comment-list{display:grid;gap:6px}.comment{border-radius:10px;background:#f4f4f4;padding:8px 10px}.comment p{margin:4px 0;font-size:14px;font-weight:700;color:#181818;white-space:pre-wrap}.comment-author{display:block;font-size:13px;color:#434343;overflow-wrap:anywhere}.comment small{color:#505050}.comment-title{font-size:17px;margin:0 0 8px}
 .station-details{display:grid;gap:8px;margin:0 0 14px;padding:10px 12px;background:#f4f4f4;border-radius:12px;font-size:13px}
 .station-details[hidden]{display:none}.station-details dt{color:#555}.station-details dd{margin:2px 0 0;overflow-wrap:anywhere;font-weight:600}
-.sender{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;font-size:14px}.sender strong{color:#181818;overflow-wrap:anywhere}
-.comments-section{border-top:1px solid #e5e5e5;padding-top:12px}.comment-note{font-size:13px;margin:0}.comment-more{margin:8px 0;width:auto;padding:7px 12px;background:#ececec;color:#171717;font-size:13px}
+.comments-section{border-top:1px solid #e5e5e5;padding-top:12px}.comment-note{font-size:13px;margin:0}.comment-pages{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;margin-top:10px;font-size:13px}
+.comment-pages[hidden]{display:none}.comment-pages button{margin:0;width:auto;min-height:40px;padding:7px 12px;background:#ececec;color:#171717;font-size:13px}
+.comment-form{margin-top:20px;padding:14px;border:1px solid #c7d5e4;border-radius:16px;background:#eff5fc}
+.comment-form label{margin-top:12px;font-size:14px}.comment-form textarea{min-height:104px}.comment-form button{margin-top:12px}
 </style></head><body><main><a class="back-link" href="/" target="_top">← К карте зарядок</a><h1>Комментарии к станции</h1>
 <p id="stationLabel">Выберите станцию на карте, чтобы сообщить о проблеме.</p>
 <dl id="stationDetails" class="station-details" hidden>
 <div><dt>Адрес зарядки</dt><dd id="stationAddress">Не указан</dd></div>
 <div><dt id="stationNumberLabel">Номер зарядки</dt><dd id="stationNumber"></dd></div>
 </dl>
-<form id="feedback" hidden>
-<p class="sender">Отправитель <strong id="senderName"></strong></p>
-<label for="type">Что случилось?</label>
-<select id="type" required><option value="broken">Зарядка не работает</option><option value="incorrect_info">Неверные данные</option><option value="access">Проблема с доступом</option><option value="other">Другое</option></select>
-<label for="message">Подробности</label>
-<textarea id="message" maxlength="1000" minlength="10" required placeholder="Опишите проблему (не менее 10 символов)"></textarea>
-<p class="comment-note">Комментарий будет виден всем. На карте отображаются текст, категория и время отправки.</p>
-<button type="submit">Отправить сообщение</button>
-</form><p id="status" role="status"></p>
 <section class="comments-section" aria-labelledby="commentTitle">
 <h2 class="comment-title" id="commentTitle">Комментарии</h2>
 <p id="commentStatus" class="comment-note" role="status"></p>
 <div class="comment-list" id="comments"></div>
-<button class="comment-more" id="moreComments" type="button" hidden>Показать ещё</button>
+<nav id="commentPages" class="comment-pages" aria-label="Страницы комментариев" hidden>
+<button id="previousComments" type="button">Назад</button>
+<span id="commentPage" aria-live="polite"></span>
+<button id="nextComments" type="button">Вперёд</button>
+</nav>
 </section>
+<form id="feedback" class="comment-form" aria-labelledby="newCommentTitle" hidden>
+<h2 class="comment-title" id="newCommentTitle">Новый комментарий</h2>
+<label for="type">Что случилось?</label>
+<select id="type" required><option value="broken">Зарядка не работает</option><option value="incorrect_info">Неверные данные</option><option value="access">Проблема с доступом</option><option value="other">Другое</option></select>
+<label for="message">Подробности</label>
+<textarea id="message" maxlength="1000" minlength="10" required placeholder="Опишите проблему (не менее 10 символов)"></textarea>
+<button type="submit">Отправить сообщение</button>
+</form><p id="status" role="status"></p>
+
 
 </main><script>
 (async()=>{
@@ -49,38 +55,49 @@ body.embedded{padding:0;background:#fff}.embedded main{margin:0;max-width:none;p
  document.getElementById('stationNumberLabel').textContent=numbers.length>1?'Номера зарядок':numbers.length?'Номер зарядки':'ID зарядки';
  document.getElementById('stationNumber').textContent=numbers.length?numbers.join(', '):stationId;
  document.getElementById('stationDetails').hidden=false;
- const comments=document.getElementById('comments'),more=document.getElementById('moreComments'),commentStatus=document.getElementById('commentStatus');
+ const comments=document.getElementById('comments'),commentStatus=document.getElementById('commentStatus');
+ const pages=document.getElementById('commentPages'),pageLabel=document.getElementById('commentPage');
+ const previous=document.getElementById('previousComments'),next=document.getElementById('nextComments');
  const categories={broken:'Не работает',incorrect_info:'Неверные данные',access:'Проблема доступа',other:'Комментарий'};
- let before=null, commentRequest=0;
- async function loadComments(append=false){
+ const cursors=[null];
+ let page=0,nextCursor=null,commentRequest=0;
+ async function loadComments(target=0,cursor=null){
   const request=++commentRequest;
-  more.disabled=true;
+  previous.disabled=next.disabled=true;
   commentStatus.textContent='Загружаем комментарии…';
   try{
    const query=new URLSearchParams({stationId});
-   if(append&&before)query.set('before',before);
+   if(cursor)query.set('before',cursor);
    const response=await fetch('/api/station-feedback.php?'+query,{cache:'no-store'});
    if(!response.ok)throw Error();
    const result=await response.json();
    if(request!==commentRequest)return;
-   if(!append)comments.replaceChildren();
+   comments.replaceChildren();
    if(!params.get('address')&&result.address)address.textContent=result.address;
    for(const item of result.items){
-    const card=document.createElement('article'),meta=document.createElement('small'),message=document.createElement('p');
+    const card=document.createElement('article'),author=document.createElement('strong'),meta=document.createElement('small'),message=document.createElement('p');
     card.className='comment';
-    meta.textContent=(categories[item.feedback_type]??'Комментарий')+' · '+item.created_at;
+    author.className='comment-author';
+    author.textContent=item.author_name||'Пользователь';
     message.textContent=item.message;
-    card.append(meta,message);
+    meta.textContent=(categories[item.feedback_type]??'Комментарий')+' · '+item.created_at;
+    card.append(author,message,meta);
     comments.append(card);
    }
-   before=result.before;
-   more.hidden=!before;
-   commentStatus.textContent=comments.childElementCount?'':'Пока нет публичных комментариев.';
+   cursors[target]=cursor;
+   page=target;
+   nextCursor=result.before;
+   pages.hidden=page===0&&!nextCursor;
+   pageLabel.textContent='Страница '+(page+1);
+   commentStatus.textContent=comments.childElementCount?'':'Комментариев пока нет.';
   }catch{
    if(request===commentRequest)commentStatus.textContent='Не удалось загрузить комментарии.';
-  }finally{if(request===commentRequest)more.disabled=false}
+  }finally{
+   if(request===commentRequest){previous.disabled=page===0;next.disabled=!nextCursor}
+  }
  }
- more.addEventListener('click',()=>loadComments(true));
+ previous.addEventListener('click',()=>{if(page>0)loadComments(page-1,cursors[page-1])});
+ next.addEventListener('click',()=>{if(nextCursor)loadComments(page+1,nextCursor)});
  loadComments();
  let account;
  try{
@@ -92,7 +109,6 @@ body.embedded{padding:0;background:#fff}.embedded main{margin:0;max-width:none;p
   const link=document.createElement('a');link.href='/account.html';link.target='_top';link.textContent='Войдите в аккаунт, чтобы отправить сообщение.';
   status.append(link);return;
  }
- document.getElementById('senderName').textContent=account.user.display_name?.trim()||'Имя не указано';
  form.hidden=false;
  form.addEventListener('submit',async e=>{
   e.preventDefault();
