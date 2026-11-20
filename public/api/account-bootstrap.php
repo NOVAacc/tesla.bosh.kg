@@ -38,17 +38,57 @@ function ev_db(): PDO {
     ]);
   return $db;
 }
+const EV_SESSION_LIFETIME = 30 * 24 * 60 * 60;
+
 function ev_session(): void {
   if (session_status() === PHP_SESSION_ACTIVE) return;
-  if (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off') {
-    // TLS may terminate at a trusted reverse proxy; deployed site is HTTPS.
+  // Use an app-specific directory so other PHP apps cannot garbage-collect these sessions.
+  $path = getenv('EV_SESSION_PATH') ?: '/home/g143326/.tesla-ev-sessions';
+  if ((!is_dir($path) && !@mkdir($path, 0700) && !is_dir($path)) || !is_writable($path)) {
+    error_log('EV session directory is unavailable');
+    ev_response(503,['error'=>'service_unavailable']);
   }
-  ini_set('session.use_strict_mode','1');
-  ini_set('session.use_only_cookies','1');
   session_name('ev_session');
-  session_set_cookie_params(['lifetime'=>0,'path'=>'/','secure'=>true,'httponly'=>true,'samesite'=>'Lax']);
-  session_start();
+  if (!session_start([
+    'save_handler'=>'files',
+    'save_path'=>$path,
+    'gc_maxlifetime'=>EV_SESSION_LIFETIME,
+    'gc_probability'=>1,
+    'gc_divisor'=>100,
+    'use_strict_mode'=>1,
+    'use_only_cookies'=>1,
+    'cookie_lifetime'=>0,
+    'cookie_path'=>'/',
+    'cookie_secure'=>true,
+    'cookie_httponly'=>true,
+    'cookie_samesite'=>'Lax',
+  ])) {
+    ev_response(503,['error'=>'service_unavailable']);
+  }
+  if (isset($_SESSION['uid']) && ($_SESSION['expires_at'] ?? 0) <= time()) {
+    ev_reset_session();
+  }
   if (!isset($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+
+function ev_reset_session(): void {
+  $_SESSION = [];
+  if (!session_regenerate_id(true)) {
+    ev_response(503,['error'=>'service_unavailable']);
+  }
+  $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+
+function ev_sign_in(int $userId): void {
+  ev_reset_session();
+  $expires = time() + EV_SESSION_LIFETIME;
+  $cookie = session_get_cookie_params();
+  unset($cookie['lifetime']);
+  if (!setcookie(session_name(), session_id(), ['expires'=>$expires] + $cookie)) {
+    ev_response(503,['error'=>'service_unavailable']);
+  }
+  $_SESSION['uid'] = $userId;
+  $_SESSION['expires_at'] = $expires;
 }
 function ev_response(int $code, array $body): never {
   http_response_code($code);

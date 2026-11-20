@@ -62,11 +62,11 @@ try {
       ev_response(401,['error'=>'invalid_credentials']);
     }
     if (!$u['email_verified_at']) ev_response(403,['error'=>'email_not_verified']);
-    session_regenerate_id(true); $_SESSION['uid']=(int)$u['id']; $_SESSION['csrf']=bin2hex(random_bytes(32));
+    ev_sign_in((int)$u['id']);
     ev_response(200,['user'=>ev_user(),'csrf'=>$_SESSION['csrf']]);
   }
   if ($action === 'logout') {
-    $_SESSION=[]; session_regenerate_id(true); $_SESSION['csrf']=bin2hex(random_bytes(32));
+    ev_reset_session();
     ev_response(200,['ok'=>true,'csrf'=>$_SESSION['csrf']]);
   }
   if ($action === 'vehicle_add' || $action === 'vehicle_update') {

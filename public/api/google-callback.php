@@ -88,9 +88,7 @@ try {
     $s->execute([$userId,$sub]);
   }
   $db->commit();
-  session_regenerate_id(true);
-  $_SESSION['uid']=$userId;
-  $_SESSION['csrf']=bin2hex(random_bytes(32));
+  ev_sign_in($userId);
   header('Location: /account.html',true,303);exit;
 } catch (Throwable $e) {
   if(isset($db)&&$db->inTransaction())$db->rollBack();
