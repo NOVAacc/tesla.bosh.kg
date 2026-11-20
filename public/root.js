@@ -130,8 +130,10 @@ async function loadNetworks() {
     refresh.disabled = false;
   }
 }
-refresh.addEventListener('click', loadNetworks);
-loadCachedNetworks();
+if (refresh) {
+  refresh.addEventListener('click', loadNetworks);
+  loadCachedNetworks();
+}
 
 const feedbackTypes = {broken:'Не работает',incorrect_info:'Неверные данные',access:'Проблема доступа',other:'Другое'};
 const feedbackStatuses = {new:'Новое',reviewing:'В работе',resolved:'Решено',dismissed:'Отклонено'};
@@ -140,7 +142,8 @@ let feedbackRequest = 0;
 function feedbackCard(item) {
   const card = textElement('article','','card feedback-card');
   const top = textElement('div','','feedback-top');
-  top.append(textElement('strong', 'Обращение №'+item.id), textElement('span',feedbackStatuses[item.status] || item.status,'feedback-state'));
+  top.append(textElement('strong', 'Обращение №'+item.id), textElement('span',feedbackStatuses[item.status] || item.status,'feedback-state'),
+    textElement('span',Number(item.is_public) && item.status!=='dismissed'?'На карте':'Только в админке','feedback-state feedback-visibility'));
   card.append(top);
   const station = textElement('p', 'Станция: '+item.station_id,'feedback-station');
   const info = textElement('p', (feedbackTypes[item.feedback_type] || item.feedback_type) + ' · ' + (item.created_at || ''),'muted');
@@ -186,7 +189,9 @@ async function loadFeedback(page=1) {
     if(request===feedbackRequest)refresh.disabled=false;
   }
 }
+if (document.getElementById('refreshFeedback')) {
 document.getElementById('refreshFeedback').addEventListener('click',()=>loadFeedback(feedbackPageIndex));
 document.getElementById('feedbackPrev').addEventListener('click',()=>loadFeedback(Math.max(1,feedbackPageIndex-1)));
 document.getElementById('feedbackNext').addEventListener('click',()=>loadFeedback(feedbackPageIndex+1));
 loadFeedback();
+}

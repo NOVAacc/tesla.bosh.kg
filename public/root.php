@@ -13,8 +13,9 @@ $user = ev_user();
 session_write_close();
 $allowed = ev_root_access($user);
 if (!$allowed) http_response_code($user ? 403 : 401);
+$comments = ($_GET['page'] ?? null) === 'comments';
 $userCount = null;
-if ($allowed) {
+if ($allowed && !$comments) {
   try {
     $userCount = (int) ev_db()->query('SELECT COUNT(*) FROM users')->fetchColumn();
   } catch (Throwable $error) {
@@ -34,6 +35,11 @@ if ($allowed) {
   <nav><a href="/">Карта зарядок</a><a href="/account.html">Кабинет</a></nav>
   <h1>Панель управления</h1>
   <?php if ($allowed): ?>
+    <nav class="root-menu" aria-label="Разделы админки">
+      <a href="/root"<?= $comments ? '' : ' aria-current="page"' ?>>Дашборд</a>
+      <a href="/root?page=comments"<?= $comments ? ' aria-current="page"' : '' ?>>Комментарии</a>
+    </nav>
+    <?php if (!$comments): ?>
     <section class="card users" aria-labelledby="users">
       <h2 id="users">Пользователи в базе</h2>
       <p class="total"><?= $userCount === null ? 'Недоступно' : number_format($userCount, 0, ',', ' ') ?></p>
@@ -44,13 +50,15 @@ if ($allowed) {
       <p id="networkStatus" role="status"></p>
       <div class="networks" id="networkCards"></div>
     </section>
+    <?php else: ?>
     <section class="feedback-section" aria-labelledby="feedbackTitle">
       <div class="section-heading"><h2 id="feedbackTitle">Сообщения о станциях</h2><button id="refreshFeedback" type="button">Обновить</button></div>
-      <p class="note">Все обращения пользователей, новые сверху. Информация доступна только владельцу.</p>
+      <p class="note">Новые сообщения сверху. Метка показывает, виден ли текст на карте.</p>
       <p id="feedbackStatus" role="status" aria-live="polite">Загрузка сообщений…</p>
       <div id="feedbackCards" class="feedback-cards"></div>
       <div class="feedback-pages"><button id="feedbackPrev" type="button" disabled>Назад</button><span id="feedbackPage"></span><button id="feedbackNext" type="button" disabled>Вперёд</button></div>
     </section>
+    <?php endif; ?>
     <script src="/root.js?v=<?= hash_file('sha256', __DIR__.'/root.js') ?>" type="module"></script>
   <?php else: ?>
     <section class="card">

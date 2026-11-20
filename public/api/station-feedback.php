@@ -3,9 +3,29 @@ declare(strict_types=1);
 require_once __DIR__.'/account-bootstrap.php';
 header('Referrer-Policy: no-referrer');
 header('X-Frame-Options: DENY');
-if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') ev_response(405, ['error'=>'method_not_allowed']);
-ev_session();
+$method = $_SERVER['REQUEST_METHOD'] ?? '';
+if (!in_array($method, ['GET','POST'], true)) ev_response(405, ['error'=>'method_not_allowed']);
+
+function valid_feedback_station($id): bool {
+  return is_string($id) && strlen($id) <= 1024
+    && preg_match('/\A(?:spark|charge24|weway|evion):[^\p{Cc}]+\z/u', $id) === 1;
+}
+
 try {
+  if ($method === 'GET') {
+    $id = $_GET['stationId'] ?? null;
+    $before = filter_var($_GET['before'] ?? PHP_INT_MAX, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
+    if (!valid_feedback_station($id) || $before === false) ev_response(422, ['error'=>'invalid_feedback']);
+    $query = ev_db()->prepare("SELECT id, feedback_type, message, created_at FROM station_feedback
+      WHERE station_hash=UNHEX(SHA2(?,256)) AND is_public=1 AND status<>'dismissed' AND id<?
+      ORDER BY id DESC LIMIT 21");
+    $query->execute([$id,$before]);
+    $items = $query->fetchAll();
+    $hasMore = count($items) > 20;
+    if ($hasMore) array_pop($items);
+    ev_response(200, ['items'=>$items,'before'=>$hasMore ? (string)end($items)['id'] : null]);
+  }
+  ev_session();
   $user = ev_require_user();
   $body = ev_input();
   ev_csrf($body);
@@ -35,8 +55,8 @@ try {
       $db->rollBack();
       ev_response(429, ['error'=>'rate_limited','message'=>'Повторное сообщение можно отправить через 5 минут.']);
     }
-    $insert = $db->prepare("INSERT INTO station_feedback(user_id,station_hash,station_id,feedback_type,message) VALUES (?,UNHEX(SHA2(?,256)),?,?,?)");
-    $insert->execute([$user['id'],$id,$id,$type,$message]);
+    $insert = $db->prepare("INSERT INTO station_feedback(user_id,station_hash,station_id,feedback_type,message,is_public) VALUES (?,UNHEX(SHA2(?,256)),?,?,?,?)");
+    $insert->execute([$user['id'],$id,$id,$type,$message,(int)(($body['public'] ?? false) === true)]);
     $feedbackId = (int)$db->lastInsertId();
     $db->commit();
     ev_response(201, ['ok'=>true,'id'=>$feedbackId,'status'=>'new']);

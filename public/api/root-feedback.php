@@ -23,7 +23,7 @@ try {
     throw $error;
   }
   $offset = ($page - 1) * $perPage;
-  $q = $db->prepare('SELECT f.id,f.station_id,f.feedback_type,f.message,f.status,f.created_at,
+  $q = $db->prepare('SELECT f.id,f.station_id,f.feedback_type,f.message,f.status,f.created_at,f.is_public,
       u.email, u.display_name
       FROM station_feedback f
       INNER JOIN users u ON u.id=f.user_id

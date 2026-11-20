@@ -7,21 +7,66 @@
 a{color:inherit}label{display:block;margin:18px 0 8px;font-weight:600}select,textarea{width:100%;padding:12px;border:1px solid #ccc;border-radius:12px;background:#fff;font:inherit}
 textarea{min-height:130px;resize:vertical}button{margin-top:20px;border:0;border-radius:100px;padding:14px 24px;background:#181818;color:white;font:inherit;cursor:pointer;width:100%}button:disabled{opacity:.5}
 p{line-height:1.5;color:#555;overflow-wrap:anywhere}#status{min-height:25px}h1{font-size:25px;letter-spacing:-.04em}
-</style></head><body><main><a href="/">← К карте зарядок</a><h1>Сообщить о станции</h1>
+body.embedded{padding:0;background:#fff}.embedded main{margin:0;max-width:none;padding:16px}.embedded .back-link,.embedded h1{display:none}
+.comment-list{display:grid;gap:6px}.comment{border-radius:10px;background:#f4f4f4;padding:8px 10px}.comment p{margin:3px 0 0;font-size:13px;white-space:pre-wrap}.comment small{color:#505050}.comment-title{font-size:17px;margin:0 0 8px}
+.comment-option{display:flex;gap:8px;align-items:center;font-size:14px}.comment-note{font-size:13px;margin:0}.comment-more{margin:8px 0;width:auto;padding:7px 12px;background:#ececec;color:#171717;font-size:13px}
+</style></head><body><main><a class="back-link" href="/" target="_top">← К карте зарядок</a><h1>Комментарии к станции</h1>
 <p id="stationLabel">Выберите станцию на карте, чтобы сообщить о проблеме.</p>
+<section aria-labelledby="commentTitle">
+<h2 class="comment-title" id="commentTitle">Комментарии</h2>
+<p id="commentStatus" class="comment-note" role="status"></p>
+<div class="comment-list" id="comments"></div>
+<button class="comment-more" id="moreComments" type="button" hidden>Показать ещё</button>
+</section>
 <form id="feedback" hidden>
 <label for="type">Что случилось?</label>
 <select id="type" required><option value="broken">Зарядка не работает</option><option value="incorrect_info">Неверные данные</option><option value="access">Проблема с доступом</option><option value="other">Другое</option></select>
 <label for="message">Подробности</label>
 <textarea id="message" maxlength="1000" minlength="10" required placeholder="Опишите проблему (не менее 10 символов)"></textarea>
+<label class="comment-option"><input type="checkbox" id="publicComment" checked> Опубликовать на карте</label>
+<p class="comment-note">Публично видны текст, категория и время отправки. Снимите галочку, чтобы отправить сообщение только администратору.</p>
 <button type="submit">Отправить сообщение</button>
 </form><p id="status" role="status"></p>
 </main><script>
 (async()=>{
  const form=document.getElementById('feedback'),status=document.getElementById('status'),label=document.getElementById('stationLabel');
- const stationId=new URLSearchParams(location.search).get('stationId');
+ const params=new URLSearchParams(location.search);
+ if(params.get('embed')==='1')document.body.classList.add('embedded');
+ const stationId=params.get('stationId');
  if(!stationId||stationId.length>1024||!/^(spark|charge24|weway|evion):[^\x00-\x1F\x7F]+$/u.test(stationId)){status.textContent='Откройте карточку станции на карте.';return}
- label.textContent='Станция: '+stationId;
+ label.textContent=params.get('name')||'Станция: '+stationId;
+ const comments=document.getElementById('comments'),more=document.getElementById('moreComments'),commentStatus=document.getElementById('commentStatus');
+ const categories={broken:'Не работает',incorrect_info:'Неверные данные',access:'Проблема доступа',other:'Комментарий'};
+ let before=null, commentRequest=0;
+ async function loadComments(append=false){
+  const request=++commentRequest;
+  more.disabled=true;
+  commentStatus.textContent='Загружаем комментарии…';
+  try{
+   const query=new URLSearchParams({stationId});
+   if(append&&before)query.set('before',before);
+   const response=await fetch('/api/station-feedback.php?'+query,{cache:'no-store'});
+   if(!response.ok)throw Error();
+   const result=await response.json();
+   if(request!==commentRequest)return;
+   if(!append)comments.replaceChildren();
+   for(const item of result.items){
+    const card=document.createElement('article'),meta=document.createElement('small'),message=document.createElement('p');
+    card.className='comment';
+    meta.textContent=(categories[item.feedback_type]??'Комментарий')+' · '+item.created_at;
+    message.textContent=item.message;
+    card.append(meta,message);
+    comments.append(card);
+   }
+   before=result.before;
+   more.hidden=!before;
+   commentStatus.textContent=comments.childElementCount?'':'Пока нет публичных комментариев.';
+  }catch{
+   if(request===commentRequest)commentStatus.textContent='Не удалось загрузить комментарии.';
+  }finally{if(request===commentRequest)more.disabled=false}
+ }
+ more.addEventListener('click',()=>loadComments(true));
+ loadComments();
  let account;
  try{
   const response=await fetch('/api/account.php?action=me',{cache:'no-store'});
@@ -29,7 +74,7 @@ p{line-height:1.5;color:#555;overflow-wrap:anywhere}#status{min-height:25px}h1{f
   account=await response.json();
  }catch{status.textContent='Не удалось проверить авторизацию.';return}
  if(!account.user){
-  const link=document.createElement('a');link.href='/account.html';link.textContent='Войдите в аккаунт, чтобы отправить сообщение.';
+  const link=document.createElement('a');link.href='/account.html';link.target='_top';link.textContent='Войдите в аккаунт, чтобы отправить сообщение.';
   status.append(link);return;
  }
  form.hidden=false;
@@ -38,9 +83,9 @@ p{line-height:1.5;color:#555;overflow-wrap:anywhere}#status{min-height:25px}h1{f
   if(!form.reportValidity())return;
   const button=form.querySelector('button');button.disabled=true;status.textContent='Отправляем…';
   try{
-   const response=await fetch('/api/station-feedback.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csrf:account.csrf,stationId,type:document.getElementById('type').value,message:document.getElementById('message').value})});
+   const response=await fetch('/api/station-feedback.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csrf:account.csrf,stationId,type:document.getElementById('type').value,public:document.getElementById('publicComment').checked,message:document.getElementById('message').value})});
    const result=await response.json();
-   if(response.status===201&&result.ok===true&&Number.isInteger(result.id)){status.textContent='Сообщение №'+result.id+' сохранено. Спасибо!';form.hidden=true;return}
+   if(response.status===201&&result.ok===true&&Number.isInteger(result.id)){status.textContent='Сообщение №'+result.id+' сохранено. Спасибо!';form.reset();loadComments();return}
    status.textContent=result.message||({
     unauthorized:'Войдите снова, чтобы отправить сообщение.',
     invalid_csrf:'Сессия изменилась. Обновите страницу и повторите отправку.',
