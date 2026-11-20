@@ -11,6 +11,13 @@ $action = $_GET['action'] ?? 'me';
 try {
   if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
     if ($action === 'me') ev_response(200,['user'=>ev_user(),'csrf'=>$_SESSION['csrf']]);
+    if ($action === 'station_favorites') {
+      $user = ev_user();
+      if (!$user) ev_response(200,['signedIn'=>false]);
+      $query = ev_db()->prepare('SELECT station_id FROM user_station_favorites WHERE user_id=?');
+      $query->execute([$user['id']]);
+      ev_response(200,['signedIn'=>true,'csrf'=>$_SESSION['csrf'],'stations'=>$query->fetchAll(PDO::FETCH_COLUMN)]);
+    }
     if ($action === 'map_preferences') {
       $user = ev_user();
       if (!$user) ev_response(200,['signedIn'=>false]);
@@ -63,7 +70,25 @@ try {
     }
     ev_response(404,['error'=>'unknown_action']);
   }
-  $data=ev_input(); ev_csrf($data);
+  $data=ev_input();
+  if ($action === 'station_favorites') {
+    $user = ev_require_user();
+    ev_csrf($data);
+    $id = $data['stationId'] ?? null;
+    $favorite = $data['favorite'] ?? null;
+    if (!is_string($id) || strlen($id)>1024 || !preg_match('/\A(?:spark|charge24|weway|evion):[^\p{Cc}]+\z/u',$id) || !is_bool($favorite)) {
+      ev_response(422,['error'=>'invalid_favorite']);
+    }
+    $db = ev_db();
+    $query = $favorite
+      ? $db->prepare('INSERT INTO user_station_favorites (user_id,station_hash,station_id) VALUES (?,UNHEX(SHA2(?,256)),?) ON DUPLICATE KEY UPDATE station_id=VALUES(station_id)')
+      : $db->prepare('DELETE FROM user_station_favorites WHERE user_id=? AND station_hash=UNHEX(SHA2(?,256))');
+    $params = [$user['id'],$id];
+    if ($favorite) $params[] = $id;
+    $query->execute($params);
+    ev_response(200,['favorite'=>$favorite]);
+  }
+  ev_csrf($data);
   if ($action === 'map_preferences') {
     $user = ev_require_user();
     if (isset($data['automatic']) && is_bool($data['automatic']) && !array_key_exists('filters',$data)) {

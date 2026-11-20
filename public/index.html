@@ -154,6 +154,12 @@
 #filterSearch{margin-bottom:10px;min-height:44px}
 @media(max-width:850px){.connector-preference-note,.filter-save-error{display:block;margin:6px 0}}
 .connector-preference-note[hidden],.filter-save-error[hidden]{display:none}
+.station-favorite-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.station-favorite-button{display:grid;place-items:center;flex:none;width:44px;height:44px;padding:0;border:1px solid #e5e5e5;border-radius:50%;background:#f5f5f5;color:#292929;cursor:pointer;font:25px/1 system-ui,sans-serif}
+.station-favorite-button[aria-pressed=true]{color:#a32240;background:#fff0f3}
+.station-favorite-button:disabled{opacity:.6;cursor:wait}
+.station-favorite-message{font-size:13px;margin-top:6px;color:#414141}
+.station-favorite-message a{font-weight:650}
 </style></head><body><div class="app"><div class="toolbar"><div class="top"><div class="brand"><h1>Зарядные станции Кыргызстана</h1><div class="sub">Единая карта SPARK KG, Charge24, WeWay и EVION</div></div><div class="actions"><button class="chip" id="desktopList" type="button" aria-pressed="false">Списком</button><a class="chip" href="/account.html" style="text-decoration:none;display:inline-flex;align-items:center">Кабинет</a><button class="chip" id="refresh" type="button">↻ Обновить данные</button><button class="chip" id="reset" type="button">Сбросить фильтры</button></div></div><div class="filters" role="group" aria-label="Фильтры зарядных станций"><div class="filter-group">
 <h3 class="filter-heading">Операторы</h3>
 <div class="filter-group filter-networks"><button class="chip" id="spark" type="button" aria-pressed="true">SPARK KG</button><button class="chip" id="charge24" type="button" aria-pressed="true">Charge24</button><button class="chip" id="weway" type="button" aria-pressed="true">WeWay</button><button class="chip" id="evion" type="button" aria-pressed="true">EVION</button></div>
@@ -171,7 +177,7 @@
 <label class="filter-row"><span>Станция</span><select class="control" id="station" aria-label="Состояние устройства"><option value="all">Любые станции</option><option value="active">Только активные</option><option value="inactive">Неактивные / заблокированные</option></select></label>
 <label class="filter-row"><span>Статус порта</span><select class="control" id="portstatus" aria-label="Статус порта"><option value="all">Любой статус порта</option><option value="AVAILABLE">Свободен</option><option value="OCCUPIED">Занят / зарядка</option><option value="FAULTED">Неисправен</option><option value="UNAVAILABLE">Недоступен</option><option value="FINISHING">Завершение</option><option value="PREPARING">Подключение</option><option value="UNKNOWN">Неизвестный статус</option></select></label>
 <label class="filter-row"><span>Дополнительно</span><select class="control" id="extras" aria-label="Дополнительный фильтр"><option value="all">Без доп. условий</option><option value="pending">Ожидает подключения</option><option value="finished">Зарядка завершена</option><option value="percentage">Показан % заряда</option></select></label>
-</div></div><div class="summary" id="summary">Загрузка данных…</div></div><div class="main"><div id="map"></div><section class="station-list-view" id="stationListView" aria-label="Зарядные станции списком" aria-hidden="true"><div class="nearby-header"><h2 class="nearby-title">Зарядные станции рядом</h2><div class="nearby-location" id="nearbyLocation">Для сортировки по расстоянию разрешите определение местоположения.</div></div><div class="nearby-content" id="nearbyContent"></div></section><section class="station-panel" id="stationPanel" aria-label="Информация о выбранной зарядной станции" aria-hidden="true"><div class="station-grip" aria-hidden="true"></div><div class="station-panel-header"><div class="station-headings"><div class="station-operator" id="stationOperator"></div><h2 class="station-name" id="stationName"></h2><div class="station-address" id="stationAddress"></div></div><button type="button" id="closeStation" class="station-dismiss" aria-label="Закрыть карточку станции">×</button></div><div class="station-panel-body" id="stationPanelBody"></div></section><div class="status" id="status">Получение данных…</div><button class="mobile-map-refresh" id="mobileRefresh" type="button" aria-label="Обновить станции">↻</button><div class="mobile-shade" id="mobileShade" aria-hidden="true"></div><section class="mobile-sheet" id="searchSheet" aria-label="Поиск станций" aria-hidden="true"><div class="sheet-head"><strong>Поиск станций</strong><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть поиск">×</button></div><div class="sheet-content"><div id="mobileSearchSlot"></div><div id="searchResults" class="search-results"></div></div></section><section class="mobile-sheet" id="filterSheet" aria-label="Фильтры станций" aria-hidden="true"><div class="sheet-head"><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть фильтры">‹</button><strong>Фильтры</strong><button class="chip" id="applyFilters" type="button">Готово</button></div><div class="sheet-content"><button class="chip" id="filterSearch" type="button">Поиск по названию или адресу</button><div id="mobileFilterSlot"></div></div><div class="sheet-actions"><button class="chip" id="mobileReset" type="button">Сбросить</button></div></section></div><nav class="mobile-nav" aria-label="Панель карты">
+</div></div><div class="summary" id="summary">Загрузка данных…</div></div><div class="main"><div id="map"></div><section class="station-list-view" id="stationListView" aria-label="Зарядные станции списком" aria-hidden="true"><div class="nearby-header"><h2 class="nearby-title">Зарядные станции рядом</h2><div class="nearby-location" id="nearbyLocation">Для сортировки по расстоянию разрешите определение местоположения.</div></div><div class="nearby-content" id="nearbyContent"></div></section><section class="station-panel" id="stationPanel" aria-label="Информация о выбранной зарядной станции" aria-hidden="true"><div class="station-grip" aria-hidden="true"></div><div class="station-panel-header"><div class="station-headings"><div class="station-operator" id="stationOperator"></div><div class="station-favorite-header"><h2 class="station-name" id="stationName"></h2><span id="mobileFavorite"></span></div><div class="station-address" id="stationAddress"></div><div class="station-favorite-message" id="mobileFavoriteMessage" role="status"></div></div><button type="button" id="closeStation" class="station-dismiss" aria-label="Закрыть карточку станции">×</button></div><div class="station-panel-body" id="stationPanelBody"></div></section><div class="status" id="status">Получение данных…</div><button class="mobile-map-refresh" id="mobileRefresh" type="button" aria-label="Обновить станции">↻</button><div class="mobile-shade" id="mobileShade" aria-hidden="true"></div><section class="mobile-sheet" id="searchSheet" aria-label="Поиск станций" aria-hidden="true"><div class="sheet-head"><strong>Поиск станций</strong><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть поиск">×</button></div><div class="sheet-content"><div id="mobileSearchSlot"></div><div id="searchResults" class="search-results"></div></div></section><section class="mobile-sheet" id="filterSheet" aria-label="Фильтры станций" aria-hidden="true"><div class="sheet-head"><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть фильтры">‹</button><strong>Фильтры</strong><button class="chip" id="applyFilters" type="button">Готово</button></div><div class="sheet-content"><button class="chip" id="filterSearch" type="button">Поиск по названию или адресу</button><div id="mobileFilterSlot"></div></div><div class="sheet-actions"><button class="chip" id="mobileReset" type="button">Сбросить</button></div></section></div><nav class="mobile-nav" aria-label="Панель карты">
   <div class="mobile-view-switch" role="group" aria-label="Вид зарядных станций">
     <button class="mobile-tab" data-mobile-tab="map" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 10-7 10s-7-5-7-10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg><span>Карта</span></button>
     <button class="mobile-tab" data-mobile-tab="list" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h14"/></svg><span>Списком</span></button>
@@ -292,9 +298,80 @@ function tariffText(t){
   const basis=t.type==='PER_E'?'/кВт·ч':t.type==='PER_T'?'/мин':'';
   return Number(t.amount).toLocaleString('ru-RU')+' '+esc(currency)+esc(basis);
 }
+const favoritesUrl='/api/account.php?action=station_favorites';
+const favoriteStations=new Set(),favoriteWrites=new Set();
+let favoriteAccount=null,favoriteLoad=null;
+let favoriteMessage=null;
+async function loadStationFavorites(){
+ if(favoriteLoad)return favoriteLoad;
+ favoriteLoad=(async()=>{
+  const response=await fetch(favoritesUrl,{cache:'no-store'});
+  if(!response.ok)throw Error('Favorites unavailable');
+  const account=await response.json();
+  favoriteAccount=account;
+  favoriteStations.clear();
+  for(const id of account.stations??[])favoriteStations.add(id);
+  syncFavoriteControls();
+ })();
+ try{await favoriteLoad}finally{favoriteLoad=null}
+}
+function favoriteButton(id){
+ const saved=favoriteStations.has(id);
+ return `<button type="button" class="station-favorite-button" data-favorite-station="${esc(id)}" aria-label="Избранная станция" aria-pressed="${saved}" ${favoriteWrites.has(id)?'disabled':''}>${saved?'♥':'♡'}</button>`;
+}
+function favoriteNotice(id){
+ if(id!==favoriteMessage?.id)return '';
+ return favoriteMessage.signIn?'<a href="/account.html">Войдите</a>, чтобы сохранить станцию.':'Не удалось сохранить избранное. Попробуйте ещё раз.';
+}
+function syncFavoriteControls(){
+ for(const button of document.querySelectorAll('[data-favorite-station]')){
+  const id=button.dataset.favoriteStation,saved=favoriteStations.has(id);
+  button.textContent=saved?'♥':'♡';
+  button.setAttribute('aria-pressed',String(saved));
+  button.disabled=favoriteWrites.has(id);
+ }
+ for(const status of document.querySelectorAll('[data-favorite-status]')){
+  status.innerHTML=favoriteNotice(status.dataset.favoriteStatus);
+ }
+}
+document.addEventListener('click',async event=>{
+ const button=event.target.closest('[data-favorite-station]');
+ if(!button)return;
+ const id=button.dataset.favoriteStation;
+ if(favoriteWrites.has(id))return;
+ favoriteWrites.add(id);
+ favoriteMessage=null;
+ syncFavoriteControls();
+ try{
+  if(!favoriteAccount||favoriteLoad)await loadStationFavorites();
+  if(!favoriteAccount.signedIn){
+   favoriteMessage={id,signIn:true};
+   return;
+  }
+  const favorite=!favoriteStations.has(id);
+  const response=await fetch(favoritesUrl,{
+   method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({csrf:favoriteAccount.csrf,stationId:id,favorite})
+  });
+  if(response.status===401){
+   favoriteAccount=null;
+   favoriteStations.clear();
+   favoriteMessage={id,signIn:true};
+   return;
+  }
+  if(!response.ok)throw Error('Favorites unavailable');
+  if(favorite)favoriteStations.add(id);
+  else favoriteStations.delete(id);
+ }catch{
+  favoriteMessage={id,signIn:false};
+ }finally{
+  favoriteWrites.delete(id);
+  syncFavoriteControls();
+ }
+});
 function popup(s){
   let p=flatten(s),available=p.filter(isFree).length;
-  let html=`<strong>${esc(s.name)}</strong><div>${esc(s.address||'Адрес не указан')}</div><div class="muted">${esc(s.operator)} · ${available} из ${p.length} портов доступны</div>`;if(s.restricted)html+='<div class="spark-detail-note">Ограниченный доступ к станции</div>';if(s.operator==='Charge24'&&s.price!==undefined&&s.price!==null&&s.price!=='')html+=`<div class="muted">Стоимость: ${esc(s.price)} сом (данные Charge24)</div>`;
+  let html=`<div class="station-favorite-header"><strong>${esc(s.name)}</strong>${favoriteButton(s.id)}</div><div class="station-favorite-message" data-favorite-status="${esc(s.id)}" role="status">${favoriteNotice(s.id)}</div><div>${esc(s.address||'Адрес не указан')}</div><div class="muted">${esc(s.operator)} · ${available} из ${p.length} портов доступны</div>`;if(s.restricted)html+='<div class="spark-detail-note">Ограниченный доступ к станции</div>';if(s.operator==='Charge24'&&s.price!==undefined&&s.price!==null&&s.price!=='')html+=`<div class="muted">Стоимость: ${esc(s.price)} сом (данные Charge24)</div>`;
   for(const d of s.devices||[s]){
     const unresolvedTypes=(d.supportedConnectorTypes||[]).filter(t=>!(d.connectors||[]).some(c=>type(c)===t));
     html+=`<div class="device"><b>${esc(d.name)}</b>${unresolvedTypes.length?' · <small>На устройстве: '+esc(unresolvedTypes.join(', '))+' (порт не определён)</small>':''}<span class="muted"> · ${esc(current(d)||'?')} ${power(d)??'?'} кВт${power(d)&&!d.powerKw?' (по названию)':''}${!active(d)?' · неактивна':''}</span><div>`;
@@ -398,6 +475,10 @@ function openStationPanel(site){
  closeStationPanel();
  closeSheet();
  selectedStation=site;
+ $('mobileFavorite').innerHTML=favoriteButton(site.id);
+ const favoriteStatus=$('mobileFavoriteMessage');
+ favoriteStatus.dataset.favoriteStatus=site.id;
+ favoriteStatus.innerHTML=favoriteNotice(site.id);
  renderStationPanel();
  $('stationPanelBody').scrollTop=0;
  $('stationPanel').classList.add('is-open');
@@ -665,6 +746,13 @@ const initialPanel=new URLSearchParams(window.location.search).get('panel');
 if(initialPanel==='list')setListMode(true);
 if(initialPanel==='search'||initialPanel==='filters')openSheet(initialPanel);
 loadMapPreferences();
-window.addEventListener('pageshow',event=>{if(event.persisted)loadMapPreferences()});
+loadStationFavorites().catch(()=>{});
+window.addEventListener('pageshow',event=>{
+ if(event.persisted){
+  loadMapPreferences();
+  favoriteAccount=null;
+  loadStationFavorites().catch(()=>{});
+ }
+});
 refresh();
 </script></body></html>
