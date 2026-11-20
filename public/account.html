@@ -23,9 +23,15 @@ main { padding-block: 32px 48px; }
 .card { min-width: 0; padding: clamp(18px, 3vw, 28px); background: #fff; border-radius: 30px; }
 .card h2 { font-size: clamp(21px, 3vw, 28px); font-weight: 550; line-height: 1.1; margin: 0; letter-spacing: -.045em; overflow-wrap: anywhere; }
 .card p, .notice { color: #505050; font-size: 14px; line-height: 1.5; }
-.profile { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.profile p { margin: 5px 0 10px; overflow-wrap: anywhere; }
-.profile button { flex: none; }
+.header-end { display: flex; align-items: center; gap: 12px; }
+.account-menu { position: relative; z-index: 2; }
+.account-avatar { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: #f8f8f8; color: #171717; font-size: 15px; font-weight: 650; list-style: none; }
+.account-avatar::-webkit-details-marker { display: none; }
+.account-menu[open] .account-avatar { background: #171717; color: #fff; }
+.account-panel { position: absolute; top: calc(100% + 8px); right: 0; width: min(290px, calc(100vw - 28px)); border: 1px solid #ebebeb; border-radius: 22px; padding: 18px; background: #fff; box-shadow: 0 12px 32px #0002; }
+.account-panel h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
+.account-panel p { margin: 6px 0 10px; color: #505050; font-size: 14px; overflow-wrap: anywhere; }
+.account-panel button { display: block; width: 100%; margin-top: 14px; }
 .garage { grid-row: span 2; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 #vehicleCount { margin: 8px 0 14px; }
@@ -72,13 +78,23 @@ input, select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px s
   .card { border-radius: 26px; }
 }
 </style></head><body>
-<header><a class="back" href="/" aria-label="Вернуться к карте">←</a><strong>EV Карта</strong></header>
+<header><a class="back" href="/" aria-label="Вернуться к карте">←</a><div class="header-end"><strong>EV Карта</strong>
+  <details id="accountMenu" class="account-menu hidden">
+    <summary id="accountAvatar" class="account-avatar" aria-label="Мой профиль"><span id="accountInitials" aria-hidden="true"></span></summary>
+    <div class="account-panel">
+      <h2 id="displayName">Мой профиль</h2>
+      <p id="userEmail"></p>
+      <span id="roleBadge" class="pill">Пользователь</span>
+      <button type="button" class="secondary" id="logout">Выйти</button>
+      <p id="logoutMsg" class="message" role="status"></p>
+    </div>
+  </details>
+</div></header>
 <main><h1 class="heading">Личный кабинет</h1>
 <div id="guest" class="grid">
 <section class="card"><h2>Войти</h2><p>Продолжите с Google. Новый аккаунт создаётся автоматически при первом входе.</p><a class="google-link" href="/api/google-start.php"><svg width="19" height="19" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.27 5.48-4.79 7.18l7.73 6C44.39 38.03 46.98 31.89 46.98 24.55z"/><path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.2A23.9 23.9 0 0 0 0 24c0 3.87.92 7.53 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.88-5.8l-7.73-6c-2.15 1.45-4.92 2.3-8.15 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Продолжить с Google</a><details><summary>Вход по паролю для существующих пользователей</summary><form id="login"><label for="email">Электронная почта</label><input id="email" type="email" autocomplete="username" required maxlength="254"><label for="password">Пароль</label><input id="password" type="password" autocomplete="current-password" required><div class="buttons"><button type="submit">Войти</button></div><div id="loginMsg" class="message" role="status" aria-live="polite"></div></form></details></section>
 </div>
 <div id="authenticated" class="grid hidden">
-<section class="card profile"><div><h2 id="displayName">Мой профиль</h2><p id="userEmail"></p><span id="roleBadge" class="pill">Пользователь</span></div><button type="button" class="secondary" id="logout">Выйти</button></section>
 <section class="card garage"><div class="section-heading"><h2>Мои автомобили</h2><button id="vehicleAdd" type="button" class="round hidden" aria-label="Добавить автомобиль" aria-controls="vehicleForm" aria-expanded="false">+</button></div><p id="vehicleCount" role="status"></p><div id="vehicleList"><p>Загрузка…</p></div><form id="vehicleForm" class="hidden"><label for="make">Марка</label><select id="make" required disabled><option value="">Загрузка марок…</option></select><label for="model">Модель</label><select id="model" required disabled><option value="">Сначала выберите марку</option></select><label for="year">Год выпуска</label><input id="year" type="number" min="1990" max="2100" placeholder="2022"><fieldset class="vehicle-connectors" aria-describedby="connectorHint"><legend>Разъёмы</legend><p id="connectorHint">Отметьте разъёмы автомобиля и переходников.</p><div><label><input type="checkbox" name="connectors" value="CCS2">CCS2</label><label><input type="checkbox" name="connectors" value="GB/T">GB/T</label><label><input type="checkbox" name="connectors" value="NACS">NACS</label><label><input type="checkbox" name="connectors" value="Type2">Type 2</label><label><input type="checkbox" name="connectors" value="CHAdeMO">CHAdeMO</label></div></fieldset><div class="buttons"><button id="vehicleSubmit" type="submit" disabled>Добавить автомобиль</button><button id="vehicleCancel" type="button" class="secondary">Отмена</button></div></form><div id="vehicleMsg" class="message" role="status"></div></section>
 <section class="card"><h2>Разместить EV-компанию</h2><p>Подайте заявку на добавление автосервиса, магазина или автосалона. Компания появится в каталоге только после модерации.</p><form id="businessForm"><label for="businessName">Название компании</label><input id="businessName" required maxlength="150"><label for="businessCategory">Категория</label><select id="businessCategory" required><option value="">Загрузка категорий…</option></select><div class="buttons"><button type="submit">Отправить заявку</button></div><div id="businessMsg" class="message" role="status"></div></form></section>
 <section class="card"><h2>Единый кошелёк</h2><div class="notice">Платежи и баланс ещё не запущены. Мы не принимаем пополнения до подключения лицензированного платёжного партнёра.</div></section>
@@ -104,7 +120,27 @@ async function api(action,data){
  if(!response.ok)throw Object.assign(new Error(body.message||({invalid_credentials:'Неверная почта или пароль',email_not_verified:'Почта ещё не подтверждена',try_later:'Слишком много попыток. Попробуйте позже',unauthorized:'Сначала войдите',service_unavailable:'Сервис временно недоступен'}[body.error]||body.error||'Ошибка запроса')),{code:body.error});
  return body;
 }
-function showUser(u){$('guest').classList.toggle('hidden',!!u);$('authenticated').classList.toggle('hidden',!u);if(u){$('displayName').textContent=u.display_name||'Мой профиль';$('userEmail').textContent=u.email;$('roleBadge').textContent=({user:'Пользователь',business:'Компания',admin:'Администратор'})[u.role]||'Пользователь';}}
+const accountMenu=$('accountMenu');
+function showUser(u){
+ $('guest').classList.toggle('hidden',!!u);
+ $('authenticated').classList.toggle('hidden',!u);
+ accountMenu.classList.toggle('hidden',!u);
+ accountMenu.open=false;
+ $('displayName').textContent=u?.display_name||'Мой профиль';
+ $('userEmail').textContent=u?.email||'';
+ $('roleBadge').textContent=({user:'Пользователь',business:'Компания',admin:'Администратор'})[u?.role]||'Пользователь';
+ const name=u?.display_name?.trim()||u?.email||'';
+ $('accountInitials').textContent=name.split(/\s+/).slice(0,2).map(part=>Array.from(part)[0]||'').join('').toUpperCase();
+}
+document.addEventListener('click',e=>{
+ if(accountMenu.open&&!accountMenu.contains(e.target))accountMenu.open=false;
+});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&accountMenu.open){
+  accountMenu.open=false;
+  $('accountAvatar').focus();
+ }
+});
 let vehicleMakes=[];
 let savingVehicle=false;
 let editingVehicle=null;
@@ -207,7 +243,7 @@ async function loadVehicles(){
 }
 async function boot(){try{const r=await api('me');csrf=r.csrf;showUser(r.user);if(r.user)await loadVehicles();const {categories}=await api('categories');const s=$('businessCategory');s.replaceChildren();for(const c of categories){const o=document.createElement('option');o.value=String(c.id);o.textContent=c.name_ru;s.append(o);}}catch(e){$('globalMsg').textContent='Не удалось загрузить кабинет: '+e.message;}}
 $('login').addEventListener('submit',async e=>{e.preventDefault();$('loginMsg').textContent='';try{const r=await api('login',{email:$('email').value,password:$('password').value});csrf=r.csrf;$('password').value='';showUser(r.user);await loadVehicles();}catch(err){$('loginMsg').textContent=err.message;}});
-$('logout').addEventListener('click',async()=>{try{const r=await api('logout',{});csrf=r.csrf;showUser(null);vehicleLimitReached=false;closeVehicleForm();$('vehicleMsg').textContent='';$('password').value='';}catch(err){$('globalMsg').textContent=err.message;}});
+$('logout').addEventListener('click',async()=>{$('logoutMsg').textContent='';try{const r=await api('logout',{});csrf=r.csrf;showUser(null);vehicleLimitReached=false;closeVehicleForm();$('vehicleMsg').textContent='';$('password').value='';document.querySelector('.google-link').focus();}catch(err){$('logoutMsg').textContent=err.message;}});
 $('vehicleForm').addEventListener('submit',async e=>{
  e.preventDefault();
  if(savingVehicle||$('vehicleSubmit').disabled)return;
