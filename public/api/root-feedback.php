@@ -1,0 +1,34 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__.'/root-access.php';
+header('Referrer-Policy: no-referrer');
+header('X-Frame-Options: DENY');
+header('X-Robots-Tag: noindex, nofollow');
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') ev_response(405, ['error'=>'method_not_allowed']);
+ev_session();
+try {
+  if (!ev_root_access(ev_user())) ev_response(403, ['error'=>'forbidden']);
+  session_write_close();
+  $page = filter_var($_GET['page'] ?? '1', FILTER_VALIDATE_INT, ['options'=>['min_range'=>1,'max_range'=>1000000]]);
+  if ($page === false) ev_response(422, ['error'=>'invalid_page']);
+  $perPage = 30;
+  $db = ev_db();
+  // The report table is created by the feedback endpoint on the first successful submission.
+  // If there are no submissions yet, do not expose SQL errors in the admin UI.
+  $table = $db->query("SHOW TABLES LIKE 'station_feedback'")->fetchColumn();
+  if (!$table) ev_response(200, ['items'=>[], 'total'=>0, 'page'=>1, 'perPage'=>$perPage]);
+  $total = (int)$db->query('SELECT COUNT(*) FROM station_feedback')->fetchColumn();
+  $offset = ($page - 1) * $perPage;
+  $q = $db->prepare('SELECT f.id,f.station_id,f.feedback_type,f.message,f.status,f.created_at,
+      u.email, u.display_name
+      FROM station_feedback f
+      INNER JOIN users u ON u.id=f.user_id
+      ORDER BY f.created_at DESC, f.id DESC LIMIT :take OFFSET :skip');
+  $q->bindValue(':take', $perPage, PDO::PARAM_INT);
+  $q->bindValue(':skip', $offset, PDO::PARAM_INT);
+  $q->execute();
+  ev_response(200, ['items'=>$q->fetchAll(), 'total'=>$total, 'page'=>$page, 'perPage'=>$perPage]);
+} catch (Throwable $error) {
+  error_log('EV root feedback error: '.$error->getMessage());
+  ev_response(503, ['error'=>'service_unavailable']);
+}

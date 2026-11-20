@@ -44,6 +44,13 @@ if ($allowed) {
       <p id="networkStatus" role="status"></p>
       <div class="networks" id="networkCards"></div>
     </section>
+    <section class="feedback-section" aria-labelledby="feedbackTitle">
+      <div class="section-heading"><h2 id="feedbackTitle">Сообщения о станциях</h2><button id="refreshFeedback" type="button">Обновить</button></div>
+      <p class="note">Все обращения пользователей, новые сверху. Информация доступна только владельцу.</p>
+      <p id="feedbackStatus" role="status" aria-live="polite">Загрузка сообщений…</p>
+      <div id="feedbackCards" class="feedback-cards"></div>
+      <div class="feedback-pages"><button id="feedbackPrev" type="button" disabled>Назад</button><span id="feedbackPage"></span><button id="feedbackNext" type="button" disabled>Вперёд</button></div>
+    </section>
     <script src="/root.js" type="module"></script>
   <?php else: ?>
     <section class="card">
