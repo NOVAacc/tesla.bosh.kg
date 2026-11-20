@@ -6,7 +6,8 @@ header('Referrer-Policy: no-referrer');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 function oauth_fail(string $reason): never {
-  header('Location: /account.html?auth_error='.rawurlencode($reason),true,303);
+  global $returnToRoot;
+  header('Location: '.($returnToRoot?'/root':'/account.html').'?auth_error='.rawurlencode($reason),true,303);
   exit;
 }
 function oauth_post_json(string $url,array $params): array {
@@ -35,6 +36,7 @@ $pending=$_SESSION['google_oauth']??null;
 unset($_SESSION['google_oauth']); // Single-use OAuth state; replay cannot sign in.
 if (!is_array($pending)||time()-(int)($pending['created']??0)>600||time()<(int)($pending['created']??0)
     ||!isset($_GET['state'])||!is_string($_GET['state'])||!hash_equals((string)$pending['state'],$_GET['state'])) oauth_fail('expired');
+$returnToRoot=($pending['returnToRoot']??false)===true;
 if (isset($_GET['error'])) oauth_fail('cancelled');
 $code=$_GET['code']??null;
 if (!is_string($code)||$code===''||strlen($code)>4096) oauth_fail('invalid_response');
@@ -89,7 +91,7 @@ try {
   }
   $db->commit();
   ev_sign_in($userId);
-  header('Location: /account.html',true,303);exit;
+  header('Location: '.($returnToRoot?'/root':'/account.html'),true,303);exit;
 } catch (Throwable $e) {
   if(isset($db)&&$db->inTransaction())$db->rollBack();
   error_log('Google OAuth user transaction failed: '.$e->getMessage());

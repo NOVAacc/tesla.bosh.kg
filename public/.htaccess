@@ -1,4 +1,5 @@
 DirectoryIndex index.html
 RewriteEngine On
+RewriteRule ^root/?$ root.php [L]
 RewriteRule ^api/stations/?$ api/stations.php [L]
 RewriteRule ^api/spark-snapshot\.json$ - [F,L,NC]
