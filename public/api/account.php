@@ -142,6 +142,15 @@ try {
     ev_reset_session();
     ev_response(200,['ok'=>true,'csrf'=>$_SESSION['csrf']]);
   }
+  if ($action === 'vehicle_delete') {
+    $user = ev_require_user();
+    $id = $data['id'] ?? null;
+    if (!is_int($id) || $id < 1) ev_response(422,['error'=>'invalid_vehicle','message'=>'Некорректный автомобиль.']);
+    $query = ev_db()->prepare('DELETE FROM user_vehicles WHERE id=? AND user_id=?');
+    $query->execute([$id,$user['id']]);
+    if (!$query->rowCount()) ev_response(404,['error'=>'vehicle_not_found','message'=>'Автомобиль уже удалён или недоступен.']);
+    ev_response(200,['ok'=>true]);
+  }
   if ($action === 'vehicle_add' || $action === 'vehicle_update') {
     $u=ev_require_user();
     $editing=$action === 'vehicle_update';

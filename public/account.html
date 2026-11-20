@@ -83,6 +83,8 @@ input, select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px s
 .account-tab-list [aria-selected="true"] { background: #fff; color: #171717; box-shadow: 0 2px 6px #0001; }
 .connector-setting { display: flex; gap: 10px; align-items: center; min-height: 44px; font-size: 15px; cursor: pointer; }
 .connector-setting input { flex: none; width: 19px; height: 19px; min-height: 0; margin: 0; accent-color: #171717; }
+#vehicleDelete { color: #a32240; }
+#accountLoading { color: #505050; }
 </style></head><body>
 <header><a class="back" href="/" aria-label="Вернуться к карте">←</a><div class="header-end"><strong>EV Карта</strong>
   <details id="accountMenu" class="account-menu hidden">
@@ -97,11 +99,12 @@ input, select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px s
   </details>
 </div></header>
 <main><h1 class="heading">Личный кабинет</h1>
-<div id="guest" class="grid">
+<p id="accountLoading" role="status">Загрузка кабинета…</p>
+<div id="guest" class="grid hidden">
 <section class="card"><h2>Войти</h2><p>Продолжите с Google. Новый аккаунт создаётся автоматически при первом входе.</p><a class="google-link" href="/api/google-start.php"><svg width="19" height="19" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.27 5.48-4.79 7.18l7.73 6C44.39 38.03 46.98 31.89 46.98 24.55z"/><path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.2A23.9 23.9 0 0 0 0 24c0 3.87.92 7.53 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.88-5.8l-7.73-6c-2.15 1.45-4.92 2.3-8.15 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Продолжить с Google</a><details><summary>Вход по паролю для существующих пользователей</summary><form id="login"><label for="email">Электронная почта</label><input id="email" type="email" autocomplete="username" required maxlength="254"><label for="password">Пароль</label><input id="password" type="password" autocomplete="current-password" required><div class="buttons"><button type="submit">Войти</button></div><div id="loginMsg" class="message" role="status" aria-live="polite"></div></form></details></section>
 </div>
 <div id="authenticated" class="grid hidden">
-<section class="card garage"><div class="section-heading"><h2>Мои автомобили</h2><button id="vehicleAdd" type="button" class="round hidden" aria-label="Добавить автомобиль" aria-controls="vehicleForm" aria-expanded="false">+</button></div><div id="vehicleList"><p>Загрузка…</p></div><form id="vehicleForm" class="hidden"><label for="make">Марка</label><select id="make" required disabled><option value="">Загрузка марок…</option></select><label for="model">Модель</label><select id="model" required disabled><option value="">Сначала выберите марку</option></select><label for="year">Год выпуска</label><input id="year" type="number" min="1990" max="2100" placeholder="2022"><fieldset class="vehicle-connectors" aria-describedby="connectorHint"><legend>Разъёмы</legend><p id="connectorHint">Отметьте разъёмы автомобиля и переходников.</p><div><label><input type="checkbox" name="connectors" value="CCS2">CCS2</label><label><input type="checkbox" name="connectors" value="GB/T">GB/T</label><label><input type="checkbox" name="connectors" value="NACS">NACS</label><label><input type="checkbox" name="connectors" value="Type2">Type 2</label><label><input type="checkbox" name="connectors" value="CHAdeMO">CHAdeMO</label></div></fieldset><div class="buttons"><button id="vehicleSubmit" type="submit" disabled>Добавить автомобиль</button><button id="vehicleCancel" type="button" class="secondary">Отмена</button></div></form><div id="vehicleMsg" class="message" role="status"></div></section>
+<section class="card garage"><div class="section-heading"><h2>Мои автомобили</h2><button id="vehicleAdd" type="button" class="round hidden" aria-label="Добавить автомобиль" aria-controls="vehicleForm" aria-expanded="false">+</button></div><div id="vehicleList"><p>Загрузка…</p></div><form id="vehicleForm" class="hidden"><label for="make">Марка</label><select id="make" required disabled><option value="">Загрузка марок…</option></select><label for="model">Модель</label><select id="model" required disabled><option value="">Сначала выберите марку</option></select><label for="year">Год выпуска</label><input id="year" type="number" min="1990" max="2100" placeholder="2022"><fieldset class="vehicle-connectors" aria-describedby="connectorHint"><legend>Разъёмы</legend><p id="connectorHint">Отметьте разъёмы автомобиля и переходников.</p><div><label><input type="checkbox" name="connectors" value="CCS2">CCS2</label><label><input type="checkbox" name="connectors" value="GB/T">GB/T</label><label><input type="checkbox" name="connectors" value="NACS">NACS</label><label><input type="checkbox" name="connectors" value="Type2">Type 2</label><label><input type="checkbox" name="connectors" value="CHAdeMO">CHAdeMO</label></div></fieldset><div class="buttons"><button id="vehicleSubmit" type="submit" disabled>Добавить автомобиль</button><button id="vehicleCancel" type="button" class="secondary">Отмена</button><button id="vehicleDelete" type="button" class="secondary hidden">Удалить автомобиль</button></div></form><div id="vehicleMsg" class="message" role="status"></div></section>
 <div class="account-tabs">
 <div class="account-tab-list" role="tablist" aria-label="Разделы кабинета">
  <button type="button" role="tab" id="companyTab" aria-controls="companyPanel" aria-selected="true">Компании</button>
@@ -191,6 +194,7 @@ window.addEventListener('pageshow',event=>{
 });
 const accountMenu=$('accountMenu');
 function showUser(u){
+ $('accountLoading').classList.add('hidden');
  $('guest').classList.toggle('hidden',!!u);
  $('authenticated').classList.toggle('hidden',!u);
  accountMenu.classList.toggle('hidden',!u);
@@ -223,6 +227,7 @@ let editingVehicle=null;
 let vehicleLimitReached=false;
 const connectorInputs=[...$('vehicleForm').querySelectorAll('input[name="connectors"]')];
 function syncVehicleSubmit(){
+ $('vehicleDelete').disabled=savingVehicle;
  $('vehicleSubmit').disabled=savingVehicle||(!editingVehicle||$('make').value!=='')&&!$('model').value;
 }
 function syncVehicleModels(){
@@ -247,6 +252,7 @@ function showVehicleForm(vehicle=null){
  $('make').required=!vehicle;
  $('year').value=vehicle?.model_year??'';
  for(const input of connectorInputs)input.checked=vehicle?.connectors.includes(input.value)??false;
+ $('vehicleDelete').classList.toggle('hidden',!vehicle);
  $('vehicleSubmit').textContent=vehicle?'Сохранить изменения':'Добавить автомобиль';
  form.classList.remove('hidden');
  $('vehicleAdd').setAttribute('aria-expanded',String(!vehicle));
@@ -324,7 +330,32 @@ async function loadVehicles(){
   $('vehicleMsg').textContent='Не удалось загрузить каталог. Обновите страницу, чтобы выбрать другую модель.';
  }
 }
-async function boot(){try{const r=await api('me');csrf=r.csrf;showUser(r.user);if(r.user)await loadVehicles();const {categories}=await api('categories');const s=$('businessCategory');s.replaceChildren();for(const c of categories){const o=document.createElement('option');o.value=String(c.id);o.textContent=c.name_ru;s.append(o);}}catch(e){$('globalMsg').textContent='Не удалось загрузить кабинет: '+e.message;}}
+$('vehicleDelete').addEventListener('click',async()=>{
+ if(savingVehicle||!editingVehicle)return;
+ const vehicle=editingVehicle;
+ if(!window.confirm(`Удалить ${vehicle.make} ${vehicle.model} из гаража?`))return;
+ savingVehicle=true;
+ syncVehicleSubmit();
+ $('vehicleMsg').textContent='';
+ try{
+  await api('vehicle_delete',{id:Number(vehicle.id)});
+  closeVehicleForm();
+  $('vehicleMsg').textContent='Автомобиль удалён.';
+  await loadVehicles().catch(()=>{$('vehicleMsg').textContent='Автомобиль удалён. Обновите страницу, чтобы увидеть изменения.';});
+  const next=$('vehicleAdd').disabled?$('vehicleList').querySelector('button'):$('vehicleAdd');
+  next?.focus();
+ }catch(err){
+  if(err.code==='vehicle_not_found'){
+   closeVehicleForm();
+   await loadVehicles().catch(()=>{});
+  }
+  $('vehicleMsg').textContent=err.message;
+ }finally{
+  savingVehicle=false;
+  syncVehicleSubmit();
+ }
+});
+async function boot(){try{const r=await api('me');csrf=r.csrf;showUser(r.user);if(r.user)await loadVehicles();const {categories}=await api('categories');const s=$('businessCategory');s.replaceChildren();for(const c of categories){const o=document.createElement('option');o.value=String(c.id);o.textContent=c.name_ru;s.append(o);}}catch(e){$('accountLoading').classList.add('hidden');$('globalMsg').textContent='Не удалось загрузить кабинет: '+e.message;}}
 $('login').addEventListener('submit',async e=>{e.preventDefault();$('loginMsg').textContent='';try{const r=await api('login',{email:$('email').value,password:$('password').value});csrf=r.csrf;$('password').value='';showUser(r.user);await loadVehicles();}catch(err){$('loginMsg').textContent=err.message;}});
 $('logout').addEventListener('click',async()=>{$('logoutMsg').textContent='';try{const r=await api('logout',{});csrf=r.csrf;showUser(null);vehicleLimitReached=false;closeVehicleForm();$('vehicleMsg').textContent='';$('password').value='';document.querySelector('.google-link').focus();}catch(err){$('logoutMsg').textContent=err.message;}});
 $('vehicleForm').addEventListener('submit',async e=>{
