@@ -22,3 +22,14 @@ dt { font-size: 13px; color: #505050; }
 dd { margin: 2px 0 0; font-weight: 650; font-size: 23px; }
 summary { cursor: pointer; }
 li { overflow-wrap: anywhere; }
+
+.feedback-section{margin-top:30px}
+.feedback-cards{display:grid;gap:12px}
+.feedback-card{overflow-wrap:anywhere}
+.feedback-card p{margin:10px 0 0;line-height:1.5}
+.feedback-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.feedback-state{font-size:12px;font-weight:650;background:#f1f1f1;border-radius:20px;padding:6px 10px}
+.feedback-station{font-weight:650}
+.feedback-message{white-space:pre-wrap}
+.feedback-pages{display:flex;gap:12px;align-items:center;justify-content:center;padding:20px 0}
+.feedback-pages span{font-size:13px;color:#555}
