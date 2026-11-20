@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/account-bootstrap.php';
+require_once __DIR__.'/station-cache.php';
 header('Referrer-Policy: no-referrer');
 header('X-Frame-Options: DENY');
 $method = $_SERVER['REQUEST_METHOD'] ?? '';
@@ -55,8 +56,8 @@ try {
       $db->rollBack();
       ev_response(429, ['error'=>'rate_limited','message'=>'Повторное сообщение можно отправить через 5 минут.']);
     }
-    $insert = $db->prepare("INSERT INTO station_feedback(user_id,station_hash,station_id,feedback_type,message,is_public) VALUES (?,UNHEX(SHA2(?,256)),?,?,?,?)");
-    $insert->execute([$user['id'],$id,$id,$type,$message,(int)(($body['public'] ?? false) === true)]);
+    $insert = $db->prepare("INSERT INTO station_feedback(user_id,station_hash,station_id,feedback_type,message,is_public,station_address) VALUES (?,UNHEX(SHA2(?,256)),?,?,?,1,?)");
+    $insert->execute([$user['id'],$id,$id,$type,$message,cachedStationAddress($id)]);
     $feedbackId = (int)$db->lastInsertId();
     $db->commit();
     ev_response(201, ['ok'=>true,'id'=>$feedbackId,'status'=>'new']);

@@ -30,6 +30,7 @@ jobs:
           extensions: curl, mbstring
       - run: |
           php -l public/api/stations.php
+          php -l public/api/station-cache.php
           php -l public/api/account.php
           php -l public/api/station-feedback.php
           php -l public/api/root-access.php

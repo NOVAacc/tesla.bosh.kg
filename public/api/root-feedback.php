@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/root-access.php';
+require_once __DIR__.'/station-cache.php';
 header('Referrer-Policy: no-referrer');
 header('X-Frame-Options: DENY');
 header('X-Robots-Tag: noindex, nofollow');
@@ -23,7 +24,7 @@ try {
     throw $error;
   }
   $offset = ($page - 1) * $perPage;
-  $q = $db->prepare('SELECT f.id,f.station_id,f.feedback_type,f.message,f.status,f.created_at,f.is_public,
+  $q = $db->prepare('SELECT f.id,f.station_id,f.feedback_type,f.message,f.status,f.created_at,f.is_public,f.station_address,
       u.email, u.display_name
       FROM station_feedback f
       INNER JOIN users u ON u.id=f.user_id
@@ -31,7 +32,10 @@ try {
   $q->bindValue(':take', $perPage, PDO::PARAM_INT);
   $q->bindValue(':skip', $offset, PDO::PARAM_INT);
   $q->execute();
-  ev_response(200, ['items'=>$q->fetchAll(), 'total'=>$total, 'page'=>$page, 'perPage'=>$perPage]);
+  $items = $q->fetchAll();
+  foreach ($items as &$item) $item['station_address'] ??= cachedStationAddress($item['station_id']);
+  unset($item);
+  ev_response(200, ['items'=>$items, 'total'=>$total, 'page'=>$page, 'perPage'=>$perPage]);
 } catch (Throwable $error) {
   error_log('EV root feedback error: '.$error->getMessage());
   ev_response(503, ['error'=>'service_unavailable']);

@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 ini_set('display_errors', '0');
+require_once __DIR__ . '/station-cache.php';
 
 function graphql(string $url, string $query, array $variables, array $headers = []): array
 {
@@ -386,9 +387,7 @@ function groupSites(array $stations): array
 {
     $groups = [];
     foreach ($stations as $station) {
-        $address = preg_replace('/\s+/u', ' ', trim($station['address']));
-        $address = function_exists('mb_strtolower') ? mb_strtolower($address, 'UTF-8') : strtolower($address);
-        $key = $address !== '' ? "spark:site:$address" : $station['id'];
+        $key = sparkSiteId($station);
         $groups[$key] ??= [
             'id' => $key, 'operator' => 'SPARK KG',
             'name' => preg_replace('/\s+№\d+\b.*$/u', '', $station['name']),
@@ -403,17 +402,6 @@ function groupSites(array $stations): array
         $groups[$key]['totalConnectors'] += $station['totalConnectors'];
     }
     return array_values($groups);
-}
-
-function cachePath(string $key): string
-{
-    return sys_get_temp_dir() . '/tesla-map-' . hash('sha256', __DIR__) . "-$key.json";
-}
-
-function readCache(string $path): ?array
-{
-    $data = json_decode((string) @file_get_contents($path), true);
-    return is_array($data) && isset($data['checkedAt']) ? $data : null;
 }
 
 function isFresh(?array $data, int $ttl): bool

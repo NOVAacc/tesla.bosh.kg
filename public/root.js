@@ -143,10 +143,11 @@ function feedbackCard(item) {
   const card = textElement('article','','card feedback-card');
   const top = textElement('div','','feedback-top');
   top.append(textElement('strong', 'Обращение №'+item.id), textElement('span',feedbackStatuses[item.status] || item.status,'feedback-state'),
-    textElement('span',Number(item.is_public) && item.status!=='dismissed'?'На карте':'Только в админке','feedback-state feedback-visibility'));
+    textElement('span',Number(item.is_public) && item.status!=='dismissed'?'На карте':'Скрыто с карты','feedback-state feedback-visibility'));
   card.append(top);
-  const station = textElement('p', 'Станция: '+item.station_id,'feedback-station');
+  const station = textElement('p', 'Адрес: '+(item.station_address||'не указан'),'feedback-station');
   const info = textElement('p', (feedbackTypes[item.feedback_type] || item.feedback_type) + ' · ' + (item.created_at || ''),'muted');
+  station.title = item.station_id;
   const person = textElement('p', 'Отправитель: '+(item.display_name || item.email || 'Пользователь')+(item.display_name && item.email?' · '+item.email:''),'muted');
   const message = textElement('p',item.message,'feedback-message');
   card.append(station,info,person,message);

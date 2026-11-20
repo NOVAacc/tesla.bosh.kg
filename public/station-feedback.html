@@ -23,8 +23,7 @@ body.embedded{padding:0;background:#fff}.embedded main{margin:0;max-width:none;p
 <select id="type" required><option value="broken">Зарядка не работает</option><option value="incorrect_info">Неверные данные</option><option value="access">Проблема с доступом</option><option value="other">Другое</option></select>
 <label for="message">Подробности</label>
 <textarea id="message" maxlength="1000" minlength="10" required placeholder="Опишите проблему (не менее 10 символов)"></textarea>
-<label class="comment-option"><input type="checkbox" id="publicComment" checked> Опубликовать на карте</label>
-<p class="comment-note">Публично видны текст, категория и время отправки. Снимите галочку, чтобы отправить сообщение только администратору.</p>
+<p class="comment-note">Комментарий будет виден всем. На карте отображаются текст, категория и время отправки.</p>
 <button type="submit">Отправить сообщение</button>
 </form><p id="status" role="status"></p>
 </main><script>
@@ -83,7 +82,7 @@ body.embedded{padding:0;background:#fff}.embedded main{margin:0;max-width:none;p
   if(!form.reportValidity())return;
   const button=form.querySelector('button');button.disabled=true;status.textContent='Отправляем…';
   try{
-   const response=await fetch('/api/station-feedback.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csrf:account.csrf,stationId,type:document.getElementById('type').value,public:document.getElementById('publicComment').checked,message:document.getElementById('message').value})});
+   const response=await fetch('/api/station-feedback.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csrf:account.csrf,stationId,type:document.getElementById('type').value,message:document.getElementById('message').value})});
    const result=await response.json();
    if(response.status===201&&result.ok===true&&Number.isInteger(result.id)){status.textContent='Сообщение №'+result.id+' сохранено. Спасибо!';form.reset();loadComments();return}
    status.textContent=result.message||({
