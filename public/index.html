@@ -318,6 +318,15 @@ function tariffText(t){
   const basis=t.type==='PER_E'?'/кВт·ч':t.type==='PER_T'?'/мин':'';
   return Number(t.amount).toLocaleString('ru-RU')+' '+esc(currency)+esc(basis);
 }
+function stationCommentsButton(station){
+ const query=new URLSearchParams({stationId:station.id,name:station.name??'',address:station.address??''});
+ const numbers=new Set((station.devices??[station]).map(device=>{
+  const source=String(device.sourceId??device.id??'').split(':').pop();
+  return device.seqNo??(/^\d+$/.test(source)?source:null);
+ }).filter(value=>value!=null&&value!==''));
+ for(const number of numbers)query.append('number',String(number));
+ return `<div class="station-report-actions"><button type="button" class="station-report-link" data-url="/station-feedback.html?${esc(query.toString())}">Комментарии и жалобы</button></div>`;
+}
 const stationCommentsDialog=$('stationCommentsDialog');
 document.addEventListener('click',event=>{
  const button=event.target.closest('.station-report-link');
@@ -414,7 +423,7 @@ function popup(s){
     html+='</div></div>';
   }
   if(s.operator==='SPARK KG')html+=`<div class="spark-detail-note">${esc(s.detailError||'')}</div>`;
-  html+=`<div class="station-report-actions"><button type="button" class="station-report-link" data-url="/station-feedback.html?stationId=${encodeURIComponent(s.id)}&amp;name=${encodeURIComponent(s.name)}">Комментарии и жалобы</button></div>`;
+  html+=stationCommentsButton(s);
   return html;
 }
 
@@ -485,7 +494,7 @@ function stationPanelMarkup(site){
     html+='</section>';
   }
   if(site.detailError)html+=`<div class="station-detail-note">${esc(site.detailError)}</div>`;
-  html+=`<div class="station-report-actions"><button type="button" class="station-report-link" data-url="/station-feedback.html?stationId=${encodeURIComponent(site.id)}&amp;name=${encodeURIComponent(site.name)}">Комментарии и жалобы</button></div>`;
+  html+=stationCommentsButton(site);
   return html;
 }
 let selectedStation=null,stopSelectedDetails=null;

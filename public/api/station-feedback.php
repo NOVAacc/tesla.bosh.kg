@@ -24,7 +24,7 @@ try {
     $items = $query->fetchAll();
     $hasMore = count($items) > 20;
     if ($hasMore) array_pop($items);
-    ev_response(200, ['items'=>$items,'before'=>$hasMore ? (string)end($items)['id'] : null]);
+    ev_response(200, ['items'=>$items,'address'=>cachedStationAddress($id),'before'=>$hasMore ? (string)end($items)['id'] : null]);
   }
   ev_session();
   $user = ev_require_user();
