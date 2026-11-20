@@ -392,6 +392,7 @@ function popup(s){
     html+='</div></div>';
   }
   if(s.operator==='SPARK KG')html+=`<div class="spark-detail-note">${esc(s.detailError||'')}</div>`;
+  html+=`<p><a class="station-report-link" href="/station-feedback.html?stationId=${encodeURIComponent(s.id)}">Сообщить о проблеме</a></p>`;
   return html;
 }
 
@@ -462,6 +463,7 @@ function stationPanelMarkup(site){
     html+='</section>';
   }
   if(site.detailError)html+=`<div class="station-detail-note">${esc(site.detailError)}</div>`;
+  html+=`<p><a class="station-report-link" href="/station-feedback.html?stationId=${encodeURIComponent(site.id)}">Сообщить о проблеме</a></p>`;
   return html;
 }
 let selectedStation=null,stopSelectedDetails=null;

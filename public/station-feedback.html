@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Сообщить о станции · EV Карта</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#181818;background:#f3f3f3;color-scheme:light}
+*{box-sizing:border-box}body{margin:0;padding:16px}main{max-width:520px;margin:35px auto;padding:26px;background:white;border-radius:24px}
+a{color:inherit}label{display:block;margin:18px 0 8px;font-weight:600}select,textarea{width:100%;padding:12px;border:1px solid #ccc;border-radius:12px;background:#fff;font:inherit}
+textarea{min-height:130px;resize:vertical}button{margin-top:20px;border:0;border-radius:100px;padding:14px 24px;background:#181818;color:white;font:inherit;cursor:pointer;width:100%}button:disabled{opacity:.5}
+p{line-height:1.5;color:#555;overflow-wrap:anywhere}#status{min-height:25px}h1{font-size:25px;letter-spacing:-.04em}
+</style></head><body><main><a href="/">← К карте зарядок</a><h1>Сообщить о станции</h1>
+<p id="stationLabel">Выберите станцию на карте, чтобы сообщить о проблеме.</p>
+<form id="feedback" hidden>
+<label for="type">Что случилось?</label>
+<select id="type" required><option value="broken">Зарядка не работает</option><option value="incorrect_info">Неверные данные</option><option value="access">Проблема с доступом</option><option value="other">Другое</option></select>
+<label for="message">Подробности</label>
+<textarea id="message" maxlength="1000" minlength="10" required placeholder="Опишите проблему (не менее 10 символов)"></textarea>
+<button type="submit">Отправить сообщение</button>
+</form><p id="status" role="status"></p>
+</main><script>
+(async()=>{
+ const form=document.getElementById('feedback'),status=document.getElementById('status'),label=document.getElementById('stationLabel');
+ const stationId=new URLSearchParams(location.search).get('stationId');
+ if(!stationId||stationId.length>1024||!/^(spark|charge24|weway|evion):[^\x00-\x1F\x7F]+$/u.test(stationId)){status.textContent='Откройте карточку станции на карте.';return}
+ label.textContent='Станция: '+stationId;
+ let account;
+ try{
+  const response=await fetch('/api/account.php?action=me',{cache:'no-store'});
+  if(!response.ok)throw Error();
+  account=await response.json();
+ }catch{status.textContent='Не удалось проверить авторизацию.';return}
+ if(!account.user){
+  const link=document.createElement('a');link.href='/account.html';link.textContent='Войдите в аккаунт, чтобы отправить сообщение.';
+  status.append(link);return;
+ }
+ form.hidden=false;
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!form.reportValidity())return;
+  const button=form.querySelector('button');button.disabled=true;status.textContent='Отправляем…';
+  try{
+   const response=await fetch('/api/station-feedback.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({csrf:account.csrf,stationId,type:document.getElementById('type').value,message:document.getElementById('message').value})});
+   const result=await response.json();
+   if(response.status===201){status.textContent='Сообщение принято. Спасибо!';form.hidden=true;return}
+   status.textContent=result.message||(response.status===429?'Слишком много сообщений.':'Не удалось отправить сообщение.');
+  }catch{status.textContent='Ошибка сети. Попробуйте позже.'}
+  finally{button.disabled=false}
+ });
+})();
+</script></body></html>
