@@ -11,6 +11,28 @@ $action = $_GET['action'] ?? 'me';
 try {
   if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
     if ($action === 'me') ev_response(200,['user'=>ev_user(),'csrf'=>$_SESSION['csrf']]);
+    if ($action === 'map_preferences') {
+      $user = ev_user();
+      if (!$user) ev_response(200,['signedIn'=>false]);
+      $db = ev_db();
+      $query = $db->prepare('SELECT use_vehicle_connectors, filters_json FROM user_map_preferences WHERE user_id=?');
+      $query->execute([$user['id']]);
+      $row = $query->fetch();
+      $automatic = (bool)($row['use_vehicle_connectors'] ?? false);
+      $connectors = [];
+      if ($automatic) {
+        $query = $db->prepare('SELECT connector FROM user_vehicles WHERE user_id=?');
+        $query->execute([$user['id']]);
+        foreach ($query->fetchAll(PDO::FETCH_COLUMN) as $value) {
+          $connectors = array_merge($connectors, explode(',', (string)$value));
+        }
+        $connectors = array_values(array_intersect(EV_CONNECTORS, $connectors));
+      }
+      ev_response(200,[
+        'signedIn'=>true, 'csrf'=>$_SESSION['csrf'], 'automatic'=>$automatic, 'connectors'=>$connectors,
+        'filters'=>json_decode($row['filters_json'] ?? 'null', true)
+      ]);
+    }
     if ($action === 'vehicles') {
       $u=ev_require_user(); $s=ev_db()->prepare('SELECT id,make,model,model_year,connector,is_primary FROM user_vehicles WHERE user_id=? ORDER BY is_primary DESC,id DESC');
       $s->execute([$u['id']]);
@@ -42,6 +64,32 @@ try {
     ev_response(404,['error'=>'unknown_action']);
   }
   $data=ev_input(); ev_csrf($data);
+  if ($action === 'map_preferences') {
+    $user = ev_require_user();
+    if (isset($data['automatic']) && is_bool($data['automatic']) && !array_key_exists('filters',$data)) {
+      $query = ev_db()->prepare('INSERT INTO user_map_preferences (user_id,use_vehicle_connectors) VALUES (?,?)
+        ON DUPLICATE KEY UPDATE use_vehicle_connectors=VALUES(use_vehicle_connectors)');
+      $query->execute([$user['id'], (int)$data['automatic']]);
+    } elseif (!array_key_exists('automatic',$data) && isset($data['filters']) && is_array($data['filters']) && !array_is_list($data['filters'])) {
+      $filters = $data['filters'];
+      $clean = [];
+      foreach (['spark','charge24','weway','evion'] as $key) {
+        if (is_bool($filters[$key] ?? null)) $clean[$key] = $filters[$key];
+      }
+      foreach (['availability','current','power','station','portstatus','extras'] as $key) {
+        if (is_string($filters[$key] ?? null) && strlen($filters[$key]) <= 24) $clean[$key] = $filters[$key];
+      }
+      $connectors = $filters['connectors'] ?? [];
+      if (!is_array($connectors) || !array_is_list($connectors) || count($connectors) > 64) ev_response(422,['error'=>'invalid_filters']);
+      $clean['connectors'] = array_values(array_unique(array_filter($connectors, static fn($value) => is_string($value) && $value !== '' && strlen($value) <= 64)));
+      $query = ev_db()->prepare('INSERT INTO user_map_preferences (user_id,filters_json) VALUES (?,?)
+        ON DUPLICATE KEY UPDATE filters_json=VALUES(filters_json)');
+      $query->execute([$user['id'],json_encode($clean, JSON_THROW_ON_ERROR)]);
+    } else {
+      ev_response(422,['error'=>'invalid_preferences']);
+    }
+    ev_response(200,['ok'=>true]);
+  }
   if ($action === 'register') {
     $email=strtolower(trim((string)($data['email']??''))); $name=trim((string)($data['name']??'')); $password=$data['password']??null;
     if (!filter_var($email,FILTER_VALIDATE_EMAIL) || strlen($email)>254 || mb_strlen($name)>120 || !is_string($password) || strlen($password)<12 || strlen($password)>1024) ev_response(422,['error'=>'invalid_registration']);

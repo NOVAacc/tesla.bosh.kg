@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS user_map_preferences (
+ user_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+ use_vehicle_connectors TINYINT(1) NOT NULL DEFAULT 0,
+ filters_json TEXT,
+ FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

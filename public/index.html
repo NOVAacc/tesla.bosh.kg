@@ -149,12 +149,17 @@
  #filterSheet button:focus-visible,#filterSheet select:focus-visible{outline:2px solid #2675bd;outline-offset:-2px}
 }
 @media(prefers-reduced-motion:reduce){.mobile-sheet,.station-panel{transition:none}}
+.connector-preference-note,.filter-save-error{font-size:13px;color:#414141}
+.filter-save-error{color:#8e3230}
+#filterSearch{margin-bottom:10px;min-height:44px}
+@media(max-width:850px){.connector-preference-note,.filter-save-error{display:block;margin:6px 0}}
+.connector-preference-note[hidden],.filter-save-error[hidden]{display:none}
 </style></head><body><div class="app"><div class="toolbar"><div class="top"><div class="brand"><h1>Зарядные станции Кыргызстана</h1><div class="sub">Единая карта SPARK KG, Charge24, WeWay и EVION</div></div><div class="actions"><button class="chip" id="desktopList" type="button" aria-pressed="false">Списком</button><a class="chip" href="/account.html" style="text-decoration:none;display:inline-flex;align-items:center">Кабинет</a><button class="chip" id="refresh" type="button">↻ Обновить данные</button><button class="chip" id="reset" type="button">Сбросить фильтры</button></div></div><div class="filters" role="group" aria-label="Фильтры зарядных станций"><div class="filter-group">
 <h3 class="filter-heading">Операторы</h3>
 <div class="filter-group filter-networks"><button class="chip" id="spark" type="button" aria-pressed="true">SPARK KG</button><button class="chip" id="charge24" type="button" aria-pressed="true">Charge24</button><button class="chip" id="weway" type="button" aria-pressed="true">WeWay</button><button class="chip" id="evion" type="button" aria-pressed="true">EVION</button></div>
 </div><div class="divider"></div><input id="search" class="search" placeholder="Поиск по названию и адресу" aria-label="Поиск по названию и адресу">
 <div class="filter-group">
-<h3 class="filter-heading" id="connectorHeading">Разъёмы</h3>
+<h3 class="filter-heading" id="connectorHeading">Разъёмы</h3><a class="connector-preference-note" id="connectorPreferenceNote" href="/account.html" hidden></a><span class="filter-save-error" id="filterSaveError" role="status" hidden></span>
 <select class="control" id="connector" aria-label="Разъём" hidden><option value="all">Все разъёмы</option></select><div class="connector-picker" id="connectorPicker"><button class="control connector-picker-button" id="connectorPickerButton" type="button" aria-expanded="false" aria-controls="connectorPickerOptions">Все разъёмы ▾</button><div class="connector-picker-options" id="connectorPickerOptions" role="group" aria-label="Выберите типы разъёмов"></div></div>
 <div class="connector-cards" id="connectorCards" role="group" aria-labelledby="connectorHeading"></div>
 </div>
@@ -166,12 +171,11 @@
 <label class="filter-row"><span>Станция</span><select class="control" id="station" aria-label="Состояние устройства"><option value="all">Любые станции</option><option value="active">Только активные</option><option value="inactive">Неактивные / заблокированные</option></select></label>
 <label class="filter-row"><span>Статус порта</span><select class="control" id="portstatus" aria-label="Статус порта"><option value="all">Любой статус порта</option><option value="AVAILABLE">Свободен</option><option value="OCCUPIED">Занят / зарядка</option><option value="FAULTED">Неисправен</option><option value="UNAVAILABLE">Недоступен</option><option value="FINISHING">Завершение</option><option value="PREPARING">Подключение</option><option value="UNKNOWN">Неизвестный статус</option></select></label>
 <label class="filter-row"><span>Дополнительно</span><select class="control" id="extras" aria-label="Дополнительный фильтр"><option value="all">Без доп. условий</option><option value="pending">Ожидает подключения</option><option value="finished">Зарядка завершена</option><option value="percentage">Показан % заряда</option></select></label>
-</div></div><div class="summary" id="summary">Загрузка данных…</div></div><div class="main"><div id="map"></div><section class="station-list-view" id="stationListView" aria-label="Зарядные станции списком" aria-hidden="true"><div class="nearby-header"><h2 class="nearby-title">Зарядные станции рядом</h2><div class="nearby-location" id="nearbyLocation">Для сортировки по расстоянию разрешите определение местоположения.</div></div><div class="nearby-content" id="nearbyContent"></div></section><section class="station-panel" id="stationPanel" aria-label="Информация о выбранной зарядной станции" aria-hidden="true"><div class="station-grip" aria-hidden="true"></div><div class="station-panel-header"><div class="station-headings"><div class="station-operator" id="stationOperator"></div><h2 class="station-name" id="stationName"></h2><div class="station-address" id="stationAddress"></div></div><button type="button" id="closeStation" class="station-dismiss" aria-label="Закрыть карточку станции">×</button></div><div class="station-panel-body" id="stationPanelBody"></div></section><div class="status" id="status">Получение данных…</div><button class="mobile-map-refresh" id="mobileRefresh" type="button" aria-label="Обновить станции">↻</button><div class="mobile-shade" id="mobileShade" aria-hidden="true"></div><section class="mobile-sheet" id="searchSheet" aria-label="Поиск станций" aria-hidden="true"><div class="sheet-head"><strong>Поиск станций</strong><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть поиск">×</button></div><div class="sheet-content"><div id="mobileSearchSlot"></div><div id="searchResults" class="search-results"></div></div></section><section class="mobile-sheet" id="filterSheet" aria-label="Фильтры станций" aria-hidden="true"><div class="sheet-head"><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть фильтры">‹</button><strong>Фильтры</strong><button class="chip" id="applyFilters" type="button">Готово</button></div><div class="sheet-content"><div id="mobileFilterSlot"></div></div><div class="sheet-actions"><button class="chip" id="mobileReset" type="button">Сбросить</button></div></section></div><nav class="mobile-nav" aria-label="Панель карты">
+</div></div><div class="summary" id="summary">Загрузка данных…</div></div><div class="main"><div id="map"></div><section class="station-list-view" id="stationListView" aria-label="Зарядные станции списком" aria-hidden="true"><div class="nearby-header"><h2 class="nearby-title">Зарядные станции рядом</h2><div class="nearby-location" id="nearbyLocation">Для сортировки по расстоянию разрешите определение местоположения.</div></div><div class="nearby-content" id="nearbyContent"></div></section><section class="station-panel" id="stationPanel" aria-label="Информация о выбранной зарядной станции" aria-hidden="true"><div class="station-grip" aria-hidden="true"></div><div class="station-panel-header"><div class="station-headings"><div class="station-operator" id="stationOperator"></div><h2 class="station-name" id="stationName"></h2><div class="station-address" id="stationAddress"></div></div><button type="button" id="closeStation" class="station-dismiss" aria-label="Закрыть карточку станции">×</button></div><div class="station-panel-body" id="stationPanelBody"></div></section><div class="status" id="status">Получение данных…</div><button class="mobile-map-refresh" id="mobileRefresh" type="button" aria-label="Обновить станции">↻</button><div class="mobile-shade" id="mobileShade" aria-hidden="true"></div><section class="mobile-sheet" id="searchSheet" aria-label="Поиск станций" aria-hidden="true"><div class="sheet-head"><strong>Поиск станций</strong><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть поиск">×</button></div><div class="sheet-content"><div id="mobileSearchSlot"></div><div id="searchResults" class="search-results"></div></div></section><section class="mobile-sheet" id="filterSheet" aria-label="Фильтры станций" aria-hidden="true"><div class="sheet-head"><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть фильтры">‹</button><strong>Фильтры</strong><button class="chip" id="applyFilters" type="button">Готово</button></div><div class="sheet-content"><button class="chip" id="filterSearch" type="button">Поиск по названию или адресу</button><div id="mobileFilterSlot"></div></div><div class="sheet-actions"><button class="chip" id="mobileReset" type="button">Сбросить</button></div></section></div><nav class="mobile-nav" aria-label="Панель карты">
   <div class="mobile-view-switch" role="group" aria-label="Вид зарядных станций">
     <button class="mobile-tab" data-mobile-tab="map" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 10-7 10s-7-5-7-10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg><span>Карта</span></button>
     <button class="mobile-tab" data-mobile-tab="list" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h14"/></svg><span>Списком</span></button>
   </div>
-  <button class="mobile-tab" data-mobile-tab="search" type="button" aria-expanded="false" aria-controls="searchSheet"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg><span>Поиск</span></button>
   <button class="mobile-tab" data-mobile-tab="filters" type="button" aria-expanded="false" aria-controls="filterSheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h4m4 0h8M4 16h10m4 0h2"/><circle cx="10" cy="8" r="2"/><circle cx="16" cy="16" r="2"/></svg><span>Фильтры</span></button>
   <a class="mobile-tab" href="/account.html" aria-label="Личный кабинет" style="text-decoration:none"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg><span>Кабинет</span></a>
 </nav></div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="/map-config.js"></script><script>
@@ -185,7 +189,7 @@ if(cartoKey){
  positronTiles.on('tileerror',()=>{if(++failures>=3&&map.hasLayer(positronTiles)){map.removeLayer(positronTiles);osmTiles.addTo(map);baseTiles=osmTiles;}});
  baseTiles=positronTiles;
 }
-baseTiles.addTo(map);const layer=L.layerGroup().addTo(map);let stations=[],meta={},first=true;const filter={spark:true,charge24:true,weway:true,evion:true};const selectedConnectorTypes=new Set();const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));const statuses={AVAILABLE:'Свободен',OCCUPIED:'Занят',FAULTED:'Ошибка',UNAVAILABLE:'Недоступен',FINISHING:'Завершение',PREPARING:'Подключение',UNKNOWN:'Неизвестно'};
+baseTiles.addTo(map);const layer=L.layerGroup().addTo(map);let stations=[],meta={},first=true;const filter={spark:true,charge24:true,weway:true,evion:true};const selectedConnectorTypes=new Set();let vehicleConnectorTypes=null;const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));const statuses={AVAILABLE:'Свободен',OCCUPIED:'Занят',FAULTED:'Ошибка',UNAVAILABLE:'Недоступен',FINISHING:'Завершение',PREPARING:'Подключение',UNKNOWN:'Неизвестно'};
 function canon(s){const x=String(s||'').toUpperCase();if(x==='AVAILABLE'||x==='FREE')return 'AVAILABLE';if(['CHARGING','OCCUPIED'].includes(x))return 'OCCUPIED';if(x==='FAULTED')return 'FAULTED';if(x==='UNAVAILABLE')return 'UNAVAILABLE';if(x==='FINISHING')return 'FINISHING';if(x==='PREPARING')return 'PREPARING';return 'UNKNOWN'}
 function flatten(s){return s.devices?s.devices.flatMap(d=>(d.connectors||[]).map(c=>({device:d,connector:c}))):(s.connectors||[]).map(c=>({device:s,connector:c}))}
 function power(d){let n=Number(d.powerKw);if(Number.isFinite(n)&&n>0)return n;const portPowers=(d.connectors||[]).map(c=>Number(c.powerKw)).filter(n=>Number.isFinite(n)&&n>0);if(portPowers.length)return Math.max(...portPowers);const m=String(d.name||'').match(/\b(AC|DC)\s*(\d+(?:[.,]\d+)?)/i);return m?Number(m[2].replace(',','.')):null}
@@ -202,7 +206,7 @@ function chargingPercentage(connector){
 function active(d){return d.active!==false&&!d.blocked}
 function isFree(x){return active(x.device)&&x.connector.available===true&&!x.connector.pending}
 function searchText(s){return [s.name,s.address,...(s.devices||[]).map(d=>d.name)].join(' ').toLocaleLowerCase()}
-function matches(s){if(s.operator==='SPARK KG'&&!filter.spark||s.operator==='Charge24'&&!filter.charge24||s.operator==='WeWay'&&!filter.weway||s.operator==='EVION'&&!filter.evion)return false;const q=$('search').value.trim().toLocaleLowerCase();if(q&&!searchText(s).includes(q))return false;const p=flatten(s),free=p.filter(isFree).length,occupied=p.filter(x=>['OCCUPIED','PREPARING','FINISHING'].includes(canon(x.connector.status))).length;const a=$('availability').value;if(a==='free'&&!free||a==='occupied'&&!occupied||a==='allfree'&&(!p.length||free!==p.length)||a==='nofree'&&free>0)return false;const devices=s.devices||[s];const st=$('station').value;if(st==='active'&&!devices.some(active)||st==='inactive'&&!devices.some(d=>!active(d)))return false;const cur=$('current').value;if(cur!=='all'&&!devices.some(d=>cur==='unknown'?!current(d):current(d)===cur))return false;const pow=$('power').value;if(pow!=='all'&&!devices.some(d=>pow==='unknown'?power(d)===null:power(d)!==null&&power(d)>=Number(pow)))return false;if(selectedConnectorTypes.size&&![...selectedConnectorTypes].some(conn=>(conn!=='unknown'&&(s.supportedConnectorTypes||[]).includes(conn))||p.some(x=>conn==='unknown'?!type(x.connector)&&!(x.device.supportedConnectorTypes||[]).length:type(x.connector)===conn)))return false;const ps=$('portstatus').value;if(ps!=='all'&&!p.some(x=>canon(x.connector.status)===ps))return false;const ex=$('extras').value;if(ex==='pending'&&!p.some(x=>x.connector.pending)||ex==='finished'&&!p.some(x=>x.connector.chargingFinished)||ex==='percentage'&&!p.some(x=>chargingPercentage(x.connector)!==null))return false;return true}
+function matches(s){if(s.operator==='SPARK KG'&&!filter.spark||s.operator==='Charge24'&&!filter.charge24||s.operator==='WeWay'&&!filter.weway||s.operator==='EVION'&&!filter.evion)return false;const q=$('search').value.trim().toLocaleLowerCase();if(q&&!searchText(s).includes(q))return false;const p=flatten(s),free=p.filter(isFree).length,occupied=p.filter(x=>['OCCUPIED','PREPARING','FINISHING'].includes(canon(x.connector.status))).length;const a=$('availability').value;if(a==='free'&&!free||a==='occupied'&&!occupied||a==='allfree'&&(!p.length||free!==p.length)||a==='nofree'&&free>0)return false;const devices=s.devices||[s];const st=$('station').value;if(st==='active'&&!devices.some(active)||st==='inactive'&&!devices.some(d=>!active(d)))return false;const cur=$('current').value;if(cur!=='all'&&!devices.some(d=>cur==='unknown'?!current(d):current(d)===cur))return false;const pow=$('power').value;if(pow!=='all'&&!devices.some(d=>pow==='unknown'?power(d)===null:power(d)!==null&&power(d)>=Number(pow)))return false;const connectors=vehicleConnectorTypes??selectedConnectorTypes;if((vehicleConnectorTypes!==null||connectors.size)&&![...connectors].some(conn=>(conn!=='unknown'&&(s.supportedConnectorTypes||[]).includes(conn))||p.some(x=>conn==='unknown'?!type(x.connector)&&!(x.device.supportedConnectorTypes||[]).length:type(x.connector)===conn)))return false;const ps=$('portstatus').value;if(ps!=='all'&&!p.some(x=>canon(x.connector.status)===ps))return false;const ex=$('extras').value;if(ex==='pending'&&!p.some(x=>x.connector.pending)||ex==='finished'&&!p.some(x=>x.connector.chargingFinished)||ex==='percentage'&&!p.some(x=>chargingPercentage(x.connector)!==null))return false;return true}
 const connectorPins={
  'GB/T':[[10,11],[22,11],[16,16],[10,21],[22,21]],
  CCS2:[[12,9],[20,9],[16,14],[11,25],[21,25]],
@@ -240,11 +244,19 @@ function renderConnectorCards(){
      return card;
    }));
  }
- for(const card of cards.children)card.setAttribute('aria-pressed',String(card.value==='all'?!selectedConnectorTypes.size:selectedConnectorTypes.has(card.value)));
+ const connectors=vehicleConnectorTypes??selectedConnectorTypes;
+ for(const card of cards.children){
+  card.disabled=vehicleConnectorTypes!==null;
+  card.setAttribute('aria-pressed',String(card.value==='all'?vehicleConnectorTypes===null&&!connectors.size:connectors.has(card.value)));
+ }
+ const note=$('connectorPreferenceNote');
+ note.hidden=vehicleConnectorTypes===null;
+ note.textContent=connectors.size?'Разъёмы из гаража: '+[...connectors].join(', '):'Укажите разъёмы в карточках автомобилей';
  renderConnectorPicker();
 }
 function renderConnectorPicker(){
- const button=$('connectorPickerButton'),wrap=$('connectorPickerOptions'),labels=[...selectedConnectorTypes];
+ const button=$('connectorPickerButton'),wrap=$('connectorPickerOptions'),labels=[...(vehicleConnectorTypes??selectedConnectorTypes)];
+ button.disabled=vehicleConnectorTypes!==null;
  button.textContent=labels.length?(labels.length<=2?labels.join(', '):'Разъёмы: '+labels.length)+' ▾':'Все разъёмы ▾';
  wrap.replaceChildren(...[...$('connector').options].map(option=>{
   const row=document.createElement('button');row.type='button';row.className='connector-picker-option';
@@ -256,10 +268,11 @@ function renderConnectorPicker(){
  }));
 }
 function toggleConnectorType(value){
+ if(vehicleConnectorTypes!==null)return;
  if(value==='all')selectedConnectorTypes.clear();
  else if(selectedConnectorTypes.has(value))selectedConnectorTypes.delete(value);
  else selectedConnectorTypes.add(value);
- renderConnectorCards();draw();
+ renderConnectorCards();draw();saveMapFilters();
 }
 function refreshTypes(){
  const control=$('connector');
@@ -494,7 +507,84 @@ async function refresh(){if(refreshing)return;refreshing=true;const old=$('statu
   providerStatus('WeWay',meta.weway),
   providerStatus('EVION',meta.evion),
 ].join(' · ')+' <span class="refresh-note">· Кэш 5 мин</span>';if(first&&stations.length){const bounds=L.latLngBounds(stations.map(s=>[s.lat,s.lng]));if(bounds.isValid())map.fitBounds(bounds,{padding:[24,24]});first=false}}catch(e){old.textContent='Ошибка загрузки: '+e.message}finally{refreshing=false}}
-for(const id of ['spark','charge24','weway','evion'])$(id).onclick=()=>{filter[id]=!filter[id];$(id).setAttribute('aria-pressed',String(filter[id]));refreshTypes();draw()};for(const id of ['search','availability','current','power','station','portstatus','extras'])$(id).addEventListener(id==='search'?'input':'change',draw);$('refresh').onclick=refresh;$('reset').onclick=()=>{filter.spark=filter.charge24=filter.weway=filter.evion=true;selectedConnectorTypes.clear();for(const id of ['spark','charge24','weway','evion'])$(id).setAttribute('aria-pressed','true');$('search').value='';for(const id of ['availability','current','power','station','portstatus','extras'])$(id).value='all';refreshTypes();draw()};
+const networkFilterIds=Object.keys(filter);
+const selectFilterIds=['availability','current','power','station','portstatus','extras'];
+const preferencesUrl='/api/account.php?action=map_preferences';
+let preferencesCsrf=null, filterRevision=0, pendingFilters=null, savingFilters=false;
+function showFilterSaveError(message){
+ const status=$('filterSaveError');
+ status.textContent=message;
+ status.hidden=!message;
+}
+function applySavedFilters(saved){
+ for(const id of networkFilterIds){
+  filter[id]=saved?.[id]!==false;
+  $(id).setAttribute('aria-pressed',String(filter[id]));
+ }
+ for(const id of selectFilterIds){
+  const control=$(id);
+  control.value=[...control.options].some(option=>option.value===saved?.[id])?saved[id]:'all';
+ }
+ selectedConnectorTypes.clear();
+ for(const connector of saved?.connectors??[])selectedConnectorTypes.add(connector);
+ refreshTypes();draw();
+}
+async function loadMapPreferences(){
+ const revision=filterRevision;
+ try{
+  const response=await fetch(preferencesUrl,{cache:'no-store'});
+  if(!response.ok)throw Error('Preferences request failed');
+  const saved=await response.json();
+  const changed=filterRevision!==revision||savingFilters||pendingFilters!==null;
+  const wasSignedIn=preferencesCsrf!==null;
+  preferencesCsrf=saved.signedIn?saved.csrf:null;
+  vehicleConnectorTypes=saved.automatic?new Set(saved.connectors.map(connector=>type({type:connector})).filter(Boolean)):null;
+  if((saved.signedIn&&!changed)||(wasSignedIn&&!saved.signedIn)){
+   applySavedFilters(saved.filters);
+  }else{
+   refreshTypes();draw();
+   if(saved.signedIn&&changed&&filterRevision!==revision)saveMapFilters();
+  }
+ }catch{
+  showFilterSaveError('Не удалось загрузить сохранённые фильтры');
+ }
+}
+function saveMapFilters(){
+ filterRevision++;
+ if(!preferencesCsrf)return;
+ pendingFilters={...filter,connectors:[...selectedConnectorTypes]};
+ for(const id of selectFilterIds)pendingFilters[id]=$(id).value;
+ if(!savingFilters)flushMapFilters();
+}
+async function flushMapFilters(){
+ savingFilters=true;
+ try{
+  while(pendingFilters){
+   const filters=pendingFilters;
+   pendingFilters=null;
+   const response=await fetch(preferencesUrl,{
+    method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({csrf:preferencesCsrf,filters})
+   });
+   if(!response.ok)throw Error('Could not save filters');
+   showFilterSaveError('');
+  }
+ }catch{
+  pendingFilters=null;
+  showFilterSaveError('Не удалось сохранить фильтры. Измените фильтр, чтобы повторить.');
+ }finally{
+  savingFilters=false;
+ }
+}
+for(const id of networkFilterIds)$(id).onclick=()=>{
+ filter[id]=!filter[id];
+ $(id).setAttribute('aria-pressed',String(filter[id]));
+ refreshTypes();draw();saveMapFilters();
+};
+for(const id of selectFilterIds)$(id).addEventListener('change',()=>{draw();saveMapFilters()});
+$('search').addEventListener('input',draw);
+$('refresh').onclick=refresh;
+$('reset').onclick=()=>{$('search').value='';applySavedFilters(null);saveMapFilters()};
 $('connectorPickerButton').onclick=()=>{const picker=$('connectorPicker'),open=!picker.classList.contains('is-open');picker.classList.toggle('is-open',open);$('connectorPickerButton').setAttribute('aria-expanded',String(open))};
 document.addEventListener('click',event=>{if(!$('connectorPicker').contains(event.target)){$('connectorPicker').classList.remove('is-open');$('connectorPickerButton').setAttribute('aria-expanded','false')}});
 $('connectorPicker').addEventListener('keydown',event=>{if(event.key==='Escape'){$('connectorPicker').classList.remove('is-open');$('connectorPickerButton').setAttribute('aria-expanded','false');$('connectorPickerButton').focus()}});
@@ -564,6 +654,7 @@ for(const tab of document.querySelectorAll('[data-mobile-tab]'))tab.addEventList
 for(const btn of document.querySelectorAll('[data-close-sheet]'))btn.addEventListener('click',closeSheet);
 $('mobileShade').addEventListener('click',closeSheet);
 $('applyFilters').addEventListener('click',closeSheet);
+$('filterSearch').addEventListener('click',()=>openSheet('search'));
 $('mobileReset').addEventListener('click',()=>$('reset').click());
 $('mobileRefresh').addEventListener('click',()=>refresh());
 document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(activeSheet)closeSheet();else closeStationPanel()}});
@@ -573,5 +664,7 @@ syncMobileLayout();
 const initialPanel=new URLSearchParams(window.location.search).get('panel');
 if(initialPanel==='list')setListMode(true);
 if(initialPanel==='search'||initialPanel==='filters')openSheet(initialPanel);
+loadMapPreferences();
+window.addEventListener('pageshow',event=>{if(event.persisted)loadMapPreferences()});
 refresh();
 </script></body></html>

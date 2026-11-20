@@ -62,7 +62,8 @@ test('SPARK card includes prices and keeps credential status private',()=>{
 
 test('Mobile navigation: persistent tabs and bottom sheets are wired',()=>{
  const html=fs.readFileSync('public/index.html','utf8');
- for(const tab of ['map','search','filters'])assert.match(html,new RegExp('data-mobile-tab="'+tab+'"'));
+ for(const tab of ['map','list','filters'])assert.match(html,new RegExp('data-mobile-tab="'+tab+'"'));
+ assert.doesNotMatch(html,/data-mobile-tab="search"/);
  for(const id of ['searchSheet','filterSheet','mobileShade','mobileRefresh','mobileReset','applyFilters'])assert.ok(html.includes('id="'+id+'"'));
  assert.match(html,/function syncMobileLayout\(\)/);
  assert.match(html,/function openSheet\(name\)/);

@@ -18,7 +18,6 @@ header strong { font-size: 15px; font-weight: 650; }
 main { padding-block: 32px 48px; }
 .heading { font-size: clamp(38px, 7vw, 68px); line-height: .98; font-weight: 550; letter-spacing: -.065em; margin: 0 0 26px; }
 .grid { display: grid; gap: 14px; align-items: start; }
-#authenticated { grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); }
 #guest { max-width: 500px; }
 .card { min-width: 0; padding: clamp(18px, 3vw, 28px); background: #fff; border-radius: 30px; }
 .card h2 { font-size: clamp(21px, 3vw, 28px); font-weight: 550; line-height: 1.1; margin: 0; letter-spacing: -.045em; overflow-wrap: anywhere; }
@@ -32,7 +31,7 @@ main { padding-block: 32px 48px; }
 .account-panel h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
 .account-panel p { margin: 6px 0 10px; color: #505050; font-size: 14px; overflow-wrap: anywhere; }
 .account-panel button { display: block; width: 100%; margin-top: 14px; }
-.garage { grid-row: span 2; padding: 0; background: transparent; }
+.garage { grid-column: 1 / -1; padding: 0; background: transparent; }
 .garage .section-heading { margin-bottom: 16px; }
 .garage .section-heading .round { background: #f8f8f8; color: #171717; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -76,10 +75,14 @@ input, select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px s
   header, main { width: calc(100% - 28px); }
   header { padding-top: max(16px, env(safe-area-inset-top)); }
   main { padding-top: 22px; }
-  #authenticated { grid-template-columns: minmax(0, 1fr); }
-  .garage { grid-row: auto; }
   .card { border-radius: 26px; }
 }
+.account-tabs { grid-column: 1 / -1; min-width: 0; }
+.account-tab-list { display: flex; gap: 4px; padding: 4px; margin-bottom: 10px; border-radius: 999px; background: #dedede; }
+.account-tab-list button { flex: 1; min-width: 0; padding-inline: 4px; background: transparent; color: #505050; font-size: 13px; }
+.account-tab-list [aria-selected="true"] { background: #fff; color: #171717; box-shadow: 0 2px 6px #0001; }
+.connector-setting { display: flex; gap: 10px; align-items: center; min-height: 44px; font-size: 15px; cursor: pointer; }
+.connector-setting input { flex: none; width: 19px; height: 19px; min-height: 0; margin: 0; accent-color: #171717; }
 </style></head><body>
 <header><a class="back" href="/" aria-label="Вернуться к карте">←</a><div class="header-end"><strong>EV Карта</strong>
   <details id="accountMenu" class="account-menu hidden">
@@ -99,15 +102,25 @@ input, select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px s
 </div>
 <div id="authenticated" class="grid hidden">
 <section class="card garage"><div class="section-heading"><h2>Мои автомобили</h2><button id="vehicleAdd" type="button" class="round hidden" aria-label="Добавить автомобиль" aria-controls="vehicleForm" aria-expanded="false">+</button></div><div id="vehicleList"><p>Загрузка…</p></div><form id="vehicleForm" class="hidden"><label for="make">Марка</label><select id="make" required disabled><option value="">Загрузка марок…</option></select><label for="model">Модель</label><select id="model" required disabled><option value="">Сначала выберите марку</option></select><label for="year">Год выпуска</label><input id="year" type="number" min="1990" max="2100" placeholder="2022"><fieldset class="vehicle-connectors" aria-describedby="connectorHint"><legend>Разъёмы</legend><p id="connectorHint">Отметьте разъёмы автомобиля и переходников.</p><div><label><input type="checkbox" name="connectors" value="CCS2">CCS2</label><label><input type="checkbox" name="connectors" value="GB/T">GB/T</label><label><input type="checkbox" name="connectors" value="NACS">NACS</label><label><input type="checkbox" name="connectors" value="Type2">Type 2</label><label><input type="checkbox" name="connectors" value="CHAdeMO">CHAdeMO</label></div></fieldset><div class="buttons"><button id="vehicleSubmit" type="submit" disabled>Добавить автомобиль</button><button id="vehicleCancel" type="button" class="secondary">Отмена</button></div></form><div id="vehicleMsg" class="message" role="status"></div></section>
-<section class="card"><h2>Разместить EV-компанию</h2><p>Подайте заявку на добавление автосервиса, магазина или автосалона. Компания появится в каталоге только после модерации.</p><form id="businessForm"><label for="businessName">Название компании</label><input id="businessName" required maxlength="150"><label for="businessCategory">Категория</label><select id="businessCategory" required><option value="">Загрузка категорий…</option></select><div class="buttons"><button type="submit">Отправить заявку</button></div><div id="businessMsg" class="message" role="status"></div></form></section>
-<section class="card"><h2>Единый кошелёк</h2><div class="notice">Платежи и баланс ещё не запущены. Мы не принимаем пополнения до подключения лицензированного платёжного партнёра.</div></section>
-</div><p id="globalMsg" class="message" role="status" aria-live="polite"></p></main>
+<div class="account-tabs">
+<div class="account-tab-list" role="tablist" aria-label="Разделы кабинета">
+ <button type="button" role="tab" id="companyTab" aria-controls="companyPanel" aria-selected="true">Компании</button>
+ <button type="button" role="tab" id="settingsTab" aria-controls="settingsPanel" aria-selected="false" tabindex="-1">Настройки</button>
+ <button type="button" role="tab" id="walletTab" aria-controls="walletPanel" aria-selected="false" tabindex="-1">Кошелёк</button>
+</div>
+<section class="card" role="tabpanel" tabindex="0" id="companyPanel" aria-labelledby="companyTab"><h2>Разместить EV-компанию</h2><p>Подайте заявку на добавление автосервиса, магазина или автосалона. Компания появится в каталоге только после модерации.</p><form id="businessForm"><label for="businessName">Название компании</label><input id="businessName" required maxlength="150"><label for="businessCategory">Категория</label><select id="businessCategory" required><option value="">Загрузка категорий…</option></select><div class="buttons"><button type="submit">Отправить заявку</button></div><div id="businessMsg" class="message" role="status"></div></form></section>
+<section class="card hidden" role="tabpanel" tabindex="0" id="settingsPanel" aria-labelledby="settingsTab">
+ <label class="connector-setting"><input type="checkbox" id="useVehicleConnectors" aria-describedby="vehicleConnectorHint" disabled>Только разъёмы моих автомобилей</label>
+ <p id="vehicleConnectorHint">Карта будет показывать станции с разъёмами, указанными хотя бы у одного из ваших автомобилей.</p>
+ <div class="message" id="preferencesMsg" role="status"></div>
+</section>
+<section class="card hidden" role="tabpanel" tabindex="0" id="walletPanel" aria-labelledby="walletTab"><h2>Единый кошелёк</h2><div class="notice">Платежи и баланс ещё не запущены. Мы не принимаем пополнения до подключения лицензированного платёжного партнёра.</div></section>
+</div></div><p id="globalMsg" class="message" role="status" aria-live="polite"></p></main>
 <nav class="mobile-nav" aria-label="Навигация по зарядным станциям">
   <div class="mobile-view-switch" role="group" aria-label="Вид зарядных станций">
     <a class="mobile-tab" href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 10-7 10s-7-5-7-10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg><span>Карта</span></a>
     <a class="mobile-tab" href="/?panel=list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h14"/></svg><span>Списком</span></a>
   </div>
-  <a class="mobile-tab" href="/?panel=search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 4.5 4.5"/></svg><span>Поиск</span></a>
   <a class="mobile-tab" href="/?panel=filters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h4m4 0h8M4 16h10m4 0h2"/><circle cx="10" cy="8" r="2"/><circle cx="16" cy="16" r="2"/></svg><span>Фильтры</span></a>
   <a class="mobile-tab" href="/account.html" aria-label="Личный кабинет" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg><span>Кабинет</span></a>
 </nav>
@@ -117,18 +130,78 @@ const $=id=>document.getElementById(id);
 let csrf='';
 async function api(action,data){
  const options={credentials:'same-origin',cache:'no-store',headers:{'Accept':'application/json'}};
- if(data){options.method='POST';options.headers['Content-Type']='application/json';options.body=JSON.stringify({...data,csrf});}
+ if(data){options.method='POST';if(action==='map_preferences')options.keepalive=true;options.headers['Content-Type']='application/json';options.body=JSON.stringify({...data,csrf});}
  const response=await fetch('/api/account.php?action='+encodeURIComponent(action),options);
  const body=await response.json();
  if(!response.ok)throw Object.assign(new Error(body.message||({invalid_credentials:'Неверная почта или пароль',email_not_verified:'Почта ещё не подтверждена',try_later:'Слишком много попыток. Попробуйте позже',unauthorized:'Сначала войдите',service_unavailable:'Сервис временно недоступен'}[body.error]||body.error||'Ошибка запроса')),{code:body.error});
  return body;
 }
+const accountTabs=[...document.querySelectorAll('.account-tab-list [role="tab"]')];
+function selectAccountTab(active){
+ for(const tab of accountTabs){
+  const selected=tab===active;
+  tab.setAttribute('aria-selected',String(selected));
+  tab.tabIndex=selected?0:-1;
+  $(tab.getAttribute('aria-controls')).classList.toggle('hidden',!selected);
+ }
+}
+for(const [index,tab] of accountTabs.entries()){
+ tab.addEventListener('click',()=>selectAccountTab(tab));
+ tab.addEventListener('keydown',event=>{
+  const next={ArrowLeft:(index+2)%3,ArrowRight:(index+1)%3,Home:0,End:2}[event.key];
+  if(next===undefined)return;
+  event.preventDefault();
+  selectAccountTab(accountTabs[next]);
+  accountTabs[next].focus();
+ });
+}
+const connectorPreference=$('useVehicleConnectors');
+let preferenceRequest=0;
+async function loadConnectorPreference(){
+ const request=++preferenceRequest;
+ connectorPreference.disabled=true;
+ $('preferencesMsg').textContent='';
+ try{
+  const result=await api('map_preferences');
+  if(request!==preferenceRequest||!result.signedIn)return;
+  connectorPreference.checked=result.automatic;
+  connectorPreference.disabled=false;
+ }catch(error){
+  if(request===preferenceRequest)$('preferencesMsg').textContent='Не удалось загрузить настройки';
+ }
+}
+connectorPreference.addEventListener('change',async()=>{
+ const request=preferenceRequest;
+ const automatic=connectorPreference.checked;
+ connectorPreference.disabled=true;
+ $('preferencesMsg').textContent='';
+ try{
+  await api('map_preferences',{automatic});
+ }catch(error){
+  if(request===preferenceRequest){
+   connectorPreference.checked=!automatic;
+   $('preferencesMsg').textContent='Не удалось сохранить настройку';
+  }
+ }finally{
+  if(request===preferenceRequest)connectorPreference.disabled=false;
+ }
+});
+window.addEventListener('pageshow',event=>{
+ if(event.persisted&&!$('authenticated').classList.contains('hidden'))loadConnectorPreference();
+});
 const accountMenu=$('accountMenu');
 function showUser(u){
  $('guest').classList.toggle('hidden',!!u);
  $('authenticated').classList.toggle('hidden',!u);
  accountMenu.classList.toggle('hidden',!u);
  accountMenu.open=false;
+ if(u)loadConnectorPreference();
+ else{
+  preferenceRequest++;
+  connectorPreference.checked=false;
+  connectorPreference.disabled=true;
+  selectAccountTab(accountTabs[0]);
+ }
  $('displayName').textContent=u?.display_name||'Мой профиль';
  $('userEmail').textContent=u?.email||'';
  $('roleBadge').textContent=({user:'Пользователь',business:'Компания',admin:'Администратор'})[u?.role]||'Пользователь';
