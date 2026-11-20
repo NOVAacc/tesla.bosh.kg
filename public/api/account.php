@@ -98,7 +98,7 @@ try {
     } elseif (!array_key_exists('automatic',$data) && isset($data['filters']) && is_array($data['filters']) && !array_is_list($data['filters'])) {
       $filters = $data['filters'];
       $clean = [];
-      foreach (['spark','charge24','weway','evion'] as $key) {
+      foreach (['spark','charge24','weway','evion','favoritesOnly'] as $key) {
         if (is_bool($filters[$key] ?? null)) $clean[$key] = $filters[$key];
       }
       foreach (['availability','current','power','station','portstatus','extras'] as $key) {

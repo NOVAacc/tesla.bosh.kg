@@ -13,7 +13,11 @@
 .nearby-location{font-size:12px;color:#64748b;line-height:1.45}
 .nearby-location button{border:0;background:none;color:#176ab4;font:inherit;font-weight:700;padding:0 4px;text-decoration:underline;cursor:pointer}
 .nearby-content{max-width:840px;margin:0 auto;padding:12px 14px 25px}
-.nearby-card{width:100%;display:block;text-align:left;background:white;border:1px solid #e5eaf1;border-radius:16px;padding:15px;margin-bottom:10px;color:#1b2430;box-shadow:0 2px 8px #17213208;cursor:pointer;font:inherit}
+.nearby-entry{position:relative;margin-bottom:10px}
+.nearby-entry .station-favorite-button{position:absolute;top:10px;right:10px}
+.nearby-entry .station-favorite-message{margin:6px 15px 0}
+.station-favorite-message:empty{display:none}
+.nearby-card{width:100%;display:block;text-align:left;background:white;border:1px solid #e5eaf1;border-radius:16px;padding:15px 62px 15px 15px;color:#1b2430;box-shadow:0 2px 8px #17213208;cursor:pointer;font:inherit}
 .nearby-card:focus-visible{outline:3px solid #3289d1;outline-offset:2px}
 .nearby-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .nearby-card-title{font-size:16px;font-weight:750;line-height:1.3}
@@ -160,6 +164,8 @@
 .station-favorite-button:disabled{opacity:.6;cursor:wait}
 .station-favorite-message{font-size:13px;margin-top:6px;color:#414141}
 .station-favorite-message a{font-weight:650}
+.favorite-filter{display:inline-flex;align-items:center;gap:8px;min-height:44px;font-size:14px;cursor:pointer}
+.favorite-filter input{width:17px;height:17px;accent-color:#171717}
 </style></head><body><div class="app"><div class="toolbar"><div class="top"><div class="brand"><h1>Зарядные станции Кыргызстана</h1><div class="sub">Единая карта SPARK KG, Charge24, WeWay и EVION</div></div><div class="actions"><button class="chip" id="desktopList" type="button" aria-pressed="false">Списком</button><a class="chip" href="/account.html" style="text-decoration:none;display:inline-flex;align-items:center">Кабинет</a><button class="chip" id="refresh" type="button">↻ Обновить данные</button><button class="chip" id="reset" type="button">Сбросить фильтры</button></div></div><div class="filters" role="group" aria-label="Фильтры зарядных станций"><div class="filter-group">
 <h3 class="filter-heading">Операторы</h3>
 <div class="filter-group filter-networks"><button class="chip" id="spark" type="button" aria-pressed="true">SPARK KG</button><button class="chip" id="charge24" type="button" aria-pressed="true">Charge24</button><button class="chip" id="weway" type="button" aria-pressed="true">WeWay</button><button class="chip" id="evion" type="button" aria-pressed="true">EVION</button></div>
@@ -171,6 +177,8 @@
 </div>
 <div class="filter-group">
 <h3 class="filter-heading">Параметры станции</h3>
+<label class="favorite-filter"><input type="checkbox" id="favoritesOnly" aria-describedby="favoriteFilterMessage">Только избранные</label>
+<span id="favoriteFilterMessage" class="station-favorite-message" role="status"></span>
 <label class="filter-row"><span>Доступность</span><select class="control" id="availability" aria-label="Доступность"><option value="all">Любая доступность</option><option value="free">Есть свободный порт</option><option value="occupied">Есть занятый порт</option><option value="allfree">Все порты свободны</option><option value="nofree">Нет свободных</option></select></label>
 <label class="filter-row"><span>Тип зарядки</span><select class="control" id="current" aria-label="Род тока"><option value="all">AC и DC</option><option value="DC">DC (быстрая)</option><option value="AC">AC (медленная)</option><option value="unknown">Неизвестный тип</option></select></label>
 <label class="filter-row"><span>Мощность</span><select class="control" id="power" aria-label="Мощность"><option value="all">Любая мощность</option><option value="20">от 20 кВт</option><option value="40">от 40 кВт</option><option value="60">от 60 кВт</option><option value="80">от 80 кВт</option><option value="120">от 120 кВт</option><option value="150">от 150 кВт</option><option value="unknown">Не указана</option></select></label>
@@ -212,7 +220,7 @@ function chargingPercentage(connector){
 function active(d){return d.active!==false&&!d.blocked}
 function isFree(x){return active(x.device)&&x.connector.available===true&&!x.connector.pending}
 function searchText(s){return [s.name,s.address,...(s.devices||[]).map(d=>d.name)].join(' ').toLocaleLowerCase()}
-function matches(s){if(s.operator==='SPARK KG'&&!filter.spark||s.operator==='Charge24'&&!filter.charge24||s.operator==='WeWay'&&!filter.weway||s.operator==='EVION'&&!filter.evion)return false;const q=$('search').value.trim().toLocaleLowerCase();if(q&&!searchText(s).includes(q))return false;const p=flatten(s),free=p.filter(isFree).length,occupied=p.filter(x=>['OCCUPIED','PREPARING','FINISHING'].includes(canon(x.connector.status))).length;const a=$('availability').value;if(a==='free'&&!free||a==='occupied'&&!occupied||a==='allfree'&&(!p.length||free!==p.length)||a==='nofree'&&free>0)return false;const devices=s.devices||[s];const st=$('station').value;if(st==='active'&&!devices.some(active)||st==='inactive'&&!devices.some(d=>!active(d)))return false;const cur=$('current').value;if(cur!=='all'&&!devices.some(d=>cur==='unknown'?!current(d):current(d)===cur))return false;const pow=$('power').value;if(pow!=='all'&&!devices.some(d=>pow==='unknown'?power(d)===null:power(d)!==null&&power(d)>=Number(pow)))return false;const connectors=vehicleConnectorTypes??selectedConnectorTypes;if((vehicleConnectorTypes!==null||connectors.size)&&![...connectors].some(conn=>(conn!=='unknown'&&(s.supportedConnectorTypes||[]).includes(conn))||p.some(x=>conn==='unknown'?!type(x.connector)&&!(x.device.supportedConnectorTypes||[]).length:type(x.connector)===conn)))return false;const ps=$('portstatus').value;if(ps!=='all'&&!p.some(x=>canon(x.connector.status)===ps))return false;const ex=$('extras').value;if(ex==='pending'&&!p.some(x=>x.connector.pending)||ex==='finished'&&!p.some(x=>x.connector.chargingFinished)||ex==='percentage'&&!p.some(x=>chargingPercentage(x.connector)!==null))return false;return true}
+function matches(s){if($('favoritesOnly').checked&&!favoriteStations.has(s.id))return false;if(s.operator==='SPARK KG'&&!filter.spark||s.operator==='Charge24'&&!filter.charge24||s.operator==='WeWay'&&!filter.weway||s.operator==='EVION'&&!filter.evion)return false;const q=$('search').value.trim().toLocaleLowerCase();if(q&&!searchText(s).includes(q))return false;const p=flatten(s),free=p.filter(isFree).length,occupied=p.filter(x=>['OCCUPIED','PREPARING','FINISHING'].includes(canon(x.connector.status))).length;const a=$('availability').value;if(a==='free'&&!free||a==='occupied'&&!occupied||a==='allfree'&&(!p.length||free!==p.length)||a==='nofree'&&free>0)return false;const devices=s.devices||[s];const st=$('station').value;if(st==='active'&&!devices.some(active)||st==='inactive'&&!devices.some(d=>!active(d)))return false;const cur=$('current').value;if(cur!=='all'&&!devices.some(d=>cur==='unknown'?!current(d):current(d)===cur))return false;const pow=$('power').value;if(pow!=='all'&&!devices.some(d=>pow==='unknown'?power(d)===null:power(d)!==null&&power(d)>=Number(pow)))return false;const connectors=vehicleConnectorTypes??selectedConnectorTypes;if((vehicleConnectorTypes!==null||connectors.size)&&![...connectors].some(conn=>(conn!=='unknown'&&(s.supportedConnectorTypes||[]).includes(conn))||p.some(x=>conn==='unknown'?!type(x.connector)&&!(x.device.supportedConnectorTypes||[]).length:type(x.connector)===conn)))return false;const ps=$('portstatus').value;if(ps!=='all'&&!p.some(x=>canon(x.connector.status)===ps))return false;const ex=$('extras').value;if(ex==='pending'&&!p.some(x=>x.connector.pending)||ex==='finished'&&!p.some(x=>x.connector.chargingFinished)||ex==='percentage'&&!p.some(x=>chargingPercentage(x.connector)!==null))return false;return true}
 const connectorPins={
  'GB/T':[[10,11],[22,11],[16,16],[10,21],[22,21]],
  CCS2:[[12,9],[20,9],[16,14],[11,25],[21,25]],
@@ -312,6 +320,7 @@ async function loadStationFavorites(){
   favoriteStations.clear();
   for(const id of account.stations??[])favoriteStations.add(id);
   syncFavoriteControls();
+  if($('favoritesOnly').checked)draw();
  })();
  try{await favoriteLoad}finally{favoriteLoad=null}
 }
@@ -362,6 +371,7 @@ document.addEventListener('click',async event=>{
   if(!response.ok)throw Error('Favorites unavailable');
   if(favorite)favoriteStations.add(id);
   else favoriteStations.delete(id);
+  if($('favoritesOnly').checked)draw();
  }catch{
   favoriteMessage={id,signIn:false};
  }finally{
@@ -532,6 +542,7 @@ function renderStationList(){
  for(const site of entries){
    const ports=flatten(site),free=ports.filter(isFree).length;
    const types=[...new Set(ports.map(x=>type(x.connector)).filter(Boolean))].slice(0,3);
+   const entry=document.createElement('article');entry.className='nearby-entry';
    const card=document.createElement('button');card.type='button';card.className='nearby-card';
    const head=document.createElement('div');head.className='nearby-card-head';
    const title=document.createElement('span');title.className='nearby-card-title';title.textContent=site.name;
@@ -551,7 +562,10 @@ function renderStationList(){
      if(mobileMQ.matches)openStationPanel(site);
      else{setListMode(false);const markerRef=visibleMarkers.get(site.id);map.setView([site.lat,site.lng],Math.max(map.getZoom(),15));if(markerRef)markerRef.openPopup()}
    });
-   container.append(card);
+   const actions=document.createElement('div');
+   actions.innerHTML=`${favoriteButton(site.id)}<div class="station-favorite-message" data-favorite-status="${esc(site.id)}" role="status">${favoriteNotice(site.id)}</div>`;
+   entry.append(card,actions);
+   container.append(entry);
  }
  $('stationListView').scrollTop=oldScroll;
 }
@@ -598,6 +612,8 @@ function showFilterSaveError(message){
  status.hidden=!message;
 }
 function applySavedFilters(saved){
+ $('favoritesOnly').checked=saved?.favoritesOnly===true;
+ $('favoriteFilterMessage').textContent='';
  for(const id of networkFilterIds){
   filter[id]=saved?.[id]!==false;
   $(id).setAttribute('aria-pressed',String(filter[id]));
@@ -633,7 +649,7 @@ async function loadMapPreferences(){
 function saveMapFilters(){
  filterRevision++;
  if(!preferencesCsrf)return;
- pendingFilters={...filter,connectors:[...selectedConnectorTypes]};
+ pendingFilters={...filter,favoritesOnly:$('favoritesOnly').checked,connectors:[...selectedConnectorTypes]};
  for(const id of selectFilterIds)pendingFilters[id]=$(id).value;
  if(!savingFilters)flushMapFilters();
 }
@@ -663,6 +679,26 @@ for(const id of networkFilterIds)$(id).onclick=()=>{
  refreshTypes();draw();saveMapFilters();
 };
 for(const id of selectFilterIds)$(id).addEventListener('change',()=>{draw();saveMapFilters()});
+$('favoritesOnly').addEventListener('change',async event=>{
+ const checkbox=event.target,message=$('favoriteFilterMessage');
+ message.textContent='';
+ if(checkbox.checked){
+  checkbox.disabled=true;
+  try{
+   if(!favoriteAccount||favoriteLoad)await loadStationFavorites();
+   if(!favoriteAccount.signedIn){
+    checkbox.checked=false;
+    message.innerHTML='<a href="/account.html">Войдите</a>, чтобы видеть избранные станции.';
+    return;
+   }
+  }catch{
+   checkbox.checked=false;
+   message.textContent='Не удалось загрузить избранное. Попробуйте ещё раз.';
+   return;
+  }finally{checkbox.disabled=false}
+ }
+ draw();saveMapFilters();
+});
 $('search').addEventListener('input',draw);
 $('refresh').onclick=refresh;
 $('reset').onclick=()=>{$('search').value='';applySavedFilters(null);saveMapFilters()};
