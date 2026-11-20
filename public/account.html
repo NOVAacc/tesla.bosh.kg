@@ -32,21 +32,24 @@ main { padding-block: 32px 48px; }
 .account-panel h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
 .account-panel p { margin: 6px 0 10px; color: #505050; font-size: 14px; overflow-wrap: anywhere; }
 .account-panel button { display: block; width: 100%; margin-top: 14px; }
-.garage { grid-row: span 2; }
+.garage { grid-row: span 2; padding: 0; background: transparent; }
+.garage .section-heading { margin-bottom: 16px; }
+.garage .section-heading .round { background: #f8f8f8; color: #171717; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-#vehicleCount { margin: 8px 0 14px; }
-#vehicleList { display: grid; gap: 10px; }
+#vehicleList { display: grid; gap: 12px; }
 #vehicleList > p { background: #f5f5f5; padding: 18px; border-radius: 22px; margin: 0; }
-.vehicle-row { position: relative; display: grid; align-content: end; gap: 9px; min-height: 142px; padding: 20px 68px 20px 18px; border-radius: 22px; background: linear-gradient(145deg,#f7f7f7,#e9e9e9); }
-.vehicle-row h3 { font-size: clamp(24px, 4vw, 37px); line-height: 1; font-weight: 550; letter-spacing: -.05em; margin: 0; overflow-wrap: anywhere; }
-.vehicle-meta { display: flex; flex-wrap: wrap; gap: 5px; }
+.vehicle-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px 14px; padding: 18px; border-radius: 26px; background: #fff; box-shadow: 0 3px 12px #00000009; }
+.vehicle-row h3 { font-size: clamp(21px, 4vw, 28px); line-height: 1.12; font-weight: 550; letter-spacing: -.05em; margin: 0; overflow-wrap: anywhere; }
+.vehicle-row .vehicle-year { margin: 3px 0 0; font-size: 13px; color: #5c5c5c; }
+.vehicle-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 5px; }
+.vehicle-meta:empty { display: none; }
 .pill { display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 999px; background: #f4f4f4; color: #383838; font-size: 12px; }
-.vehicle-meta .pill { background: #ffffffc9; }
+.vehicle-meta .pill { background: #f4f4f4; }
 button, .google-link { border: 0; background: #171717; color: #fff; border-radius: 999px; padding: 11px 17px; min-height: 44px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 button:disabled { opacity: .45; cursor: not-allowed; }
 .secondary { background: #f0f0f0; color: #191919; }
 .round { width: 44px; min-width: 44px; padding: 0; font-size: 24px; font-weight: 450; }
-.vehicle-row .round { position: absolute; top: 14px; right: 14px; }
+
 .google-link { display: flex; align-items: center; justify-content: center; gap: 10px; margin-block: 16px; background: #f2f2f2; color: #171717; text-decoration: none; }
 summary { cursor: pointer; color: #505050; font-size: 14px; }
 label, .vehicle-connectors legend { display: block; color: #444; font-size: 13px; }
@@ -95,7 +98,7 @@ input, select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px s
 <section class="card"><h2>Войти</h2><p>Продолжите с Google. Новый аккаунт создаётся автоматически при первом входе.</p><a class="google-link" href="/api/google-start.php"><svg width="19" height="19" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.27 5.48-4.79 7.18l7.73 6C44.39 38.03 46.98 31.89 46.98 24.55z"/><path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.2A23.9 23.9 0 0 0 0 24c0 3.87.92 7.53 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.88-5.8l-7.73-6c-2.15 1.45-4.92 2.3-8.15 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Продолжить с Google</a><details><summary>Вход по паролю для существующих пользователей</summary><form id="login"><label for="email">Электронная почта</label><input id="email" type="email" autocomplete="username" required maxlength="254"><label for="password">Пароль</label><input id="password" type="password" autocomplete="current-password" required><div class="buttons"><button type="submit">Войти</button></div><div id="loginMsg" class="message" role="status" aria-live="polite"></div></form></details></section>
 </div>
 <div id="authenticated" class="grid hidden">
-<section class="card garage"><div class="section-heading"><h2>Мои автомобили</h2><button id="vehicleAdd" type="button" class="round hidden" aria-label="Добавить автомобиль" aria-controls="vehicleForm" aria-expanded="false">+</button></div><p id="vehicleCount" role="status"></p><div id="vehicleList"><p>Загрузка…</p></div><form id="vehicleForm" class="hidden"><label for="make">Марка</label><select id="make" required disabled><option value="">Загрузка марок…</option></select><label for="model">Модель</label><select id="model" required disabled><option value="">Сначала выберите марку</option></select><label for="year">Год выпуска</label><input id="year" type="number" min="1990" max="2100" placeholder="2022"><fieldset class="vehicle-connectors" aria-describedby="connectorHint"><legend>Разъёмы</legend><p id="connectorHint">Отметьте разъёмы автомобиля и переходников.</p><div><label><input type="checkbox" name="connectors" value="CCS2">CCS2</label><label><input type="checkbox" name="connectors" value="GB/T">GB/T</label><label><input type="checkbox" name="connectors" value="NACS">NACS</label><label><input type="checkbox" name="connectors" value="Type2">Type 2</label><label><input type="checkbox" name="connectors" value="CHAdeMO">CHAdeMO</label></div></fieldset><div class="buttons"><button id="vehicleSubmit" type="submit" disabled>Добавить автомобиль</button><button id="vehicleCancel" type="button" class="secondary">Отмена</button></div></form><div id="vehicleMsg" class="message" role="status"></div></section>
+<section class="card garage"><div class="section-heading"><h2>Мои автомобили</h2><button id="vehicleAdd" type="button" class="round hidden" aria-label="Добавить автомобиль" aria-controls="vehicleForm" aria-expanded="false">+</button></div><div id="vehicleList"><p>Загрузка…</p></div><form id="vehicleForm" class="hidden"><label for="make">Марка</label><select id="make" required disabled><option value="">Загрузка марок…</option></select><label for="model">Модель</label><select id="model" required disabled><option value="">Сначала выберите марку</option></select><label for="year">Год выпуска</label><input id="year" type="number" min="1990" max="2100" placeholder="2022"><fieldset class="vehicle-connectors" aria-describedby="connectorHint"><legend>Разъёмы</legend><p id="connectorHint">Отметьте разъёмы автомобиля и переходников.</p><div><label><input type="checkbox" name="connectors" value="CCS2">CCS2</label><label><input type="checkbox" name="connectors" value="GB/T">GB/T</label><label><input type="checkbox" name="connectors" value="NACS">NACS</label><label><input type="checkbox" name="connectors" value="Type2">Type 2</label><label><input type="checkbox" name="connectors" value="CHAdeMO">CHAdeMO</label></div></fieldset><div class="buttons"><button id="vehicleSubmit" type="submit" disabled>Добавить автомобиль</button><button id="vehicleCancel" type="button" class="secondary">Отмена</button></div></form><div id="vehicleMsg" class="message" role="status"></div></section>
 <section class="card"><h2>Разместить EV-компанию</h2><p>Подайте заявку на добавление автосервиса, магазина или автосалона. Компания появится в каталоге только после модерации.</p><form id="businessForm"><label for="businessName">Название компании</label><input id="businessName" required maxlength="150"><label for="businessCategory">Категория</label><select id="businessCategory" required><option value="">Загрузка категорий…</option></select><div class="buttons"><button type="submit">Отправить заявку</button></div><div id="businessMsg" class="message" role="status"></div></form></section>
 <section class="card"><h2>Единый кошелёк</h2><div class="notice">Платежи и баланс ещё не запущены. Мы не принимаем пополнения до подключения лицензированного платёжного партнёра.</div></section>
 </div><p id="globalMsg" class="message" role="status" aria-live="polite"></p></main>
@@ -202,9 +205,17 @@ async function loadVehicles(){
   const name=[v.make,v.model].join(' ');
   const title=document.createElement('h3');
   title.textContent=name;
+  const heading=document.createElement('div');
+  heading.append(title);
+  if(v.model_year){
+   const year=document.createElement('p');
+   year.className='vehicle-year';
+   year.textContent=v.model_year;
+   heading.append(year);
+  }
   const details=document.createElement('div');
   details.className='vehicle-meta';
-  for(const value of [v.model_year,...vehicle.connectors].filter(Boolean)){
+  for(const value of vehicle.connectors.filter(Boolean)){
    const pill=document.createElement('span');
    pill.className='pill';
    pill.textContent=value;
@@ -221,10 +232,9 @@ async function loadVehicles(){
    $('vehicleMsg').textContent='';showVehicleForm(vehicle);
    ($('make').disabled?$('year'):$('make')).focus();
   });
-  el.append(title,details,edit);root.append(el);
+  el.append(heading,edit,details);root.append(el);
  }
  vehicleLimitReached=vehicles.length>=limit;
- $('vehicleCount').textContent=vehicleLimitReached?`Достигнут лимит: до ${limit} автомобилей.`:`Автомобили: ${vehicles.length} из ${limit}`;
  $('vehicleAdd').classList.toggle('hidden',vehicleLimitReached);
  $('vehicleAdd').disabled=!vehicleMakes.length;
  if(vehicleLimitReached&&!editingVehicle)closeVehicleForm();
