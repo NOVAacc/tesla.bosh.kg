@@ -204,6 +204,19 @@
 .map-layer-feedback[hidden]{display:none}
 .map-layer-feedback .map-loading-spinner{margin:10px}
 .map-layer-status{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.marker{position:relative}
+.availability-icon{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;background:var(--availability-color);color:#fff;font:bold 12px/1 system-ui,sans-serif}
+.availability-icon svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.availability-icon.available{--availability-color:#087b49}
+.availability-icon.occupied{--availability-color:#a15a00}
+.availability-icon.faulted{--availability-color:#ba303b}
+.availability-icon.unknown{--availability-color:#546475}
+.marker>.availability-icon{position:absolute;right:-7px;bottom:-7px;width:18px;height:18px;border:2px solid #fff;box-shadow:0 1px 3px #0003}
+.marker>.availability-icon svg{width:10px;height:10px}
+.station-status{display:inline-flex;align-items:center;gap:5px}
+.port .availability-icon{width:15px;height:15px;vertical-align:middle;margin-right:4px}
+.port .availability-icon svg{width:10px;height:10px}
+.station-summary .availability-icon{vertical-align:middle;margin-right:5px}
 .map-service-marker{background:#3948a3}
 .main:has(.station-list-view.is-open,.station-panel.is-open) .map-layers,
 .main.chargers-hidden:not(:has(.station-list-view.is-open)) :is(.map-loading,.status,.mobile-map-refresh){display:none}
@@ -237,7 +250,7 @@
 <label class="filter-row"><span>Тип зарядки</span><select class="control" id="current" aria-label="Род тока"><option value="all">AC и DC</option><option value="DC">DC (быстрая)</option><option value="AC">AC (медленная)</option><option value="unknown">Неизвестный тип</option></select></label>
 <label class="filter-row"><span>Мощность</span><select class="control" id="power" aria-label="Мощность"><option value="all">Любая мощность</option><option value="20">от 20 кВт</option><option value="40">от 40 кВт</option><option value="60">от 60 кВт</option><option value="80">от 80 кВт</option><option value="120">от 120 кВт</option><option value="150">от 150 кВт</option><option value="unknown">Не указана</option></select></label>
 <label class="filter-row"><span>Станция</span><select class="control" id="station" aria-label="Состояние устройства"><option value="all">Любые станции</option><option value="active">Только активные</option><option value="inactive">Неактивные / заблокированные</option></select></label>
-<label class="filter-row"><span>Статус порта</span><select class="control" id="portstatus" aria-label="Статус порта"><option value="all">Любой статус порта</option><option value="AVAILABLE">Свободен</option><option value="OCCUPIED">Занят / зарядка</option><option value="FAULTED">Неисправен</option><option value="UNAVAILABLE">Недоступен</option><option value="FINISHING">Завершение</option><option value="PREPARING">Подключение</option><option value="UNKNOWN">Неизвестный статус</option></select></label>
+<label class="filter-row"><span>Статус порта</span><select class="control" id="portstatus" aria-label="Статус порта"><option value="all">Любой статус порта</option><option value="AVAILABLE">Свободен</option><option value="OCCUPIED">Занят / зарядка</option><option value="FAULTED">Неисправен</option><option value="UNAVAILABLE">Недоступен</option><option value="FINISHING">Завершение</option><option value="RESERVED">Зарезервирован</option><option value="PREPARING">Подключение</option><option value="UNKNOWN">Неизвестный статус</option></select></label>
 <label class="filter-row"><span>Дополнительно</span><select class="control" id="extras" aria-label="Дополнительный фильтр"><option value="all">Без доп. условий</option><option value="pending">Ожидает подключения</option><option value="finished">Зарядка завершена</option><option value="percentage">Показан % заряда</option></select></label>
 </div></div><div class="summary" id="summary">Загрузка данных…</div></div><div class="main"><div id="map"></div>
 <details class="map-layers" id="mapLayers">
@@ -270,7 +283,7 @@ if(cartoKey){
  positronTiles.on('tileerror',()=>{if(++failures>=3&&map.hasLayer(positronTiles)){map.removeLayer(positronTiles);osmTiles.addTo(map);baseTiles=osmTiles;}});
  baseTiles=positronTiles;
 }
-baseTiles.addTo(map);const layer=L.layerGroup().addTo(map);let stations=[],meta={};const filter={spark:true,charge24:true,weway:true,evion:true};const selectedConnectorTypes=new Set();let vehicleConnectorTypes=null;const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));const statuses={AVAILABLE:'Свободен',OCCUPIED:'Занят',FAULTED:'Ошибка',UNAVAILABLE:'Недоступен',FINISHING:'Завершение',PREPARING:'Подключение',UNKNOWN:'Неизвестно'};
+baseTiles.addTo(map);const layer=L.layerGroup().addTo(map);let stations=[],meta={};const filter={spark:true,charge24:true,weway:true,evion:true};const selectedConnectorTypes=new Set();let vehicleConnectorTypes=null;const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));const statuses={AVAILABLE:'Свободен',OCCUPIED:'Занят',FAULTED:'Неисправен',RESERVED:'Зарезервирован',UNAVAILABLE:'Недоступен',FINISHING:'Завершение',PREPARING:'Подключение',UNKNOWN:'Неизвестно'};
 const serviceLayer=L.layerGroup();
 let servicesLoaded=false;
 let servicesRequest=null;
@@ -360,23 +373,93 @@ function setupMapLayers(){
  $('mapServicesRetry').addEventListener('click',ensureServicesLoaded);
 }
 
-function canon(s){const x=String(s||'').toUpperCase();if(x==='AVAILABLE'||x==='FREE')return 'AVAILABLE';if(['CHARGING','OCCUPIED'].includes(x))return 'OCCUPIED';if(x==='FAULTED')return 'FAULTED';if(x==='UNAVAILABLE')return 'UNAVAILABLE';if(x==='FINISHING')return 'FINISHING';if(x==='PREPARING')return 'PREPARING';return 'UNKNOWN'}
+const statusAliases=new Map([
+ ['AVAILABLE','AVAILABLE'],['FREE','AVAILABLE'],
+ ['OCCUPIED','OCCUPIED'],['CHARGING','OCCUPIED'],['BUSY','OCCUPIED'],
+ ['SUSPENDEDEV','OCCUPIED'],['SUSPENDEDEVSE','OCCUPIED'],
+ ['PREPARING','PREPARING'],['FINISHING','FINISHING'],['RESERVED','RESERVED'],
+ ['FAULTED','FAULTED'],['FAULT','FAULTED'],['ERROR','FAULTED'],
+ ['UNAVAILABLE','UNAVAILABLE'],['OFFLINE','UNAVAILABLE'],['OUTOFORDER','UNAVAILABLE'],
+ ['INOPERATIVE','UNAVAILABLE'],['BLOCKED','UNAVAILABLE']
+]);
+function canon(value){
+ const key=String(value??'').trim().toUpperCase().replace(/[\s_-]+/g,'');
+ return statusAliases.get(key)??'UNKNOWN';
+}
+const busyStatuses=new Set(['OCCUPIED','PREPARING','FINISHING','RESERVED']);
+function connectorStatus({device,connector}){
+ if(!active(device))return 'UNAVAILABLE';
+ const reported=canon(connector.status);
+ const ocpp=canon(connector.ocppStatus);
+ if(reported==='FAULTED'||ocpp==='FAULTED')return 'FAULTED';
+ if(reported==='UNAVAILABLE'||ocpp==='UNAVAILABLE')return 'UNAVAILABLE';
+ if(busyStatuses.has(ocpp))return ocpp;
+ if(busyStatuses.has(reported))return reported;
+ if(connector.pending)return 'PREPARING';
+ if(connector.available===true)return 'AVAILABLE';
+ if(reported==='AVAILABLE'&&connector.available!==false)return 'AVAILABLE';
+ return 'UNKNOWN';
+}
+const availabilityStyles={
+ available:{label:'Есть свободный разъём',path:'m2 6 2.5 2.5L10 3'},
+ occupied:{label:'Свободных нет, разъёмы заняты',path:'M6 3v3l2 1M11 6a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z'},
+ faulted:{label:'Разъёмы недоступны',path:'m3 3 6 6m0-6L3 9'},
+ unknown:{label:'Доступность неизвестна',path:'M4 4a2 2 0 1 1 3.2 1.6C6.4 6.2 6 6.5 6 7.5M6 10h.01'}
+};
+function availabilityKind(status){
+ if(status==='AVAILABLE')return 'available';
+ if(busyStatuses.has(status))return 'occupied';
+ if(status==='FAULTED'||status==='UNAVAILABLE')return 'faulted';
+ return 'unknown';
+}
+function availabilityIcon(kind){
+ return `<span class="availability-icon ${kind}" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="${availabilityStyles[kind].path}"/></svg></span>`;
+}
+function connectorFilter(){
+ return vehicleConnectorTypes??selectedConnectorTypes;
+}
+function connectorFilterActive(){
+ return vehicleConnectorTypes!==null||selectedConnectorTypes.size>0;
+}
+function relevantPorts(site){
+ const ports=flatten(site);
+ if(!connectorFilterActive())return ports;
+ const types=connectorFilter();
+ return ports.filter(({device,connector})=>{
+  const connectorType=type(connector);
+  return connectorType?types.has(connectorType):types.has('unknown')&&!(device.supportedConnectorTypes||[]).length;
+ });
+}
+function stationAvailability(site){
+ const ports=relevantPorts(site);
+ const states=ports.map(connectorStatus);
+ const free=states.filter(status=>status==='AVAILABLE').length;
+ let kind='unknown';
+ if(free)kind='available';
+ else if(states.some(status=>busyStatuses.has(status)))kind='occupied';
+ else if(!active(site)||(states.length&&states.every(status=>availabilityKind(status)==='faulted')))kind='faulted';
+ return {kind,free,total:ports.length};
+}
+function availabilityText({kind,free,total}){
+ const label=availabilityStyles[kind].label;
+ return total?`${free} из ${total} свободно${kind==='available'?'':' · '+label}`:label;
+}
 function flatten(s){return s.devices?s.devices.flatMap(d=>(d.connectors||[]).map(c=>({device:d,connector:c}))):(s.connectors||[]).map(c=>({device:s,connector:c}))}
 function power(d){let n=Number(d.powerKw);if(Number.isFinite(n)&&n>0)return n;const portPowers=(d.connectors||[]).map(c=>Number(c.powerKw)).filter(n=>Number.isFinite(n)&&n>0);if(portPowers.length)return Math.max(...portPowers);const m=String(d.name||'').match(/\b(AC|DC)\s*(\d+(?:[.,]\d+)?)/i);return m?Number(m[2].replace(',','.')):null}
 function current(d){if(d.operator==='EVION')return (d.connectors||[]).some(c=>String(c.type||'').toUpperCase().includes('DC'))?'DC':null;if(d.operator==='WeWay')return (d.connectors||[]).some(c=>/\(DC\)/i.test(c.type||''))?'DC':null;const match=String(d.name||'').match(/\b(AC|DC)\s*\d/i);return match?match[1].toUpperCase():null}
 function type(c){const v=String(c.type||'').trim().toUpperCase().replace(/[\s_\-\/]/g,'');if(!v||v==='UNKNOWN'||v==='UNDETERMINED')return null;if(v==='CCCS1'||v==='CCS1')return 'CCS1';if(v==='CG105')return 'CHAdeMO';if(v==='CTESLA')return 'Tesla';if(v.includes('CCS2')||v==='CCS'||v==='COMBO2')return 'CCS2';if(v.includes('GBT')||v==='GB')return 'GB/T';if(v.includes('CHADEMO'))return 'CHAdeMO';if(v.includes('TYPE2')||v==='MENNEKES')return 'Type 2';if(v.includes('TYPE1')||v==='J1772')return 'Type 1';if(v.includes('NACS')||v.includes('TESLA'))return 'NACS';return String(c.type).trim()}
 function displayType(c){if(c.type==='GBT_DC')return 'GB/T DC';if(c.type==='GBT_AC')return 'GB/T AC';return type(c)||'Разъём не указан'}
-function chargingPercentage(connector){
-  if(canon(connector.status)!=='OCCUPIED'||connector.chargingFinished)return null;
+function chargingPercentage(connector,status=canon(connector.status)){
+  if(status!=='OCCUPIED'||connector.chargingFinished)return null;
   const raw=connector.percentage;
   if(typeof raw!=='number'&&(typeof raw!=='string'||!raw.trim()))return null;
   const percentage=Number(raw);
   return Number.isFinite(percentage)&&percentage>=0&&percentage<=100?percentage:null;
 }
 function active(d){return d.active!==false&&!d.blocked}
-function isFree(x){return active(x.device)&&x.connector.available===true&&!x.connector.pending}
+function isFree(port){return connectorStatus(port)==='AVAILABLE'}
 function searchText(s){return [s.name,s.address,...(s.devices||[]).map(d=>d.name)].join(' ').toLocaleLowerCase()}
-function matches(s){if($('favoritesOnly').checked&&!favoriteStations.has(s.id))return false;if(s.operator==='SPARK KG'&&!filter.spark||s.operator==='Charge24'&&!filter.charge24||s.operator==='WeWay'&&!filter.weway||s.operator==='EVION'&&!filter.evion)return false;const q=$('search').value.trim().toLocaleLowerCase();if(q&&!searchText(s).includes(q))return false;const p=flatten(s),free=p.filter(isFree).length,occupied=p.filter(x=>['OCCUPIED','PREPARING','FINISHING'].includes(canon(x.connector.status))).length;const a=$('availability').value;if(a==='free'&&!free||a==='occupied'&&!occupied||a==='allfree'&&(!p.length||free!==p.length)||a==='nofree'&&free>0)return false;const devices=s.devices||[s];const st=$('station').value;if(st==='active'&&!devices.some(active)||st==='inactive'&&!devices.some(d=>!active(d)))return false;const cur=$('current').value;if(cur!=='all'&&!devices.some(d=>cur==='unknown'?!current(d):current(d)===cur))return false;const pow=$('power').value;if(pow!=='all'&&!devices.some(d=>pow==='unknown'?power(d)===null:power(d)!==null&&power(d)>=Number(pow)))return false;const connectors=vehicleConnectorTypes??selectedConnectorTypes;if((vehicleConnectorTypes!==null||connectors.size)&&![...connectors].some(conn=>(conn!=='unknown'&&(s.supportedConnectorTypes||[]).includes(conn))||p.some(x=>conn==='unknown'?!type(x.connector)&&!(x.device.supportedConnectorTypes||[]).length:type(x.connector)===conn)))return false;const ps=$('portstatus').value;if(ps!=='all'&&!p.some(x=>canon(x.connector.status)===ps))return false;const ex=$('extras').value;if(ex==='pending'&&!p.some(x=>x.connector.pending)||ex==='finished'&&!p.some(x=>x.connector.chargingFinished)||ex==='percentage'&&!p.some(x=>chargingPercentage(x.connector)!==null))return false;return true}
+function matches(s){if($('favoritesOnly').checked&&!favoriteStations.has(s.id))return false;if(s.operator==='SPARK KG'&&!filter.spark||s.operator==='Charge24'&&!filter.charge24||s.operator==='WeWay'&&!filter.weway||s.operator==='EVION'&&!filter.evion)return false;const q=$('search').value.trim().toLocaleLowerCase();if(q&&!searchText(s).includes(q))return false;const p=flatten(s),relevant=relevantPorts(s),free=relevant.filter(isFree).length,occupied=relevant.filter(x=>busyStatuses.has(connectorStatus(x))).length;const a=$('availability').value;if(a==='free'&&!free||a==='occupied'&&!occupied||a==='allfree'&&(!relevant.length||free!==relevant.length)||a==='nofree'&&free>0)return false;const devices=s.devices||[s];const st=$('station').value;if(st==='active'&&!devices.some(active)||st==='inactive'&&!devices.some(d=>!active(d)))return false;const cur=$('current').value;if(cur!=='all'&&!devices.some(d=>cur==='unknown'?!current(d):current(d)===cur))return false;const pow=$('power').value;if(pow!=='all'&&!devices.some(d=>pow==='unknown'?power(d)===null:power(d)!==null&&power(d)>=Number(pow)))return false;const connectors=vehicleConnectorTypes??selectedConnectorTypes;if((vehicleConnectorTypes!==null||connectors.size)&&![...connectors].some(conn=>(conn!=='unknown'&&(s.supportedConnectorTypes||[]).includes(conn))||p.some(x=>conn==='unknown'?!type(x.connector)&&!(x.device.supportedConnectorTypes||[]).length:type(x.connector)===conn)))return false;const ps=$('portstatus').value;if(ps!=='all'&&!relevant.some(x=>connectorStatus(x)===ps))return false;const ex=$('extras').value;if(ex==='pending'&&!p.some(x=>x.connector.pending)||ex==='finished'&&!p.some(x=>x.connector.chargingFinished)||ex==='percentage'&&!relevant.some(x=>chargingPercentage(x.connector,connectorStatus(x))!==null))return false;return true}
 const connectorPins={
  'GB/T':[[10,11],[22,11],[16,16],[10,21],[22,21]],
  CCS2:[[12,9],[20,9],[16,14],[11,25],[21,25]],
@@ -454,7 +537,7 @@ function refreshTypes(){
  control.add(new Option('Тип не определён','unknown'));
  renderConnectorCards();
 }
-function marker(s){const color=s.operator==='SPARK KG'?'#209769':s.operator==='Charge24'?'#b8860b':s.operator==='WeWay'?'#d32f2f':s.operator==='EVION'?'#146b45':'#8794a5';const name=s.operator==='SPARK KG'?'S':s.operator==='WeWay'?'W':s.operator==='EVION'?'E':'24';return L.divIcon({html:`<div class="marker" style="background:${color}">${name}</div>`,className:'',iconSize:[31,31],iconAnchor:[15,15]})}
+function marker(s,availability){const color=s.operator==='SPARK KG'?'#209769':s.operator==='Charge24'?'#b8860b':s.operator==='WeWay'?'#d32f2f':s.operator==='EVION'?'#146b45':'#8794a5';const name=s.operator==='SPARK KG'?'S':s.operator==='WeWay'?'W':s.operator==='EVION'?'E':'24';return L.divIcon({html:`<div class="marker" style="background:${color}">${name}${availabilityIcon(availability.kind)}</div>`,className:'',iconSize:[31,31],iconAnchor:[15,15]})}
 function tariffText(t){
   if(typeof t==='string')return esc(t);
   if(!t||!Number.isFinite(Number(t.amount)))return '';
@@ -555,14 +638,15 @@ document.addEventListener('click',async event=>{
  }
 });
 function popup(s){
-  let p=flatten(s),available=p.filter(isFree).length;
-  let html=`<div class="station-favorite-header"><strong>${esc(s.name)}</strong>${favoriteButton(s.id)}</div><div class="station-favorite-message" data-favorite-status="${esc(s.id)}" role="status">${favoriteNotice(s.id)}</div><div>${esc(s.address||'Адрес не указан')}</div><div class="muted">${esc(s.operator)} · ${available} из ${p.length} портов доступны</div>`;if(s.restricted)html+='<div class="spark-detail-note">Ограниченный доступ к станции</div>';if(s.operator==='Charge24'&&s.price!==undefined&&s.price!==null&&s.price!=='')html+=`<div class="muted">Стоимость: ${esc(s.price)} сом (данные Charge24)</div>`;
+  const availability=stationAvailability(s);
+  let html=`<div class="station-favorite-header"><strong>${esc(s.name)}</strong>${favoriteButton(s.id)}</div><div class="station-favorite-message" data-favorite-status="${esc(s.id)}" role="status">${favoriteNotice(s.id)}</div><div>${esc(s.address||'Адрес не указан')}</div><div class="muted">${esc(s.operator)} · ${availabilityIcon(availability.kind)} ${esc(availabilityText(availability))}</div>`;if(s.restricted)html+='<div class="spark-detail-note">Ограниченный доступ к станции</div>';if(s.operator==='Charge24'&&s.price!==undefined&&s.price!==null&&s.price!=='')html+=`<div class="muted">Стоимость: ${esc(s.price)} сом (данные Charge24)</div>`;
   for(const d of s.devices||[s]){
     const unresolvedTypes=(d.supportedConnectorTypes||[]).filter(t=>!(d.connectors||[]).some(c=>type(c)===t));
     html+=`<div class="device"><b>${esc(d.name)}</b>${unresolvedTypes.length?' · <small>На устройстве: '+esc(unresolvedTypes.join(', '))+' (порт не определён)</small>':''}<span class="muted"> · ${esc(current(d)||'?')} ${power(d)??'?'} кВт${power(d)&&!d.powerKw?' (по названию)':''}${!active(d)?' · неактивна':''}</span><div>`;
     for(const c of d.connectors||[]){
-      const percentage=chargingPercentage(c),price=tariffText(c.tariff);
-      html+=`<span class="port">${esc(displayType(c))}: ${esc(statuses[canon(c.status)])}${percentage!==null?' · '+esc(percentage)+'%':''}${price?' · '+price:''}${c.pending?' · ожидание':''}${c.chargingFinished?' · завершена':''}</span>`;
+      const status=connectorStatus({device:d,connector:c});
+      const percentage=chargingPercentage(c,status),price=tariffText(c.tariff);
+      html+=`<span class="port">${availabilityIcon(availabilityKind(status))}${esc(displayType(c))}: ${esc(statuses[status])}${percentage!==null?' · '+esc(percentage)+'%':''}${price?' · '+price:''}${c.pending?' · ожидание':''}${c.chargingFinished?' · завершена':''}</span>`;
     }
     html+='</div></div>';
   }
@@ -591,7 +675,7 @@ function startSparkDetails(site,isVisible,render){
             const detail=data.connectors?.[port.evseId+':'+port.connectorId];
             if(!detail)continue;
             const raw=detail.percentage,pct=raw===null||raw===undefined?null:Number(raw);
-            const next=canon(port.status)==='OCCUPIED'&&!port.chargingFinished&&Number.isFinite(pct)&&pct>=0&&pct<=100?pct:null;
+            const next=connectorStatus({device,connector:port})==='OCCUPIED'&&!port.chargingFinished&&Number.isFinite(pct)&&pct>=0&&pct<=100?pct:null;
             if(port.percentage!==next){port.percentage=next;changed=true}
             if(JSON.stringify(port.tariff??null)!==JSON.stringify(detail.tariff??null)){port.tariff=detail.tariff;changed=true}
             if(Number(detail.powerKw)>0&&port.powerKw!==detail.powerKw){port.powerKw=detail.powerKw;changed=true}
@@ -614,16 +698,16 @@ function enrichSparkPopup(event,site){
   popupRef.once('remove',stop);
 }
 function stationPanelMarkup(site){
-  const ports=flatten(site),free=ports.filter(isFree).length;
-  let html=`<div class="station-summary"><span class="station-count">${free} свободно</span><span>из ${ports.length} разъёмов</span></div>`;
+  const availability=stationAvailability(site);
+  let html=`<div class="station-summary"><span>${availabilityIcon(availability.kind)}${esc(availabilityText(availability))}</span>${connectorFilterActive()?'<span>По выбранным разъёмам</span>':''}</div>`;
   for(const d of site.devices||[site]){
     html+=`<section class="station-device"><div class="station-device-title"><span>${esc(d.name)}</span><span class="station-power">${power(d)??'—'} кВт</span></div>`;
     for(const c of d.connectors||[]){
-      const status=canon(c.status),pct=chargingPercentage(c);
+      const status=connectorStatus({device:d,connector:c}),pct=chargingPercentage(c,status);
       const price=tariffText(c.tariff);
       const charge24price=site.operator==='Charge24'&&site.price!=null?String(site.price)+' сом (тариф станции)':'';
-      const cls=status==='AVAILABLE'?'available':status==='OCCUPIED'?'occupied':status==='FAULTED'?'faulted':'';
-      html+=`<article class="station-port"><div class="station-port-top"><div><div class="station-plug">${esc(displayType(c))}</div><div class="station-port-price">${price||esc(charge24price)||'Тариф не указан'}${c.powerKw?' · '+esc(c.powerKw)+' кВт':''}</div></div><span class="station-status ${cls}">${esc(statuses[status])}</span></div>`;
+      const cls=availabilityKind(status);
+      html+=`<article class="station-port"><div class="station-port-top"><div><div class="station-plug">${esc(displayType(c))}</div><div class="station-port-price">${price||esc(charge24price)||'Тариф не указан'}${c.powerKw?' · '+esc(c.powerKw)+' кВт':''}</div></div><span class="station-status ${cls}">${availabilityIcon(cls)}${esc(statuses[status])}</span></div>`;
       if(pct!==null){
         const percent=Math.max(0,Math.min(100,pct));
         html+=`<div class="station-charge"><div class="station-battery"><div class="station-battery-fill" style="height:calc((100% - 6px) * ${percent/100})"></div></div><div class="station-charge-copy"><div class="station-percent">${esc(percent)}%</div><div class="station-charge-label">Текущий заряд автомобиля</div><div class="station-charge-track"><div class="station-charge-progress" style="width:${percent}%"></div></div></div></div>`;
@@ -717,7 +801,7 @@ function renderStationList(){
  const entries=nearbySortedStations();
  if(!entries.length){const empty=document.createElement('p');empty.className='nearby-empty';empty.textContent='По выбранным фильтрам станции не найдены';container.append(empty);return}
  for(const site of entries){
-   const ports=flatten(site),free=ports.filter(isFree).length;
+   const ports=flatten(site),availability=stationAvailability(site);
    const types=[...new Set(ports.map(x=>type(x.connector)).filter(Boolean))].slice(0,3);
    const entry=document.createElement('article');entry.className='nearby-entry';
    const card=document.createElement('button');card.type='button';card.className='nearby-card';
@@ -731,7 +815,7 @@ function renderStationList(){
    }
    const address=document.createElement('div');address.className='nearby-card-address';address.textContent=(site.address||'Адрес не указан')+' · '+site.operator;
    const footer=document.createElement('div');footer.className='nearby-card-foot';
-   const freeTag=document.createElement('span');freeTag.className='nearby-pill '+(free?'free':'busy');freeTag.textContent=free?free+' свободно из '+ports.length:ports.length?'Свободных нет':'Нет данных по разъёмам';
+   const freeTag=document.createElement('span');freeTag.className='nearby-pill '+(availability.kind==='available'?'free':availability.kind==='occupied'?'busy':'');freeTag.textContent=availabilityText(availability);
    footer.append(freeTag);
    for(const v of types){const tag=document.createElement('span');tag.className='nearby-pill';tag.textContent=v;footer.append(tag)}
    card.append(head,address,footer);
@@ -763,7 +847,7 @@ function setListMode(enabled){
 }
 
 const visibleMarkers=new Map();
-function draw(){closeStationPanel();layer.clearLayers();visibleMarkers.clear();let shown=0,units=0,ports=0,free=0;for(const s of stations){if(!matches(s))continue;const parts=flatten(s);shown++;units+=(s.devices?s.devices.length:1);ports+=parts.length;free+=parts.filter(isFree).length;const markerRef=L.marker([s.lat,s.lng],{icon:marker(s)}).addTo(layer);if(mobileMQ.matches){markerRef.on('click',()=>openStationPanel(s))}else{markerRef.bindPopup(()=>popup(s),{maxHeight:350,maxWidth:350}).on('popupopen',event=>enrichSparkPopup(event,s))}visibleMarkers.set(s.id,markerRef)}updateSearchResults();renderStationList();$('summary').textContent=`Найдено площадок: ${shown} · устройств: ${units} · коннекторов: ${ports} · доступных: ${free} · всего SPARK: ${meta.spark?.count||0}, Charge24: ${meta.charge24?.count||0}, WeWay: ${meta.weway?.count||0}, EVION: ${meta.evion?.count||0}`}
+function draw(){closeStationPanel();layer.clearLayers();visibleMarkers.clear();let shown=0,units=0,ports=0,free=0;for(const s of stations){if(!matches(s))continue;const parts=flatten(s);shown++;units+=(s.devices?s.devices.length:1);ports+=parts.length;free+=parts.filter(isFree).length;const availability=stationAvailability(s);const markerRef=L.marker([s.lat,s.lng],{icon:marker(s,availability),title:s.name+' · '+availabilityText(availability)}).addTo(layer);if(mobileMQ.matches){markerRef.on('click',()=>openStationPanel(s))}else{markerRef.bindPopup(()=>popup(s),{maxHeight:350,maxWidth:350}).on('popupopen',event=>enrichSparkPopup(event,s))}visibleMarkers.set(s.id,markerRef)}updateSearchResults();renderStationList();$('summary').textContent=`Найдено площадок: ${shown} · устройств: ${units} · коннекторов: ${ports} · доступных: ${free} · всего SPARK: ${meta.spark?.count||0}, Charge24: ${meta.charge24?.count||0}, WeWay: ${meta.weway?.count||0}, EVION: ${meta.evion?.count||0}`}
 function providerStatus(name,provider){
   const color=provider?.count?'#209769':'#d8a13c';
   const source=provider?.source||'none';
