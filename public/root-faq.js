@@ -21,12 +21,13 @@ function clearDrag(){
 }
 
 function render(){
+  clearDrag();
   const term=$('faqFilter').value.trim().toLowerCase();
   const items=state.items.filter(item=>(item.question+' '+item.answer).toLowerCase().includes(term));
   const canReorder=!term&&!state.reordering&&items.length>1;
   $('faqReorderHint').textContent=term
     ? 'Очистите поиск, чтобы изменить порядок вопросов.'
-    : 'Перетащите вопрос за ручку или используйте стрелки. Порядок сохраняется автоматически.';
+    : 'Перетащите вопрос за заголовок или используйте стрелки. Порядок сохраняется автоматически.';
 
   cards.replaceChildren(...items.map((item,index)=>{
     const id=String(item.id);
@@ -36,16 +37,16 @@ function render(){
     const title=el('h3',item.question);
     if(canReorder){
       const handle=el('span','⠿','faq-drag-handle');
-      handle.draggable=true;
-      handle.title='Перетащить вопрос';
+      heading.draggable=true;
+      heading.title='Перетащить вопрос';
       handle.setAttribute('aria-hidden','true');
-      handle.addEventListener('dragstart',event=>{
+      heading.addEventListener('dragstart',event=>{
         draggedId=id;
         event.dataTransfer.setData('text/plain',id);
         event.dataTransfer.effectAllowed='move';
         card.classList.add('is-dragging');
       });
-      handle.addEventListener('dragend',clearDrag);
+      heading.addEventListener('dragend',clearDrag);
       heading.append(handle);
     }
     heading.append(title);

@@ -11,7 +11,7 @@ header('X-Robots-Tag: noindex, nofollow');
 header('X-Content-Type-Options: nosniff');
 header("Content-Security-Policy: default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
 ?><!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Управление FAQ · EV Карта</title><link rel="stylesheet" href="/root.css"><link rel="stylesheet" href="/root-faq.css"></head>
+<title>Управление FAQ · EV Карта</title><link rel="stylesheet" href="/root.css"><link rel="stylesheet" href="/root-faq.css?v=2"></head>
 <body><main><nav><a href="/root">← Админка</a><a href="/faq">Открыть FAQ</a></nav>
 <h1>Вопросы и ответы</h1><p class="note">Изменения сохраняются в базе данных и сразу становятся доступны посетителям. Скрытые вопросы видны только здесь.</p>
 <p id="faqStatus" role="status"></p>
@@ -24,5 +24,5 @@ header("Content-Security-Policy: default-src 'none'; style-src 'self'; script-sr
 <div class="faq-form-row"><label>Порядок<input type="number" id="faqOrder" min="0" max="100000" value="100" required></label><label class="check"><input type="checkbox" id="faqPublished" checked> Опубликован</label></div>
 <div class="faq-buttons"><button type="submit" id="faqSave">Сохранить вопрос</button><button type="button" id="faqCancel" class="secondary">Отмена</button></div>
 </form></section>
-<section class="faq-admin-list"><div class="section-heading"><h2>Все вопросы</h2><input type="search" id="faqFilter" placeholder="Найти вопрос…"></div><p class="note" id="faqReorderHint">Перетащите вопрос за ручку или используйте стрелки. Порядок сохраняется автоматически.</p><div id="faqCards"></div></section>
-</main><script src="/root-faq.js" type="module"></script></body></html>
+<section class="faq-admin-list"><div class="section-heading"><h2>Все вопросы</h2><input type="search" id="faqFilter" placeholder="Найти вопрос…"></div><p class="note" id="faqReorderHint">Перетащите вопрос за заголовок или используйте стрелки. Порядок сохраняется автоматически.</p><div id="faqCards"></div></section>
+</main><script src="/root-faq.js?v=2" type="module"></script></body></html>
