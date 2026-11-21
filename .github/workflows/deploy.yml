@@ -33,6 +33,7 @@ jobs:
           extensions: curl, mbstring
       - run: |
           php -l public/api/stations.php
+          php -l public/api/map-services.php
           php -l public/api/station-cache.php
           php -l public/api/account.php
           php -l public/api/station-feedback.php
@@ -90,5 +91,7 @@ jobs:
             jq -e '(.sites | length) > 0 and (.stations | length) > 0 and ([.stations[] | select(.operator == "SPARK KG")] | length) == 0 and (.meta | keys) == ["charge24", "evion", "spark", "weway"]' > /dev/null
           curl --fail --silent --show-error --retry 2 --max-time 20 'https://tesla.bosh.kg/api/account.php?action=vehicle_catalog' |
             jq -e 'any(.makes[]; .name == "Tesla" and any(.models[]; .name == "Model 3")) and any(.makes[]; .name == "BYD" and any(.models[]; .name == "Song Plus DM-i"))' > /dev/null
+          curl --fail --silent --show-error --retry 2 --max-time 20 'https://tesla.bosh.kg/api/map-services.php' |
+            jq -e '.items | type == "array"' > /dev/null
           snapshot_status="$(curl --silent --show-error --max-time 20 --output /dev/null --write-out '%{http_code}' https://tesla.bosh.kg/api/spark-snapshot.json)"
           [[ "$snapshot_status" == 403 || "$snapshot_status" == 404 ]]

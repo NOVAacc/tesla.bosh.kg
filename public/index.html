@@ -190,6 +190,16 @@
  .app:has(#pwaInstall:not([hidden])) .status{bottom:calc(var(--dock-clearance) + 46px)}
  .app:has(.station-panel.is-open,.mobile-sheet.is-open) #pwaInstall{display:none}
 }
+.map-layers{position:absolute;z-index:710;right:max(12px,env(safe-area-inset-right));top:50%;transform:translateY(-50%);max-width:min(230px,calc(100% - 24px));border:1px solid #e3e9ef;border-radius:14px;background:#fff;color:#23364d;box-shadow:0 3px 16px #14213b26;font-size:13px}
+.map-layers summary{min-height:44px;padding:13px 14px;cursor:pointer;font-weight:650}
+.map-layer-options{padding:0 12px 8px}
+.map-layer-options label{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
+.map-layer-options input{width:17px;height:17px;margin:0;accent-color:#23364d}
+.map-layer-status{margin:0;color:#475569;font-size:12px}
+.map-layer-status:not(:empty){margin:4px 0 8px}
+.map-service-marker{background:#3948a3}
+.main:has(.station-list-view.is-open,.station-panel.is-open) .map-layers,
+.main.chargers-hidden:not(:has(.station-list-view.is-open)) :is(.map-loading,.status,.mobile-map-refresh){display:none}
 .map-loading{position:absolute;z-index:780;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;width:max-content;max-width:calc(100% - 32px);padding:13px 16px;border:1px solid #e3e9ef;border-radius:16px;background:#fff;color:#23364d;box-shadow:0 4px 20px #14213b26;font-size:14px;text-align:center}
 .map-loading[hidden],.map-loading [hidden]{display:none}
 .map-loading-spinner{width:18px;height:18px;flex:none;border:2px solid #dbe5ef;border-top-color:#0755a5;border-radius:50%;animation:map-loading-spin .8s linear infinite}
@@ -222,7 +232,17 @@
 <label class="filter-row"><span>Станция</span><select class="control" id="station" aria-label="Состояние устройства"><option value="all">Любые станции</option><option value="active">Только активные</option><option value="inactive">Неактивные / заблокированные</option></select></label>
 <label class="filter-row"><span>Статус порта</span><select class="control" id="portstatus" aria-label="Статус порта"><option value="all">Любой статус порта</option><option value="AVAILABLE">Свободен</option><option value="OCCUPIED">Занят / зарядка</option><option value="FAULTED">Неисправен</option><option value="UNAVAILABLE">Недоступен</option><option value="FINISHING">Завершение</option><option value="PREPARING">Подключение</option><option value="UNKNOWN">Неизвестный статус</option></select></label>
 <label class="filter-row"><span>Дополнительно</span><select class="control" id="extras" aria-label="Дополнительный фильтр"><option value="all">Без доп. условий</option><option value="pending">Ожидает подключения</option><option value="finished">Зарядка завершена</option><option value="percentage">Показан % заряда</option></select></label>
-</div></div><div class="summary" id="summary">Загрузка данных…</div></div><div class="main"><div id="map" aria-busy="true"></div>
+</div></div><div class="summary" id="summary">Загрузка данных…</div></div><div class="main"><div id="map"></div>
+<details class="map-layers" id="mapLayers">
+  <summary>Слои карты</summary>
+  <div class="map-layer-options">
+    <div id="mapLayerOptions"></div>
+    <div id="mapServicesFeedback" hidden>
+      <p class="map-layer-status" id="mapServicesStatus" role="status"></p>
+      <button class="chip" id="mapServicesRetry" type="button" hidden>Повторить загрузку</button>
+    </div>
+  </div>
+</details>
 <div class="map-loading" id="mapLoading">
   <span class="map-loading-spinner" id="mapLoadingSpinner" aria-hidden="true"></span>
   <span id="mapLoadingMessage" role="status">Загружаем зарядные станции…</span>
@@ -243,6 +263,86 @@ if(cartoKey){
  baseTiles=positronTiles;
 }
 baseTiles.addTo(map);const layer=L.layerGroup().addTo(map);let stations=[],meta={};const filter={spark:true,charge24:true,weway:true,evion:true};const selectedConnectorTypes=new Set();let vehicleConnectorTypes=null;const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));const statuses={AVAILABLE:'Свободен',OCCUPIED:'Занят',FAULTED:'Ошибка',UNAVAILABLE:'Недоступен',FINISHING:'Завершение',PREPARING:'Подключение',UNKNOWN:'Неизвестно'};
+const serviceLayer=L.layerGroup();
+let servicesLoaded=false;
+let servicesRequest=null;
+
+async function loadServices(){
+ const status=$('mapServicesStatus');
+ status.textContent='Загружаем сервисы…';
+ try{
+  const response=await fetch('/api/map-services.php',{credentials:'omit',signal:AbortSignal.timeout(12000)});
+  if(!response.ok)throw Error('Services unavailable');
+  const {items}=await response.json();
+  const icon=L.divIcon({html:'<span class="marker map-service-marker" aria-hidden="true">С</span>',iconSize:[31,31],popupAnchor:[0,-13]});
+  for(const item of items){
+   const details=document.createElement('div');
+   const title=document.createElement('strong');
+   title.textContent=item.name;
+   details.append(title);
+   for(const text of [item.address,item.description]){
+    if(!text)continue;
+    const line=document.createElement('div');
+    line.textContent=text;
+    details.append(line);
+   }
+   L.marker([item.lat,item.lng],{icon,title:item.name,alt:item.name})
+    .bindPopup(details,{maxHeight:300}).addTo(serviceLayer);
+  }
+  servicesLoaded=true;
+  status.textContent=items.length?'':'На карте пока нет сервисов.';
+ }catch{
+  serviceLayer.clearLayers();
+  status.textContent='Не удалось загрузить сервисы.';
+  $('mapServicesRetry').hidden=false;
+ }
+}
+
+function ensureServicesLoaded(){
+ if(servicesLoaded||servicesRequest)return;
+ $('mapServicesRetry').hidden=true;
+ servicesRequest=loadServices().finally(()=>{servicesRequest=null});
+}
+
+function setChargingLayer(visible){
+ $('mapLayerChargers').checked=visible;
+ if(visible)layer.addTo(map);
+ else{
+  map.removeLayer(layer);
+  closeStationPanel();
+ }
+ $('map').closest('.main').classList.toggle('chargers-hidden',!visible);
+}
+
+const mapLayers=[
+ {id:'mapLayerChargers',name:'Зарядки',visible:true,setVisible:setChargingLayer},
+ {id:'mapLayerServices',name:'Сервисы',visible:false,description:'mapServicesStatus',setVisible(visible){
+  $('mapServicesFeedback').hidden=!visible;
+  if(visible){
+   serviceLayer.addTo(map);
+   ensureServicesLoaded();
+  }else{
+   map.removeLayer(serviceLayer);
+  }
+ }}
+];
+
+function setupMapLayers(){
+ const container=$('mapLayerOptions');
+ for(const {id,name,visible,description,setVisible} of mapLayers){
+  const label=document.createElement('label');
+  const input=document.createElement('input');
+  input.id=id;
+  input.type='checkbox';
+  input.checked=visible;
+  if(description)input.setAttribute('aria-describedby',description);
+  input.addEventListener('change',()=>setVisible(input.checked));
+  label.append(input,name);
+  container.append(label);
+ }
+ $('mapServicesRetry').addEventListener('click',ensureServicesLoaded);
+}
+
 function canon(s){const x=String(s||'').toUpperCase();if(x==='AVAILABLE'||x==='FREE')return 'AVAILABLE';if(['CHARGING','OCCUPIED'].includes(x))return 'OCCUPIED';if(x==='FAULTED')return 'FAULTED';if(x==='UNAVAILABLE')return 'UNAVAILABLE';if(x==='FINISHING')return 'FINISHING';if(x==='PREPARING')return 'PREPARING';return 'UNKNOWN'}
 function flatten(s){return s.devices?s.devices.flatMap(d=>(d.connectors||[]).map(c=>({device:d,connector:c}))):(s.connectors||[]).map(c=>({device:s,connector:c}))}
 function power(d){let n=Number(d.powerKw);if(Number.isFinite(n)&&n>0)return n;const portPowers=(d.connectors||[]).map(c=>Number(c.powerKw)).filter(n=>Number.isFinite(n)&&n>0);if(portPowers.length)return Math.max(...portPowers);const m=String(d.name||'').match(/\b(AC|DC)\s*(\d+(?:[.,]\d+)?)/i);return m?Number(m[2].replace(',','.')):null}
@@ -620,7 +720,7 @@ function renderStationList(){
    card.append(head,address,footer);
    card.addEventListener('click',()=>{
      if(mobileMQ.matches)openStationPanel(site);
-     else{setListMode(false);const markerRef=visibleMarkers.get(site.id);map.setView([site.lat,site.lng],Math.max(map.getZoom(),15));if(markerRef)markerRef.openPopup()}
+     else{setListMode(false);setChargingLayer(true);const markerRef=visibleMarkers.get(site.id);map.setView([site.lat,site.lng],Math.max(map.getZoom(),15));if(markerRef)markerRef.openPopup()}
    });
    const actions=document.createElement('div');
    actions.innerHTML=`${favoriteButton(site.id)}<div class="station-favorite-message" data-favorite-status="${esc(site.id)}" role="status">${favoriteNotice(site.id)}</div>`;
@@ -667,7 +767,6 @@ async function refresh(){
  const message=$('mapLoadingMessage');
  const retry=$('mapLoadingRetry');
  if(firstLoad){
-  $('map').setAttribute('aria-busy','true');
   spinner.hidden=false;
   retry.hidden=true;
   message.textContent='Загружаем зарядные станции…';
@@ -689,7 +788,6 @@ async function refresh(){
    retry.hidden=false;
   }
  }finally{
-  if(firstLoad)$('map').setAttribute('aria-busy','false');
   refreshing=false;
  }
 }
@@ -814,7 +912,7 @@ function updateSearchResults(){
    const details=document.createElement('span'),name=document.createElement('b'),address=document.createElement('small');
    name.textContent=station.name;address.textContent=station.address||station.operator;details.append(name,address);
    btn.append(details);const arrow=document.createElement('span');arrow.textContent='›';btn.append(arrow);
-   btn.onclick=()=>{closeSheet();const mark=visibleMarkers.get(station.id);map.setView([station.lat,station.lng],Math.max(map.getZoom(),15),{animate:true});if(mobileMQ.matches){setListMode(false);openStationPanel(station)}else if(mark)mark.openPopup()};
+   btn.onclick=()=>{closeSheet();setChargingLayer(true);const mark=visibleMarkers.get(station.id);map.setView([station.lat,station.lng],Math.max(map.getZoom(),15),{animate:true});if(mobileMQ.matches){setListMode(false);openStationPanel(station)}else if(mark)mark.openPopup()};
    wrap.append(btn);
  }
 }
@@ -868,6 +966,7 @@ $('mapLoadingRetry').addEventListener('click',()=>refresh());
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!stationCommentsDialog.open){if(activeSheet)closeSheet();else closeStationPanel()}});
 map.on('click',()=>{if(mobileMQ.matches&&selectedStation)closeStationPanel()});
 mobileMQ.addEventListener('change',syncMobileLayout);
+setupMapLayers();
 syncMobileLayout();
 const initialPanel=new URLSearchParams(window.location.search).get('panel');
 if(initialPanel==='list')setListMode(true);
