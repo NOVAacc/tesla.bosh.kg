@@ -181,6 +181,11 @@
  .status{right:64px;max-width:none}
  .mobile-map-refresh{bottom:calc(var(--dock-clearance) + 92px)}
 }
+@media(max-width:850px){
+ .toolbar,.toolbar .top{display:contents}
+ .toolbar .brand{display:none}
+ #pwaInstall{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);right:12px;z-index:800;background:#fff}
+}
 </style><link rel="stylesheet" href="/donation.css?v=2"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f6f7f9"><link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png"><script src="/pwa.js" defer></script><link rel="stylesheet" href="/pwa.css"></head><body>
 <aside id="donationCard" class="donation-card" aria-label="Поддержка проекта" hidden>
   <p></p>
