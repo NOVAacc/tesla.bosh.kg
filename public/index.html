@@ -190,13 +190,20 @@
  .app:has(#pwaInstall:not([hidden])) .status{bottom:calc(var(--dock-clearance) + 46px)}
  .app:has(.station-panel.is-open,.mobile-sheet.is-open) #pwaInstall{display:none}
 }
-.map-layers{position:absolute;z-index:710;right:max(12px,env(safe-area-inset-right));top:50%;transform:translateY(-50%);max-width:min(230px,calc(100% - 24px));border:1px solid #e3e9ef;border-radius:14px;background:#fff;color:#23364d;box-shadow:0 3px 16px #14213b26;font-size:13px}
-.map-layers summary{min-height:44px;padding:13px 14px;cursor:pointer;font-weight:650}
-.map-layer-options{padding:0 12px 8px}
-.map-layer-options label{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
-.map-layer-options input{width:17px;height:17px;margin:0;accent-color:#23364d}
-.map-layer-status{margin:0;color:#475569;font-size:12px}
-.map-layer-status:not(:empty){margin:4px 0 8px}
+.map-layers{position:absolute;z-index:710;right:max(12px,env(safe-area-inset-right));top:50%;transform:translateY(-50%);border:1px solid #e3e9ef;border-radius:14px;background:#fff;color:#23364d;box-shadow:0 3px 16px #14213b26}
+.map-layer-icon{display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:10px;background:transparent;color:inherit;cursor:pointer}
+.map-layer-icon[hidden]{display:none}
+.map-layer-icon::-webkit-details-marker{display:none}
+.map-layer-icon:focus-visible{outline:2px solid #2675bd;outline-offset:-2px}
+.map-layer-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.map-layers[open]>summary{background:#f0f3f8}
+.map-layer-options{padding:4px}
+.map-layer-options .map-layer-icon[aria-pressed=true]{background:#23364d;color:#fff}
+#mapLayerOptions{display:grid;gap:4px}
+.map-layer-feedback{display:grid;place-items:center}
+.map-layer-feedback[hidden]{display:none}
+.map-layer-feedback .map-loading-spinner{margin:10px}
+.map-layer-status{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .map-service-marker{background:#3948a3}
 .main:has(.station-list-view.is-open,.station-panel.is-open) .map-layers,
 .main.chargers-hidden:not(:has(.station-list-view.is-open)) :is(.map-loading,.status,.mobile-map-refresh){display:none}
@@ -234,12 +241,13 @@
 <label class="filter-row"><span>Дополнительно</span><select class="control" id="extras" aria-label="Дополнительный фильтр"><option value="all">Без доп. условий</option><option value="pending">Ожидает подключения</option><option value="finished">Зарядка завершена</option><option value="percentage">Показан % заряда</option></select></label>
 </div></div><div class="summary" id="summary">Загрузка данных…</div></div><div class="main"><div id="map"></div>
 <details class="map-layers" id="mapLayers">
-  <summary>Слои карты</summary>
+  <summary class="map-layer-icon" aria-label="Слои карты"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg></summary>
   <div class="map-layer-options">
-    <div id="mapLayerOptions"></div>
-    <div id="mapServicesFeedback" hidden>
-      <p class="map-layer-status" id="mapServicesStatus" role="status"></p>
-      <button class="chip" id="mapServicesRetry" type="button" hidden>Повторить загрузку</button>
+    <div id="mapLayerOptions" role="group" aria-label="Слои карты"></div>
+    <div class="map-layer-feedback" id="mapServicesFeedback" hidden>
+      <span class="map-layer-status" id="mapServicesStatus" role="status"></span>
+      <span class="map-loading-spinner" id="mapServicesSpinner" aria-hidden="true" hidden></span>
+      <button class="map-layer-icon" id="mapServicesRetry" type="button" aria-label="Повторить загрузку сервисов" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10a8 8 0 1 0-2 8m2-13v5h-5"/></svg></button>
     </div>
   </div>
 </details>
@@ -269,6 +277,8 @@ let servicesRequest=null;
 
 async function loadServices(){
  const status=$('mapServicesStatus');
+ const spinner=$('mapServicesSpinner');
+ spinner.hidden=false;
  status.textContent='Загружаем сервисы…';
  try{
   const response=await fetch('/api/map-services.php',{credentials:'omit',signal:AbortSignal.timeout(12000)});
@@ -295,6 +305,8 @@ async function loadServices(){
   serviceLayer.clearLayers();
   status.textContent='Не удалось загрузить сервисы.';
   $('mapServicesRetry').hidden=false;
+ }finally{
+  spinner.hidden=true;
  }
 }
 
@@ -305,7 +317,7 @@ function ensureServicesLoaded(){
 }
 
 function setChargingLayer(visible){
- $('mapLayerChargers').checked=visible;
+ $('mapLayerChargers').setAttribute('aria-pressed',String(visible));
  if(visible)layer.addTo(map);
  else{
   map.removeLayer(layer);
@@ -315,8 +327,8 @@ function setChargingLayer(visible){
 }
 
 const mapLayers=[
- {id:'mapLayerChargers',name:'Зарядки',visible:true,setVisible:setChargingLayer},
- {id:'mapLayerServices',name:'Сервисы',visible:false,description:'mapServicesStatus',setVisible(visible){
+ {id:'mapLayerChargers',name:'Зарядки',icon:'m13 2-9 12h7l-1 8 10-12h-7l1-8Z',visible:true,setVisible:setChargingLayer},
+ {id:'mapLayerServices',name:'Сервисы',icon:'M14.7 6.3a5 5 0 0 0-6.5 6.5l-5.1 5.1a2 2 0 0 0 2.8 2.8l5.1-5.1a5 5 0 0 0 6.5-6.5l-3 3-2.8-2.8 3-3Z',visible:false,description:'mapServicesStatus',setVisible(visible){
   $('mapServicesFeedback').hidden=!visible;
   if(visible){
    serviceLayer.addTo(map);
@@ -329,16 +341,21 @@ const mapLayers=[
 
 function setupMapLayers(){
  const container=$('mapLayerOptions');
- for(const {id,name,visible,description,setVisible} of mapLayers){
-  const label=document.createElement('label');
-  const input=document.createElement('input');
-  input.id=id;
-  input.type='checkbox';
-  input.checked=visible;
-  if(description)input.setAttribute('aria-describedby',description);
-  input.addEventListener('change',()=>setVisible(input.checked));
-  label.append(input,name);
-  container.append(label);
+ for(const {id,name,icon,visible,description,setVisible} of mapLayers){
+  const button=document.createElement('button');
+  button.id=id;
+  button.type='button';
+  button.className='map-layer-icon';
+  button.setAttribute('aria-label',name);
+  button.setAttribute('aria-pressed',String(visible));
+  if(description)button.setAttribute('aria-describedby',description);
+  button.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${icon}"/></svg>`;
+  button.addEventListener('click',()=>{
+   const enabled=button.getAttribute('aria-pressed')!=='true';
+   button.setAttribute('aria-pressed',String(enabled));
+   setVisible(enabled);
+  });
+  container.append(button);
  }
  $('mapServicesRetry').addEventListener('click',ensureServicesLoaded);
 }
