@@ -58,3 +58,10 @@ li { overflow-wrap: anywhere; }
   .feedback-card { padding: 7px 11px; }
   .feedback-pages { gap: 8px; }
 }
+
+.donation-form{display:grid;gap:14px;max-width:520px}
+.donation-form label{display:block}
+.donation-form textarea,.donation-form input:not([type=checkbox]){display:block;width:100%;margin-top:6px;font:inherit}
+.donation-form textarea,.donation-form input[name=button]{padding:9px;border:1px solid #cbd5e1;border-radius:8px}
+.donation-form p{margin:0}
+.donation-form button{justify-self:start}

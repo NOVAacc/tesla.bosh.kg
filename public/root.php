@@ -10,15 +10,44 @@ header('Referrer-Policy: no-referrer');
 header("Content-Security-Policy: default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
 ev_session();
 $user = ev_user();
-session_write_close();
 $allowed = ev_root_access($user);
 if (!$allowed) http_response_code($user ? 403 : 401);
 $page = match ($_GET['page'] ?? null) {
   'comments' => 'comments',
   'faq' => 'faq',
+  'donation' => 'donation',
   'users' => 'users',
   default => 'dashboard',
 };
+$donationError = '';
+$donation = null;
+if ($allowed && $page === 'donation') {
+  require_once __DIR__.'/api/donation-storage.php';
+  try {
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+      if (empty($_POST) && !empty($_SERVER['CONTENT_LENGTH'])) {
+        throw new InvalidArgumentException('Файл слишком большой. Максимальный размер — 2 МБ.');
+      }
+      ev_csrf($_POST);
+      donation_save($_POST, $_FILES['qr'] ?? []);
+      header('Location: /root?page=donation&saved=1', true, 303);
+      exit;
+    }
+  } catch (InvalidArgumentException $error) {
+    $donationError = $error->getMessage();
+  } catch (Throwable $error) {
+    error_log('EV donation settings: '.$error->getMessage());
+    $donationError = 'Не удалось сохранить настройки.';
+  }
+  try {
+    $donation = donation_read();
+  } catch (Throwable $error) {
+    error_log('EV donation settings: '.$error->getMessage());
+    $donationError = 'Не удалось загрузить настройки.';
+  }
+}
+$csrf = $_SESSION['csrf'] ?? '';
+session_write_close();
 $userCount = null;
 if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
   try {
@@ -48,6 +77,7 @@ if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
       <a href="/root?page=users"<?= $page === 'users' ? ' aria-current="page"' : '' ?>>Пользователи</a>
       <a href="/root?page=comments"<?= $page === 'comments' ? ' aria-current="page"' : '' ?>>Комментарии</a>
       <a href="/root?page=faq"<?= $page === 'faq' ? ' aria-current="page"' : '' ?>>FAQ</a>
+      <a href="/root?page=donation"<?= $page === 'donation' ? ' aria-current="page"' : '' ?>>Поддержка проекта</a>
     </nav>
     <?php if ($page === 'faq'): ?>
     <div class="section-heading"><h2>Вопросы и ответы</h2><a href="/faq">Открыть FAQ</a></div><p class="note">Изменения сохраняются в базе данных и сразу становятся доступны посетителям. Скрытые вопросы видны только здесь.</p>
@@ -63,6 +93,26 @@ if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
     </form></section>
     <section class="faq-admin-list"><div class="section-heading"><h2>Все вопросы</h2><input type="search" id="faqFilter" placeholder="Найти вопрос…"></div><p class="note" id="faqReorderHint">Перетащите вопрос за заголовок или используйте стрелки. Порядок сохраняется автоматически.</p><div id="faqCards"></div></section>
     <script src="/root-faq.js?v=<?= hash_file('sha256', __DIR__.'/root-faq.js') ?>" type="module"></script>
+    <?php elseif ($page === 'donation'): ?>
+    <section class="card">
+      <h2>Поддержка проекта</h2>
+      <?php if ($donationError !== ''): ?>
+        <p role="alert"><?= htmlspecialchars($donationError, ENT_QUOTES, 'UTF-8') ?></p>
+      <?php elseif (isset($_GET['saved'])): ?>
+        <p role="status">Настройки сохранены.</p>
+      <?php endif; ?>
+      <?php if ($donation !== null): ?>
+      <form class="donation-form" action="/root?page=donation" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+        <label>Сообщение <textarea name="message" rows="3" maxlength="240" required><?= htmlspecialchars($donation['message'], ENT_QUOTES, 'UTF-8') ?></textarea></label>
+        <label>Текст кнопки <input name="button" maxlength="48" value="<?= htmlspecialchars($donation['button'], ENT_QUOTES, 'UTF-8') ?>" required></label>
+        <label>QR-код <input name="qr" type="file" accept="image/png,image/jpeg,image/webp"></label>
+        <p class="note"><?= $donation['image'] === '' ? 'QR-код ещё не загружен.' : 'QR-код загружен. Выберите новый файл для замены.' ?> PNG, JPEG или WebP до 2 МБ.</p>
+        <label><input type="checkbox" name="enabled"<?= $donation['enabled'] ? ' checked' : '' ?>> Показывать на карте</label>
+        <button type="submit">Сохранить</button>
+      </form>
+      <?php endif; ?>
+    </section>
     <?php elseif ($page === 'dashboard' || $page === 'users'): ?>
     <section class="card users" aria-labelledby="users">
       <h2 id="users">Пользователи в базе</h2>
