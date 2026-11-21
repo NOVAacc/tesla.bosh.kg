@@ -67,7 +67,7 @@
 
 @media(max-width:850px){
  html,body{height:100%;overflow:hidden}
- .app{height:100dvh;height:100svh;overflow:hidden;background:#fff}
+ .app{height:100dvh;overflow:hidden;background:#e6eaed}
  .toolbar{padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;flex-shrink:0;z-index:900;box-shadow:0 1px 10px #14213b0d}
  .top{align-items:center;flex-wrap:nowrap}
  .brand h1{font-size:16px;line-height:1.25;letter-spacing:-.4px}
@@ -184,9 +184,13 @@
 @media(max-width:850px){
  .toolbar,.toolbar .top{display:contents}
  .toolbar .brand{display:none}
- #pwaInstall{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);right:12px;z-index:800;background:#fff}
+ .app::after{content:"";position:absolute;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:850;pointer-events:none;background:#1624372e;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+ .nearby-header{padding-top:calc(17px + env(safe-area-inset-top,0px))}
+ #pwaInstall{position:absolute;left:50%;bottom:var(--dock-clearance);transform:translateX(-50%);z-index:800;margin:0;min-height:38px;background:#fff}
+ .app:has(#pwaInstall:not([hidden])) .status{bottom:calc(var(--dock-clearance) + 46px)}
+ .app:has(.station-panel.is-open,.mobile-sheet.is-open) #pwaInstall{display:none}
 }
-</style><link rel="stylesheet" href="/donation.css?v=2"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f6f7f9"><link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png"><script src="/pwa.js" defer></script><link rel="stylesheet" href="/pwa.css"></head><body>
+</style><link rel="stylesheet" href="/donation.css?v=3"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f6f7f9" media="(min-width:851px)"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png"><script src="/pwa.js" defer></script><link rel="stylesheet" href="/pwa.css"></head><body>
 <aside id="donationCard" class="donation-card" aria-label="Поддержка проекта" hidden>
   <p></p>
   <button class="donation-toggle" type="button" aria-expanded="false" aria-controls="donationQr">Поддержать проект</button>
