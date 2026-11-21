@@ -1,0 +1,7 @@
+#pwaInstall{margin-inline-start:auto;flex:none;padding:7px 10px;cursor:pointer}
+#pwaInstall[hidden]{display:none}
+#pwaInstallHelp{width:min(420px,calc(100% - 32px));border:1px solid #e4e8ee;border-radius:18px;padding:20px;color:#18202b;box-shadow:0 12px 35px #18202b36}
+#pwaInstallHelp::backdrop{background:#18202b65}
+#pwaInstallHelp h2{margin:0 0 12px}
+#pwaInstallHelp p{margin:0 0 12px;line-height:1.45}
+#pwaInstallHelp button{cursor:pointer}

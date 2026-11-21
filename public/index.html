@@ -181,7 +181,7 @@
  .status{right:64px;max-width:none}
  .mobile-map-refresh{bottom:calc(var(--dock-clearance) + 92px)}
 }
-</style><link rel="stylesheet" href="/donation.css?v=2"></head><body>
+</style><link rel="stylesheet" href="/donation.css?v=2"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f6f7f9"><link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png"><script src="/pwa.js" defer></script><link rel="stylesheet" href="/pwa.css"></head><body>
 <aside id="donationCard" class="donation-card" aria-label="Поддержка проекта" hidden>
   <p></p>
   <button class="donation-toggle" type="button" aria-expanded="false" aria-controls="donationQr">Поддержать проект</button>
@@ -189,7 +189,7 @@
   <img id="donationQr" alt="QR-код для поддержки проекта" hidden>
 </aside>
 <script type="module" src="/donation.js"></script>
-<div class="app"><div class="toolbar"><div class="top"><div class="brand"><h1>Зарядные станции Кыргызстана</h1><div class="sub">Единая карта SPARK KG, Charge24, WeWay и EVION</div></div><div class="actions"><button class="chip" id="desktopList" type="button" aria-pressed="false">Списком</button><a class="chip" href="/faq" style="text-decoration:none;display:inline-flex;align-items:center">FAQ</a><a class="chip" href="/account.html" style="text-decoration:none;display:inline-flex;align-items:center">Кабинет</a><button class="chip" id="reset" type="button">Сбросить фильтры</button></div></div><div class="filters" role="group" aria-label="Фильтры зарядных станций"><div class="filter-group">
+<div class="app"><div class="toolbar"><div class="top"><div class="brand"><h1>Зарядные станции Кыргызстана</h1><div class="sub">Единая карта SPARK KG, Charge24, WeWay и EVION</div></div><button class="chip" id="pwaInstall" type="button" hidden>Установить</button><div class="actions"><button class="chip" id="desktopList" type="button" aria-pressed="false">Списком</button><a class="chip" href="/faq" style="text-decoration:none;display:inline-flex;align-items:center">FAQ</a><a class="chip" href="/account.html" style="text-decoration:none;display:inline-flex;align-items:center">Кабинет</a><button class="chip" id="reset" type="button">Сбросить фильтры</button></div></div><div class="filters" role="group" aria-label="Фильтры зарядных станций"><div class="filter-group">
 <h3 class="filter-heading">Операторы</h3>
 <div class="filter-group filter-networks"><button class="chip" id="spark" type="button" aria-pressed="true">SPARK KG</button><button class="chip" id="charge24" type="button" aria-pressed="true">Charge24</button><button class="chip" id="weway" type="button" aria-pressed="true">WeWay</button><button class="chip" id="evion" type="button" aria-pressed="true">EVION</button></div>
 </div><div class="divider"></div><input id="search" class="search" placeholder="Поиск по названию и адресу" aria-label="Поиск по названию и адресу">
@@ -831,4 +831,10 @@ window.addEventListener('pageshow',event=>{
  }
 });
 refresh();
-</script></body></html>
+</script><dialog id="pwaInstallHelp" aria-labelledby="pwaInstallTitle">
+  <h2 id="pwaInstallTitle">Установить EV Карту</h2>
+  <p><strong>iPhone и iPad:</strong> в Safari нажмите «Поделиться» → «На экран Домой».</p>
+  <p><strong>Android:</strong> откройте меню браузера и выберите «Установить приложение» или «Добавить на главный экран».</p>
+  <p><strong>Компьютер:</strong> используйте меню установки в Chrome или Edge. В Safari на Mac выберите «Файл» → «Добавить в Dock».</p>
+  <form method="dialog"><button class="chip">Закрыть</button></form>
+</dialog></body></html>
