@@ -13,9 +13,14 @@ $user = ev_user();
 session_write_close();
 $allowed = ev_root_access($user);
 if (!$allowed) http_response_code($user ? 403 : 401);
-$comments = ($_GET['page'] ?? null) === 'comments';
+$page = match ($_GET['page'] ?? null) {
+  'comments' => 'comments',
+  'faq' => 'faq',
+  'users' => 'users',
+  default => 'dashboard',
+};
 $userCount = null;
-if ($allowed && !$comments) {
+if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
   try {
     $userCount = (int) ev_db()->query('SELECT COUNT(*) FROM users')->fetchColumn();
   } catch (Throwable $error) {
@@ -29,6 +34,9 @@ if ($allowed && !$comments) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Панель управления · EV Карта</title>
   <link rel="stylesheet" href="/root.css?v=<?= hash_file('sha256', __DIR__.'/root.css') ?>">
+  <?php if ($allowed && $page === 'faq'): ?>
+  <link rel="stylesheet" href="/root-faq.css?v=<?= hash_file('sha256', __DIR__.'/root-faq.css') ?>">
+  <?php endif; ?>
 </head>
 <body>
 <main>
@@ -36,21 +44,38 @@ if ($allowed && !$comments) {
   <h1>Панель управления</h1>
   <?php if ($allowed): ?>
     <nav class="root-menu" aria-label="Разделы админки">
-      <a href="/root"<?= $comments ? '' : ' aria-current="page"' ?>>Дашборд</a>
-      <a href="/root/faq">Вопросы и ответы</a>
-      <a href="/root?page=comments"<?= $comments ? ' aria-current="page"' : '' ?>>Комментарии</a>
+      <a href="/root"<?= $page === 'dashboard' ? ' aria-current="page"' : '' ?>>Дашборд</a>
+      <a href="/root?page=users"<?= $page === 'users' ? ' aria-current="page"' : '' ?>>Пользователи</a>
+      <a href="/root?page=comments"<?= $page === 'comments' ? ' aria-current="page"' : '' ?>>Комментарии</a>
+      <a href="/root?page=faq"<?= $page === 'faq' ? ' aria-current="page"' : '' ?>>FAQ</a>
     </nav>
-    <?php if (!$comments): ?>
+    <?php if ($page === 'faq'): ?>
+    <div class="section-heading"><h2>Вопросы и ответы</h2><a href="/faq">Открыть FAQ</a></div><p class="note">Изменения сохраняются в базе данных и сразу становятся доступны посетителям. Скрытые вопросы видны только здесь.</p>
+    <p id="faqStatus" role="status"></p>
+    <section class="faq-editor card">
+    <h2 id="editorTitle">Новый вопрос</h2><form id="faqForm">
+    <input type="hidden" name="id" id="faqId">
+    <label>Категория<select id="faqCategory" required></select></label>
+    <label>Вопрос<input id="faqQuestion" maxlength="350" required></label>
+    <label>Ответ<textarea id="faqAnswer" rows="7" maxlength="10000" required></textarea></label>
+    <div class="faq-form-row"><label>Порядок<input type="number" id="faqOrder" min="0" max="100000" value="100" required></label><label class="check"><input type="checkbox" id="faqPublished" checked> Опубликован</label></div>
+    <div class="faq-buttons"><button type="submit" id="faqSave">Сохранить вопрос</button><button type="button" id="faqCancel" class="secondary">Отмена</button></div>
+    </form></section>
+    <section class="faq-admin-list"><div class="section-heading"><h2>Все вопросы</h2><input type="search" id="faqFilter" placeholder="Найти вопрос…"></div><p class="note" id="faqReorderHint">Перетащите вопрос за заголовок или используйте стрелки. Порядок сохраняется автоматически.</p><div id="faqCards"></div></section>
+    <script src="/root-faq.js?v=<?= hash_file('sha256', __DIR__.'/root-faq.js') ?>" type="module"></script>
+    <?php elseif ($page === 'dashboard' || $page === 'users'): ?>
     <section class="card users" aria-labelledby="users">
       <h2 id="users">Пользователи в базе</h2>
       <p class="total"><?= $userCount === null ? 'Недоступно' : number_format($userCount, 0, ',', ' ') ?></p>
     </section>
+    <?php if ($page === 'dashboard'): ?>
     <section aria-labelledby="networks">
       <div class="section-heading"><h2 id="networks">Зарядные сети</h2><button id="refreshNetworks" type="button">Обновить</button></div>
       <p class="note">Рабочая зарядка имеет хотя бы один порт в рабочем статусе, включая занятые порты.</p>
       <p id="networkStatus" role="status"></p>
       <div class="networks" id="networkCards"></div>
     </section>
+    <?php endif; ?>
     <?php else: ?>
     <section class="feedback-section" aria-labelledby="feedbackTitle">
       <div class="section-heading"><h2 id="feedbackTitle">Сообщения о станциях</h2><button id="refreshFeedback" type="button">Обновить</button></div>
@@ -60,7 +85,9 @@ if ($allowed && !$comments) {
       <div class="feedback-pages"><button id="feedbackPrev" type="button" disabled>Назад</button><span id="feedbackPage"></span><button id="feedbackNext" type="button" disabled>Вперёд</button></div>
     </section>
     <?php endif; ?>
+    <?php if ($page === 'dashboard' || $page === 'comments'): ?>
     <script src="/root.js?v=<?= hash_file('sha256', __DIR__.'/root.js') ?>" type="module"></script>
+    <?php endif; ?>
   <?php else: ?>
     <section class="card">
       <h2><?= $user ? 'Доступ закрыт' : 'Войдите в аккаунт владельца' ?></h2>
