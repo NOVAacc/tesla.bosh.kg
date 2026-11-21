@@ -69,7 +69,6 @@ input, select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px s
 :where(a,button,input,select,summary):focus-visible { outline: 2px solid #454545; outline-offset: 3px; }
 @media (max-width: 850px) {
   main { padding-bottom: calc(var(--dock-clearance) + 24px); }
-  .mobile-nav .mobile-tab[aria-current=page] { background: #171717; color: #fff; }
 }
 @media (max-width: 690px) {
   header, main { width: calc(100% - 28px); }
@@ -119,15 +118,7 @@ input, select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px s
 </section>
 <section class="card hidden" role="tabpanel" tabindex="0" id="walletPanel" aria-labelledby="walletTab"><h2>Единый кошелёк</h2><div class="notice">Платежи и баланс ещё не запущены. Мы не принимаем пополнения до подключения лицензированного платёжного партнёра.</div></section>
 </div></div><p id="globalMsg" class="message" role="status" aria-live="polite"></p></main>
-<nav class="mobile-nav" aria-label="Навигация по зарядным станциям">
-  <div class="mobile-view-switch" role="group" aria-label="Вид зарядных станций">
-    <a class="mobile-tab" href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 10-7 10s-7-5-7-10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></svg><span>Карта</span></a>
-    <a class="mobile-tab" href="/?panel=list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h14"/></svg><span>Списком</span></a>
-  </div>
-  <a class="mobile-tab" href="/?panel=filters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h4m4 0h8M4 16h10m4 0h2"/><circle cx="10" cy="8" r="2"/><circle cx="16" cy="16" r="2"/></svg><span>Фильтры</span></a>
-  <a class="mobile-tab" href="/faq" aria-label="FAQ: вопросы и ответы"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.9.6c0 2-3 2.5-3 4.4m0 3h.01"/></svg><span>FAQ</span></a>
-  <a class="mobile-tab" href="/account.html" aria-label="Личный кабинет" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg><span>Кабинет</span></a>
-</nav>
+<script src="/mobile-nav.js" data-page="account"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
