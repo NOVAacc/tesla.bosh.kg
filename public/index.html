@@ -190,6 +190,11 @@
  .app:has(#pwaInstall:not([hidden])) .status{bottom:calc(var(--dock-clearance) + 46px)}
  .app:has(.station-panel.is-open,.mobile-sheet.is-open) #pwaInstall{display:none}
 }
+.map-loading{position:absolute;z-index:780;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;width:max-content;max-width:calc(100% - 32px);padding:13px 16px;border:1px solid #e3e9ef;border-radius:16px;background:#fff;color:#23364d;box-shadow:0 4px 20px #14213b26;font-size:14px;text-align:center}
+.map-loading[hidden],.map-loading [hidden]{display:none}
+.map-loading-spinner{width:18px;height:18px;flex:none;border:2px solid #dbe5ef;border-top-color:#0755a5;border-radius:50%;animation:map-loading-spin .8s linear infinite}
+@keyframes map-loading-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.map-loading-spinner{animation:none}}
 </style><link rel="stylesheet" href="/donation.css?v=3"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f6f7f9" media="(min-width:851px)"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png"><script src="/pwa.js" defer></script><link rel="stylesheet" href="/pwa.css"></head><body>
 <aside id="donationCard" class="donation-card" aria-label="Поддержка проекта" hidden>
   <p></p>
@@ -217,7 +222,12 @@
 <label class="filter-row"><span>Станция</span><select class="control" id="station" aria-label="Состояние устройства"><option value="all">Любые станции</option><option value="active">Только активные</option><option value="inactive">Неактивные / заблокированные</option></select></label>
 <label class="filter-row"><span>Статус порта</span><select class="control" id="portstatus" aria-label="Статус порта"><option value="all">Любой статус порта</option><option value="AVAILABLE">Свободен</option><option value="OCCUPIED">Занят / зарядка</option><option value="FAULTED">Неисправен</option><option value="UNAVAILABLE">Недоступен</option><option value="FINISHING">Завершение</option><option value="PREPARING">Подключение</option><option value="UNKNOWN">Неизвестный статус</option></select></label>
 <label class="filter-row"><span>Дополнительно</span><select class="control" id="extras" aria-label="Дополнительный фильтр"><option value="all">Без доп. условий</option><option value="pending">Ожидает подключения</option><option value="finished">Зарядка завершена</option><option value="percentage">Показан % заряда</option></select></label>
-</div></div><div class="summary" id="summary">Загрузка данных…</div></div><div class="main"><div id="map"></div><section class="station-list-view" id="stationListView" aria-label="Зарядные станции списком" aria-hidden="true"><div class="nearby-header"><h2 class="nearby-title">Зарядные станции рядом</h2><div class="nearby-location" id="nearbyLocation">Для сортировки по расстоянию разрешите определение местоположения.</div></div><div class="nearby-content" id="nearbyContent"></div></section><section class="station-panel" id="stationPanel" aria-label="Информация о выбранной зарядной станции" aria-hidden="true"><div class="station-grip" aria-hidden="true"></div><div class="station-panel-header"><div class="station-headings"><div class="station-operator" id="stationOperator"></div><div class="station-favorite-header"><h2 class="station-name" id="stationName"></h2><span id="mobileFavorite"></span></div><div class="station-address" id="stationAddress"></div><div class="station-favorite-message" id="mobileFavoriteMessage" role="status"></div></div><button type="button" id="closeStation" class="station-dismiss" aria-label="Закрыть карточку станции">×</button></div><div class="station-panel-body" id="stationPanelBody"></div></section><div class="status" id="status">Получение данных…</div><button class="mobile-map-refresh" id="mobileRefresh" type="button" aria-label="Обновить данные" title="Обновить данные">↻</button><div class="mobile-shade" id="mobileShade" aria-hidden="true"></div><section class="mobile-sheet" id="searchSheet" aria-label="Поиск станций" aria-hidden="true"><div class="sheet-head"><strong>Поиск станций</strong><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть поиск">×</button></div><div class="sheet-content"><div id="mobileSearchSlot"></div><div id="searchResults" class="search-results"></div></div></section><section class="mobile-sheet" id="filterSheet" aria-label="Фильтры станций" aria-hidden="true"><div class="sheet-head"><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть фильтры">‹</button><strong>Фильтры</strong><button class="chip" id="applyFilters" type="button">Готово</button></div><div class="sheet-content"><button class="chip" id="filterSearch" type="button">Поиск по названию или адресу</button><div id="mobileFilterSlot"></div></div><div class="sheet-actions"><button class="chip" id="mobileReset" type="button">Сбросить</button></div></section></div><dialog id="stationCommentsDialog" aria-labelledby="stationCommentsTitle">
+</div></div><div class="summary" id="summary">Загрузка данных…</div></div><div class="main"><div id="map" aria-busy="true"></div>
+<div class="map-loading" id="mapLoading">
+  <span class="map-loading-spinner" id="mapLoadingSpinner" aria-hidden="true"></span>
+  <span id="mapLoadingMessage" role="status">Загружаем зарядные станции…</span>
+  <button class="chip" id="mapLoadingRetry" type="button" hidden>Повторить</button>
+</div><section class="station-list-view" id="stationListView" aria-label="Зарядные станции списком" aria-hidden="true"><div class="nearby-header"><h2 class="nearby-title">Зарядные станции рядом</h2><div class="nearby-location" id="nearbyLocation">Для сортировки по расстоянию разрешите определение местоположения.</div></div><div class="nearby-content" id="nearbyContent"></div></section><section class="station-panel" id="stationPanel" aria-label="Информация о выбранной зарядной станции" aria-hidden="true"><div class="station-grip" aria-hidden="true"></div><div class="station-panel-header"><div class="station-headings"><div class="station-operator" id="stationOperator"></div><div class="station-favorite-header"><h2 class="station-name" id="stationName"></h2><span id="mobileFavorite"></span></div><div class="station-address" id="stationAddress"></div><div class="station-favorite-message" id="mobileFavoriteMessage" role="status"></div></div><button type="button" id="closeStation" class="station-dismiss" aria-label="Закрыть карточку станции">×</button></div><div class="station-panel-body" id="stationPanelBody"></div></section><div class="status" id="status">Получение данных…</div><button class="mobile-map-refresh" id="mobileRefresh" type="button" aria-label="Обновить данные" title="Обновить данные">↻</button><div class="mobile-shade" id="mobileShade" aria-hidden="true"></div><section class="mobile-sheet" id="searchSheet" aria-label="Поиск станций" aria-hidden="true"><div class="sheet-head"><strong>Поиск станций</strong><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть поиск">×</button></div><div class="sheet-content"><div id="mobileSearchSlot"></div><div id="searchResults" class="search-results"></div></div></section><section class="mobile-sheet" id="filterSheet" aria-label="Фильтры станций" aria-hidden="true"><div class="sheet-head"><button class="sheet-close" data-close-sheet type="button" aria-label="Закрыть фильтры">‹</button><strong>Фильтры</strong><button class="chip" id="applyFilters" type="button">Готово</button></div><div class="sheet-content"><button class="chip" id="filterSearch" type="button">Поиск по названию или адресу</button><div id="mobileFilterSlot"></div></div><div class="sheet-actions"><button class="chip" id="mobileReset" type="button">Сбросить</button></div></section></div><dialog id="stationCommentsDialog" aria-labelledby="stationCommentsTitle">
  <header class="station-comments-header"><strong id="stationCommentsTitle">Комментарии и жалобы</strong><form method="dialog"><button aria-label="Закрыть комментарии">×</button></form></header>
  <iframe id="stationCommentsFrame" title="Комментарии к выбранной станции"></iframe>
 </dialog><script src="/mobile-nav.js" data-page="map"></script></div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="/map-config.js"></script><script>
@@ -646,12 +656,43 @@ function providerStatus(name,provider){
   return `<span class="dot" style="background:${color}"></span>${label}${error}${ccs2Warning}`;
 }
 let refreshing=false;
-async function refresh(){if(refreshing)return;refreshing=true;const old=$('status');old.textContent='Обновление данных…';try{const r=await fetch('/api/stations?view=map');if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();meta=d.meta||{};stations=[...(d.sites||[]),...(d.stations||[]).filter(x=>x.operator==='Charge24'||x.operator==='WeWay'||x.operator==='EVION')];refreshTypes();draw();old.innerHTML=[
+let stationsLoaded=false;
+async function refresh(){
+ if(refreshing)return;
+ refreshing=true;
+ const old=$('status');
+ const firstLoad=!stationsLoaded;
+ const loading=$('mapLoading');
+ const spinner=$('mapLoadingSpinner');
+ const message=$('mapLoadingMessage');
+ const retry=$('mapLoadingRetry');
+ if(firstLoad){
+  $('map').setAttribute('aria-busy','true');
+  spinner.hidden=false;
+  retry.hidden=true;
+  message.textContent='Загружаем зарядные станции…';
+ }
+ old.textContent=firstLoad?'Загрузка станций…':'Обновление данных…';
+ try{const r=await fetch('/api/stations?view=map');if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();meta=d.meta||{};stations=[...(d.sites||[]),...(d.stations||[]).filter(x=>x.operator==='Charge24'||x.operator==='WeWay'||x.operator==='EVION')];refreshTypes();draw();old.innerHTML=[
   providerStatus('SPARK',meta.spark),
   providerStatus('Charge24',meta.charge24),
   providerStatus('WeWay',meta.weway),
   providerStatus('EVION',meta.evion),
-].join(' · ')+' <span class="refresh-note">· Кэш 5 мин</span>';}catch(e){old.textContent='Ошибка загрузки: '+e.message}finally{refreshing=false}}
+].join(' · ')+' <span class="refresh-note">· Кэш 5 мин</span>';
+  stationsLoaded=true;
+  loading.hidden=true;
+ }catch(e){
+  old.textContent='Ошибка загрузки: '+e.message;
+  if(firstLoad){
+   spinner.hidden=true;
+   message.textContent='Не удалось загрузить зарядные станции.';
+   retry.hidden=false;
+  }
+ }finally{
+  if(firstLoad)$('map').setAttribute('aria-busy','false');
+  refreshing=false;
+ }
+}
 const networkFilterIds=Object.keys(filter);
 const selectFilterIds=['availability','current','power','station','portstatus','extras'];
 const preferencesUrl='/api/account.php?action=map_preferences';
@@ -823,6 +864,7 @@ $('applyFilters').addEventListener('click',closeSheet);
 $('filterSearch').addEventListener('click',()=>openSheet('search'));
 $('mobileReset').addEventListener('click',()=>$('reset').click());
 $('mobileRefresh').addEventListener('click',()=>refresh());
+$('mapLoadingRetry').addEventListener('click',()=>refresh());
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!stationCommentsDialog.open){if(activeSheet)closeSheet();else closeStationPanel()}});
 map.on('click',()=>{if(mobileMQ.matches&&selectedStation)closeStationPanel()});
 mobileMQ.addEventListener('change',syncMobileLayout);
