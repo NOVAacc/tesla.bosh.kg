@@ -24,5 +24,5 @@ header("Content-Security-Policy: default-src 'none'; style-src 'self'; script-sr
 <div class="faq-form-row"><label>Порядок<input type="number" id="faqOrder" min="0" max="100000" value="100" required></label><label class="check"><input type="checkbox" id="faqPublished" checked> Опубликован</label></div>
 <div class="faq-buttons"><button type="submit" id="faqSave">Сохранить вопрос</button><button type="button" id="faqCancel" class="secondary">Отмена</button></div>
 </form></section>
-<section class="faq-admin-list"><div class="section-heading"><h2>Все вопросы</h2><input type="search" id="faqFilter" placeholder="Найти вопрос…"></div><div id="faqCards"></div></section>
+<section class="faq-admin-list"><div class="section-heading"><h2>Все вопросы</h2><input type="search" id="faqFilter" placeholder="Найти вопрос…"></div><p class="note" id="faqReorderHint">Перетащите вопрос за ручку или используйте стрелки. Порядок сохраняется автоматически.</p><div id="faqCards"></div></section>
 </main><script src="/root-faq.js" type="module"></script></body></html>

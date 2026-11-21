@@ -5,6 +5,18 @@ header('Referrer-Policy: no-referrer');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 
+function faq_order_ids($value): array {
+  if (!is_array($value) || !array_is_list($value) || count($value) > 100001) return [];
+  $ids = [];
+  foreach ($value as $rawId) {
+    if (!is_string($rawId) && !is_int($rawId)) return [];
+    $id = filter_var($rawId, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
+    if ($id === false || isset($ids[$id])) return [];
+    $ids[$id] = $id;
+  }
+  return array_values($ids);
+}
+
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 try {
   $admin = $method !== 'GET' || isset($_GET['admin']);
@@ -22,9 +34,39 @@ try {
     $items=$db->query('SELECT id, category, question, answer FROM ev_faq WHERE is_published=1 ORDER BY sort_order, id')->fetchAll();
     ev_response(200, ['items'=>$items]);
   }
-  if (!in_array($method,['POST','PUT','DELETE'],true)) ev_response(405,['error'=>'method_not_allowed']);
+  if (!in_array($method,['POST','PUT','DELETE','PATCH'],true)) ev_response(405,['error'=>'method_not_allowed']);
   $data=ev_input();
   ev_csrf($data);
+  if ($method === 'PATCH') {
+    $ids = faq_order_ids($data['ids'] ?? null);
+    $previousIds = faq_order_ids($data['previous_ids'] ?? null);
+    if (!$ids || !$previousIds || count($ids) !== count($previousIds)
+        || array_diff($ids, $previousIds)) {
+      ev_response(422, ['error'=>'invalid_order']);
+    }
+
+    $db->beginTransaction();
+    try {
+      $rows = $db->query('SELECT id, sort_order FROM ev_faq ORDER BY sort_order, id FOR UPDATE')->fetchAll(PDO::FETCH_ASSOC);
+      $currentIds = array_map('intval', array_column($rows, 'id'));
+      if ($currentIds !== $previousIds) {
+        $db->rollBack();
+        ev_response(409, ['error'=>'order_changed']);
+      }
+      $existingOrder = array_column($rows, 'sort_order', 'id');
+      $step = min(10, intdiv(100000, max(1, count($ids) - 1)));
+      $update = $db->prepare('UPDATE ev_faq SET sort_order=? WHERE id=?');
+      foreach ($ids as $index => $itemId) {
+        $order = $index * $step;
+        if ((int)$existingOrder[$itemId] !== $order) $update->execute([$order, $itemId]);
+      }
+      $db->commit();
+    } catch (Throwable $error) {
+      if ($db->inTransaction()) $db->rollBack();
+      throw $error;
+    }
+    ev_response(200, ['ok'=>true, 'step'=>$step]);
+  }
   $id=filter_var($data['id']??null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
   if ($method==='DELETE') {
     if (!$id) ev_response(422,['error'=>'invalid_id']);

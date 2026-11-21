@@ -1,1 +1,11 @@
 .faq-editor{margin:20px 0}.faq-editor h2{margin:0 0 18px}.faq-editor form{display:grid;gap:16px}.faq-editor label{display:grid;gap:6px;font-size:13px;font-weight:650;color:#4b5664}.faq-editor input:not([type=checkbox]),.faq-editor select,.faq-editor textarea,#faqFilter{width:100%;border:1px solid #dce1e6;border-radius:12px;background:#fff;padding:11px 12px;font:inherit;color:#1d2939}.faq-editor textarea{resize:vertical;line-height:1.55}.faq-form-row{display:flex;align-items:end;gap:30px}.faq-form-row label:first-child{max-width:150px}.faq-form-row .check{display:flex;flex-direction:row;align-items:center;gap:9px;min-height:44px}.faq-buttons{display:flex;gap:8px}.faq-buttons .secondary{background:#eceff2;color:#202936}.faq-admin-list{margin-top:32px}.faq-admin-list .section-heading{margin-bottom:15px}.faq-admin-list #faqFilter{width:min(100%,300px)}#faqCards{display:grid;gap:9px}.faq-admin-card{background:#fff;border:1px solid #e4e7eb;border-radius:13px;padding:15px}.faq-admin-card p{font-size:13px;color:#606b79;line-height:1.5;white-space:pre-wrap;margin:7px 0 12px}.faq-admin-card h3{font-size:15px;line-height:1.4}.faq-admin-card .meta{font-size:11px;color:#8b949f;margin-bottom:6px}.faq-admin-card .actions{display:flex;gap:8px}.faq-admin-card button{min-height:35px;font-size:12px}.faq-admin-card .delete{background:#fff2f2;color:#b42318}.faq-admin-card .edit{background:#edf1f5;color:#344054}.faq-admin-card.hidden{opacity:.65}#faqStatus{font-size:13px;min-height:20px;color:#344054}@media(max-width:700px){.faq-form-row{gap:10px;flex-wrap:wrap}.faq-admin-list .section-heading{align-items:stretch}.faq-admin-list #faqFilter{width:100%}}
+.faq-card-heading{display:flex;align-items:center;gap:10px}
+.faq-card-heading h3{margin:0}
+.faq-drag-handle{display:inline-grid;place-items:center;flex:none;width:36px;height:36px;border:1px solid #dce1e6;border-radius:8px;background:#f6f8fa;color:#344054;font-size:20px;cursor:grab}
+.faq-drag-handle:active{cursor:grabbing}
+.faq-admin-card .actions{flex-wrap:wrap}
+.faq-admin-card .move{background:#edf1f5;color:#344054;min-width:40px}
+.faq-admin-card .move:disabled{opacity:.45}
+.faq-admin-card.is-dragging{opacity:.4}
+.faq-admin-card.drop-before{box-shadow:0 -3px #2563eb}
+.faq-admin-card.drop-after{box-shadow:0 3px #2563eb}
