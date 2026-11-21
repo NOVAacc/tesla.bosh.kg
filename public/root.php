@@ -37,6 +37,7 @@ if ($allowed && !$comments) {
   <?php if ($allowed): ?>
     <nav class="root-menu" aria-label="Разделы админки">
       <a href="/root"<?= $comments ? '' : ' aria-current="page"' ?>>Дашборд</a>
+      <a href="/root/faq">Вопросы и ответы</a>
       <a href="/root?page=comments"<?= $comments ? ' aria-current="page"' : '' ?>>Комментарии</a>
     </nav>
     <?php if (!$comments): ?>
