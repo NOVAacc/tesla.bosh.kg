@@ -60,10 +60,23 @@ test('SPARK card includes prices and keeps credential status private',()=>{
  assert.match(html,/tariffText\(c\.tariff\)/);
 });
 
+function renderMobileNav(page){
+ const source=fs.readFileSync('public/mobile-nav.js','utf8');
+ const nav={setAttribute(){}};
+ const document={
+  currentScript:{dataset:{page},replaceWith(element){assert.equal(element,nav)}},
+  createElement(tag){assert.equal(tag,'nav');return nav},
+ };
+ new Function('document',source)(document);
+ return nav.innerHTML;
+}
+
 test('Mobile navigation: persistent tabs and bottom sheets are wired',()=>{
  const html=fs.readFileSync('public/index.html','utf8');
- for(const tab of ['map','list','filters'])assert.match(html,new RegExp('data-mobile-tab="'+tab+'"'));
- assert.doesNotMatch(html,/data-mobile-tab="search"/);
+ assert.match(html,/<script src="\/mobile-nav\.js" data-page="map"><\/script>/);
+ const dock=renderMobileNav('map');
+ for(const tab of ['map','list','filters'])assert.match(dock,new RegExp('data-mobile-tab="'+tab+'"'));
+ assert.doesNotMatch(dock,/data-mobile-tab="search"/);
  for(const id of ['searchSheet','filterSheet','mobileShade','mobileRefresh','mobileReset','applyFilters'])assert.ok(html.includes('id="'+id+'"'));
  assert.match(html,/function syncMobileLayout\(\)/);
  assert.match(html,/function openSheet\(name\)/);
@@ -106,7 +119,7 @@ test('Mobile station panel closes on map tab, background tap and viewport switch
 test('Nearest list: tabs, geolocation, distance and filtering are wired',()=>{
  const html=fs.readFileSync('public/index.html','utf8');
  for(const id of ['stationListView','nearbyLocation','nearbyContent','desktopList'])assert.ok(html.includes('id="'+id+'"'));
- assert.match(html,/data-mobile-tab="list"/);
+ assert.match(renderMobileNav('map'),/data-mobile-tab="list"/);
  assert.match(html,/function distanceKm\(a,b\)/);
  assert.match(html,/function nearbySortedStations\(\)/);
  assert.match(html,/function setListMode\(enabled\)/);
