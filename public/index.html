@@ -221,7 +221,7 @@
  <header class="station-comments-header"><strong id="stationCommentsTitle">Комментарии и жалобы</strong><form method="dialog"><button aria-label="Закрыть комментарии">×</button></form></header>
  <iframe id="stationCommentsFrame" title="Комментарии к выбранной станции"></iframe>
 </dialog><script src="/mobile-nav.js" data-page="map"></script></div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="/map-config.js"></script><script>
-const map=L.map('map',{preferCanvas:true}).setView([41.9,74.6],7);
+const map=L.map('map',{preferCanvas:true}).setView([42.865,74.59],11);
 map.zoomControl.setPosition('bottomright');
 const osmTiles=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'});
 const cartoKey=(window.TESLA_MAP_CONFIG?.cartoApiKey||'').trim();
@@ -232,7 +232,7 @@ if(cartoKey){
  positronTiles.on('tileerror',()=>{if(++failures>=3&&map.hasLayer(positronTiles)){map.removeLayer(positronTiles);osmTiles.addTo(map);baseTiles=osmTiles;}});
  baseTiles=positronTiles;
 }
-baseTiles.addTo(map);const layer=L.layerGroup().addTo(map);let stations=[],meta={},first=true;const filter={spark:true,charge24:true,weway:true,evion:true};const selectedConnectorTypes=new Set();let vehicleConnectorTypes=null;const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));const statuses={AVAILABLE:'Свободен',OCCUPIED:'Занят',FAULTED:'Ошибка',UNAVAILABLE:'Недоступен',FINISHING:'Завершение',PREPARING:'Подключение',UNKNOWN:'Неизвестно'};
+baseTiles.addTo(map);const layer=L.layerGroup().addTo(map);let stations=[],meta={};const filter={spark:true,charge24:true,weway:true,evion:true};const selectedConnectorTypes=new Set();let vehicleConnectorTypes=null;const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));const statuses={AVAILABLE:'Свободен',OCCUPIED:'Занят',FAULTED:'Ошибка',UNAVAILABLE:'Недоступен',FINISHING:'Завершение',PREPARING:'Подключение',UNKNOWN:'Неизвестно'};
 function canon(s){const x=String(s||'').toUpperCase();if(x==='AVAILABLE'||x==='FREE')return 'AVAILABLE';if(['CHARGING','OCCUPIED'].includes(x))return 'OCCUPIED';if(x==='FAULTED')return 'FAULTED';if(x==='UNAVAILABLE')return 'UNAVAILABLE';if(x==='FINISHING')return 'FINISHING';if(x==='PREPARING')return 'PREPARING';return 'UNKNOWN'}
 function flatten(s){return s.devices?s.devices.flatMap(d=>(d.connectors||[]).map(c=>({device:d,connector:c}))):(s.connectors||[]).map(c=>({device:s,connector:c}))}
 function power(d){let n=Number(d.powerKw);if(Number.isFinite(n)&&n>0)return n;const portPowers=(d.connectors||[]).map(c=>Number(c.powerKw)).filter(n=>Number.isFinite(n)&&n>0);if(portPowers.length)return Math.max(...portPowers);const m=String(d.name||'').match(/\b(AC|DC)\s*(\d+(?:[.,]\d+)?)/i);return m?Number(m[2].replace(',','.')):null}
@@ -651,7 +651,7 @@ async function refresh(){if(refreshing)return;refreshing=true;const old=$('statu
   providerStatus('Charge24',meta.charge24),
   providerStatus('WeWay',meta.weway),
   providerStatus('EVION',meta.evion),
-].join(' · ')+' <span class="refresh-note">· Кэш 5 мин</span>';if(first&&stations.length){const bounds=L.latLngBounds(stations.map(s=>[s.lat,s.lng]));if(bounds.isValid())map.fitBounds(bounds,{padding:[24,24]});first=false}}catch(e){old.textContent='Ошибка загрузки: '+e.message}finally{refreshing=false}}
+].join(' · ')+' <span class="refresh-note">· Кэш 5 мин</span>';}catch(e){old.textContent='Ошибка загрузки: '+e.message}finally{refreshing=false}}
 const networkFilterIds=Object.keys(filter);
 const selectFilterIds=['availability','current','power','station','portstatus','extras'];
 const preferencesUrl='/api/account.php?action=map_preferences';
