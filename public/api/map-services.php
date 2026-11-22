@@ -10,7 +10,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
 
 try {
   $items = ev_db()->query("
-    SELECT b.name, b.address, b.description, b.latitude AS lat, b.longitude AS lng
+    SELECT b.name, b.address, b.description, b.phone, b.whatsapp, b.latitude AS lat, b.longitude AS lng
     FROM businesses AS b
     JOIN business_categories AS c ON c.id = b.category_id
     WHERE b.status = 'approved' AND c.slug = 'ev-service'

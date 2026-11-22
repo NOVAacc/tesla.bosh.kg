@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS business_review_notes (
+ business_id BIGINT UNSIGNED PRIMARY KEY,
+ note VARCHAR(500) NOT NULL,
+ FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

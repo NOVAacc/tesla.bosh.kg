@@ -25,6 +25,7 @@ jobs:
       - run: npm test
       - run: |
           node --check public/root.js
+          node --check public/root-businesses.js
           node --check public/pwa.js
           node --check public/sw.js
       - uses: shivammathur/setup-php@v2
@@ -34,6 +35,7 @@ jobs:
       - run: |
           php -l public/api/stations.php
           php -l public/api/map-services.php
+          php -l public/api/root-businesses.php
           php -l public/api/station-cache.php
           php -l public/api/account.php
           php -l public/api/station-feedback.php
@@ -81,7 +83,7 @@ jobs:
           published="$(mktemp)"
           curl --fail --silent --show-error --retry 3 --max-time 20 "https://tesla.bosh.kg/?deploy=$GITHUB_SHA" -o "$published"
           cmp public/index.html "$published"
-          for asset in account.html mobile-nav.css root.js station-feedback.html manifest.webmanifest sw.js pwa.js pwa.css offline.html icons/icon-180.png icons/icon-192.png icons/icon-512.png; do
+          for asset in account.html mobile-nav.css root.js root-businesses.js station-feedback.html manifest.webmanifest sw.js pwa.js pwa.css offline.html icons/icon-180.png icons/icon-192.png icons/icon-512.png; do
             curl --fail --silent --show-error --retry 3 --max-time 20 "https://tesla.bosh.kg/$asset?deploy=$GITHUB_SHA" -o "$published"
             cmp "public/$asset" "$published"
           done

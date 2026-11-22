@@ -14,6 +14,7 @@ $allowed = ev_root_access($user);
 if (!$allowed) http_response_code($user ? 403 : 401);
 $page = match ($_GET['page'] ?? null) {
   'comments' => 'comments',
+  'businesses' => 'businesses',
   'faq' => 'faq',
   'donation' => 'donation',
   'users' => 'users',
@@ -75,6 +76,7 @@ if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
     <nav class="root-menu" aria-label="Разделы админки">
       <a href="/root"<?= $page === 'dashboard' ? ' aria-current="page"' : '' ?>>Дашборд</a>
       <a href="/root?page=users"<?= $page === 'users' ? ' aria-current="page"' : '' ?>>Пользователи</a>
+      <a href="/root?page=businesses"<?= $page === 'businesses' ? ' aria-current="page"' : '' ?>>Компании</a>
       <a href="/root?page=comments"<?= $page === 'comments' ? ' aria-current="page"' : '' ?>>Комментарии</a>
       <a href="/root?page=faq"<?= $page === 'faq' ? ' aria-current="page"' : '' ?>>FAQ</a>
       <a href="/root?page=donation"<?= $page === 'donation' ? ' aria-current="page"' : '' ?>>Поддержка проекта</a>
@@ -93,6 +95,14 @@ if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
     </form></section>
     <section class="faq-admin-list"><div class="section-heading"><h2>Все вопросы</h2><input type="search" id="faqFilter" placeholder="Найти вопрос…"></div><p class="note" id="faqReorderHint">Перетащите вопрос за заголовок или используйте стрелки. Порядок сохраняется автоматически.</p><div id="faqCards"></div></section>
     <script src="/root-faq.js?v=<?= hash_file('sha256', __DIR__.'/root-faq.js') ?>" type="module"></script>
+    <?php elseif ($page === 'businesses'): ?>
+    <section aria-labelledby="businessReviewTitle">
+      <div class="section-heading"><h2 id="businessReviewTitle">Заявки компаний</h2><button type="button" id="businessReviewRefresh">Обновить</button></div>
+      <p id="businessReviewStatus" role="status"></p>
+      <div id="businessReviewCards"></div>
+      <button type="button" id="businessReviewNext" hidden>Показать ещё</button>
+    </section>
+    <script src="/root-businesses.js?v=<?= hash_file('sha256', __DIR__.'/root-businesses.js') ?>" type="module"></script>
     <?php elseif ($page === 'donation'): ?>
     <section class="card">
       <h2>Поддержка проекта</h2>

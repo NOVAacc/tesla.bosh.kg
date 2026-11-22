@@ -64,6 +64,16 @@ try {
       ev_response(200,['makes'=>array_values($makes)]);
     }
     if ($action === 'categories') ev_response(200,['categories'=>ev_db()->query('SELECT id,slug,name_ru,name_ky FROM business_categories ORDER BY id')->fetchAll()]);
+    if ($action === 'my_businesses') {
+      $u = ev_require_user();
+      $query = ev_db()->prepare("SELECT b.id,b.category_id,b.name,b.address,b.description,b.phone,b.whatsapp,b.latitude,b.longitude,b.status,c.name_ru AS category,
+        CASE WHEN b.status='rejected' THEN n.note END AS note
+        FROM businesses b JOIN business_categories c ON c.id=b.category_id
+        LEFT JOIN business_review_notes n ON n.business_id=b.id
+        WHERE b.owner_user_id=? ORDER BY b.id DESC LIMIT 100");
+      $query->execute([$u['id']]);
+      ev_response(200,['items'=>$query->fetchAll()]);
+    }
     if ($action === 'businesses') {
       $s=ev_db()->query("SELECT b.id,b.name,b.description,b.phone,b.whatsapp,b.address,b.latitude,b.longitude,c.slug AS category FROM businesses b JOIN business_categories c ON c.id=b.category_id WHERE b.status='approved' ORDER BY b.id DESC LIMIT 500");
       ev_response(200,['businesses'=>$s->fetchAll()]);
@@ -225,10 +235,48 @@ try {
     ev_response($editing?200:201,['id'=>$id]);
   }
   if ($action === 'business_apply') {
-    $u=ev_require_user(); $name=trim((string)($data['name']??'')); $cat=$data['category_id']??null;
-    if ($name==='' || mb_strlen($name)>150 || !is_int($cat) || $cat<1) ev_response(422,['error'=>'invalid_business']);
-    $s=ev_db()->prepare("INSERT INTO businesses(owner_user_id,category_id,name,status) VALUES(?,?,?,'pending')");
-    $s->execute([$u['id'],$cat,$name]); ev_response(201,['id'=>(int)ev_db()->lastInsertId(),'status'=>'pending']);
+    $u = ev_require_user();
+    $fields = [];
+    foreach (['name'=>150,'address'=>255,'description'=>1500,'phone'=>40,'whatsapp'=>40] as $field=>$limit) {
+      $value = $data[$field] ?? '';
+      if (!is_string($value) || mb_strlen($value)>$limit) ev_response(422,['error'=>'invalid_business']);
+      $fields[$field] = trim($value);
+    }
+    $cat = $data['category_id'] ?? null;
+    $lat = $data['latitude'] ?? null;
+    $lng = $data['longitude'] ?? null;
+    if (!$fields['name'] || !$fields['address'] || !$fields['description']
+      || !is_int($cat) || $cat<1 || (!is_int($lat) && !is_float($lat)) || (!is_int($lng) && !is_float($lng))
+      || !is_finite((float)$lat) || !is_finite((float)$lng) || abs($lat)>90 || abs($lng)>180
+      || (!$fields['phone'] && !$fields['whatsapp'])) {
+      ev_response(422,['error'=>'invalid_business']);
+    }
+    foreach (['phone','whatsapp'] as $field) {
+      if (!$fields[$field]) continue;
+      $digits = preg_replace('/[^0-9]/','',$fields[$field]);
+      if (!preg_match('/^[+0-9 ()-]+$/D',$fields[$field]) || strlen($digits)<7 || strlen($digits)>15) {
+        ev_response(422,['error'=>'invalid_business_contact']);
+      }
+    }
+    $db = ev_db();
+    $category = $db->prepare('SELECT id FROM business_categories WHERE id=?');
+    $category->execute([$cat]);
+    if (!$category->fetchColumn()) ev_response(422,['error'=>'invalid_business']);
+    $editId = $data['id'] ?? null;
+    if ($editId !== null) {
+      if (!is_int($editId) || $editId<1) ev_response(422,['error'=>'invalid_business']);
+      $query = $db->prepare("UPDATE businesses SET category_id=?,name=?,description=?,phone=?,whatsapp=?,
+        address=?,latitude=?,longitude=?,status='pending' WHERE id=? AND owner_user_id=? AND status='rejected'");
+      $query->execute([$cat,$fields['name'],$fields['description'],$fields['phone'] ?: null,$fields['whatsapp'] ?: null,
+        $fields['address'],$lat,$lng,$editId,$u['id']]);
+      if (!$query->rowCount()) ev_response(409,['error'=>'business_changed']);
+      ev_response(200,['id'=>$editId,'status'=>'pending']);
+    }
+    $query = $db->prepare("INSERT INTO businesses(owner_user_id,category_id,name,description,phone,whatsapp,address,latitude,longitude,status)
+      VALUES(?,?,?,?,?,?,?,?,?,'pending')");
+    $query->execute([$u['id'],$cat,$fields['name'],$fields['description'],$fields['phone'] ?: null,$fields['whatsapp'] ?: null,
+      $fields['address'],$lat,$lng]);
+    ev_response(201,['id'=>(int)$db->lastInsertId(),'status'=>'pending']);
   }
   ev_response(404,['error'=>'unknown_action']);
 } catch (PDOException $e) {

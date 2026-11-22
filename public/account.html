@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>Мой кабинет — EV карта</title>
 <link rel="stylesheet" href="/mobile-nav.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root {
   color-scheme: light;
@@ -53,7 +54,7 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 summary { cursor: pointer; color: #505050; font-size: 14px; }
 label, .vehicle-connectors legend { display: block; color: #444; font-size: 13px; }
 label { margin: 13px 0 5px; }
-input, select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #dedede; border-radius: 14px; background: #fafafa; color: inherit; font: inherit; font-size: 16px; }
+input, select, textarea { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #dedede; border-radius: 14px; background: #fafafa; color: inherit; font: inherit; font-size: 16px; }
 .buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 .notice, #vehicleForm { border-radius: 20px; padding: 14px 16px; background: #f5f5f5; }
 .notice, #vehicleForm { margin-top: 14px; }
@@ -84,6 +85,11 @@ input, select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px s
 .connector-setting input { flex: none; width: 19px; height: 19px; min-height: 0; margin: 0; accent-color: #171717; }
 #vehicleDelete { color: #a32240; }
 #accountLoading { color: #505050; }
+#businessMap{height:240px;margin:8px 0;border-radius:14px;background:#eee;isolation:isolate}
+#businessForm textarea{display:block;resize:vertical}
+#businessForm details{margin:8px 0}
+#businessApplications article{padding:12px 0;border-top:1px solid #dedede}
+#businessApplications article p{margin:6px 0}
 </style><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f6f7f9"><link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png"><script src="/pwa.js" defer></script></head><body>
 <header><a class="back" href="/" aria-label="Вернуться к карте">←</a><div class="header-end"><strong>EV Карта</strong>
   <details id="accountMenu" class="account-menu hidden">
@@ -110,7 +116,33 @@ input, select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px s
  <button type="button" role="tab" id="settingsTab" aria-controls="settingsPanel" aria-selected="false" tabindex="-1">Настройки</button>
  <button type="button" role="tab" id="walletTab" aria-controls="walletPanel" aria-selected="false" tabindex="-1">Кошелёк</button>
 </div>
-<section class="card" role="tabpanel" tabindex="0" id="companyPanel" aria-labelledby="companyTab"><h2>Разместить EV-компанию</h2><p>Подайте заявку на добавление автосервиса, магазина или автосалона. Компания появится в каталоге только после модерации.</p><form id="businessForm"><label for="businessName">Название компании</label><input id="businessName" required maxlength="150"><label for="businessCategory">Категория</label><select id="businessCategory" required><option value="">Загрузка категорий…</option></select><div class="buttons"><button type="submit">Отправить заявку</button></div><div id="businessMsg" class="message" role="status"></div></form></section>
+<section class="card" role="tabpanel" tabindex="0" id="companyPanel" aria-labelledby="companyTab">
+ <h2 id="businessFormTitle">Добавить компанию на карту</h2>
+ <p>После проверки EV-автосервисы появляются в слое «Сервисы».</p>
+ <form id="businessForm">
+  <label for="businessName">Название компании</label><input id="businessName" required maxlength="150">
+  <label for="businessCategory">Вид бизнеса</label>
+  <select id="businessCategory" required><option value="">Загрузка категорий…</option></select>
+  <label for="businessDescription">Что вы предлагаете</label>
+  <textarea id="businessDescription" required maxlength="1500" rows="3" aria-describedby="businessDescriptionHint"></textarea>
+  <p id="businessDescriptionHint"></p>
+  <label for="businessPhone">Рабочий телефон</label><input id="businessPhone" type="tel" maxlength="40">
+  <label for="businessWhatsapp">WhatsApp с кодом страны</label><input id="businessWhatsapp" type="tel" maxlength="40" placeholder="+996">
+  <p>Укажите хотя бы один контакт. После одобрения он будет виден посетителям.</p>
+  <label for="businessAddress">Адрес</label><input id="businessAddress" required maxlength="255">
+  <p id="businessPointHint">Нажмите на карту, чтобы выбрать точку компании.</p>
+  <div id="businessMap" aria-label="Расположение компании на карте"></div>
+  <details><summary>Указать координаты вручную</summary>
+   <label for="businessLat">Широта</label><input id="businessLat" type="number" min="-90" max="90" step="any">
+   <label for="businessLng">Долгота</label><input id="businessLng" type="number" min="-180" max="180" step="any">
+  </details>
+  <div class="buttons"><button id="businessSubmit" type="submit" disabled>Отправить заявку</button>
+   <button id="businessCancel" type="button" class="hidden">Отменить правки</button></div>
+  <div id="businessMsg" class="message" role="status"></div>
+ </form>
+ <h3>Мои заявки</h3>
+ <div id="businessApplications" aria-live="polite"></div>
+</section>
 <section class="card hidden" role="tabpanel" tabindex="0" id="settingsPanel" aria-labelledby="settingsTab">
  <label class="connector-setting"><input type="checkbox" id="useVehicleConnectors" aria-describedby="vehicleConnectorHint" disabled>Только разъёмы моих автомобилей</label>
  <p id="vehicleConnectorHint">Карта будет показывать станции с разъёмами, указанными хотя бы у одного из ваших автомобилей.</p>
@@ -119,6 +151,7 @@ input, select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px s
 <section class="card hidden" role="tabpanel" tabindex="0" id="walletPanel" aria-labelledby="walletTab"><h2>Единый кошелёк</h2><div class="notice">Платежи и баланс ещё не запущены. Мы не принимаем пополнения до подключения лицензированного платёжного партнёра.</div></section>
 </div></div><p id="globalMsg" class="message" role="status" aria-live="polite"></p></main>
 <script src="/mobile-nav.js" data-page="account"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
@@ -139,6 +172,7 @@ function selectAccountTab(active){
   tab.tabIndex=selected?0:-1;
   $(tab.getAttribute('aria-controls')).classList.toggle('hidden',!selected);
  }
+ if(active.id==='companyTab')businessMap?.invalidateSize();
 }
 for(const [index,tab] of accountTabs.entries()){
  tab.addEventListener('click',()=>selectAccountTab(tab));
@@ -191,8 +225,9 @@ function showUser(u){
  $('authenticated').classList.toggle('hidden',!u);
  accountMenu.classList.toggle('hidden',!u);
  accountMenu.open=false;
- if(u)loadConnectorPreference();
+ if(u){loadConnectorPreference();loadBusinessPanel();}
  else{
+  resetBusinessPanel();
   preferenceRequest++;
   connectorPreference.checked=false;
   connectorPreference.disabled=true;
@@ -347,7 +382,7 @@ $('vehicleDelete').addEventListener('click',async()=>{
   syncVehicleSubmit();
  }
 });
-async function boot(){try{const r=await api('me');csrf=r.csrf;showUser(r.user);if(r.user)await loadVehicles();const {categories}=await api('categories');const s=$('businessCategory');s.replaceChildren();for(const c of categories){const o=document.createElement('option');o.value=String(c.id);o.textContent=c.name_ru;s.append(o);}}catch(e){$('accountLoading').classList.add('hidden');$('globalMsg').textContent='Не удалось загрузить кабинет: '+e.message;}}
+async function boot(){try{const r=await api('me');csrf=r.csrf;showUser(r.user);if(r.user)await loadVehicles();}catch(e){$('accountLoading').classList.add('hidden');$('globalMsg').textContent='Не удалось загрузить кабинет: '+e.message;}}
 $('login').addEventListener('submit',async e=>{e.preventDefault();$('loginMsg').textContent='';try{const r=await api('login',{email:$('email').value,password:$('password').value});csrf=r.csrf;$('password').value='';showUser(r.user);await loadVehicles();}catch(err){$('loginMsg').textContent=err.message;}});
 $('logout').addEventListener('click',async()=>{$('logoutMsg').textContent='';try{const r=await api('logout',{});csrf=r.csrf;showUser(null);vehicleLimitReached=false;closeVehicleForm();$('vehicleMsg').textContent='';$('password').value='';document.querySelector('.google-link').focus();}catch(err){$('logoutMsg').textContent=err.message;}});
 $('vehicleForm').addEventListener('submit',async e=>{
@@ -378,7 +413,175 @@ $('vehicleForm').addEventListener('submit',async e=>{
   savingVehicle=false;syncVehicleSubmit();
  }
 });
-$('businessForm').addEventListener('submit',async e=>{e.preventDefault();$('businessMsg').textContent='';try{await api('business_apply',{name:$('businessName').value.trim(),category_id:Number($('businessCategory').value)});$('businessForm').reset();$('businessMsg').textContent='Заявка отправлена на модерацию';}catch(err){$('businessMsg').textContent=err.message;}});
+let businessMap=null,businessMarker=null,editingBusiness=null,businessRevision=0;
+const businessFields={Name:'name',Address:'address',Description:'description',Phone:'phone',Whatsapp:'whatsapp'};
+const businessHints={
+ 'ev-service':'Например, диагностика, ремонт батарей и автоэлектрика. Укажите марки, с которыми работаете.',
+ 'charging-accessories':'Укажите типы разъёмов и доступна ли продажа или аренда.',
+ 'parts':'Перечислите марки и основные категории запчастей.',
+ 'tire-service':'Укажите услуги и размеры колёс, с которыми работаете.',
+ 'software':'Укажите марки и виды программных работ.',
+ 'dealership':'Укажите марки и услуги салона.'
+};
+function updateBusinessHint(){
+ const slug=$('businessCategory').selectedOptions[0]?.dataset.slug;
+ $('businessDescriptionHint').textContent=businessHints[slug]||'Перечислите товары или услуги вашей компании.';
+}
+function showBusinessPoint(lat,lng,move=false){
+ $('businessLat').value=Number(lat).toFixed(7);
+ $('businessLng').value=Number(lng).toFixed(7);
+ $('businessPointHint').textContent='Точка выбрана. Чтобы изменить её, нажмите на карту или перетащите метку.';
+ if(!businessMap)return;
+ if(!businessMarker){
+  businessMarker=L.marker([lat,lng],{draggable:true}).addTo(businessMap);
+  businessMarker.on('dragend',()=>{const p=businessMarker.getLatLng();showBusinessPoint(p.lat,p.lng);});
+ }else businessMarker.setLatLng([lat,lng]);
+ if(move)businessMap.setView([lat,lng],16);
+}
+function initBusinessMap(){
+ if(businessMap||$('authenticated').classList.contains('hidden'))return;
+ if(!window.L){
+  $('businessMap').hidden=true;
+  $('businessPointHint').textContent='Карта недоступна. Укажите координаты вручную.';
+  return;
+ }
+ businessMap=L.map('businessMap').setView([42.87,74.59],12);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(businessMap);
+ businessMap.on('click',({latlng})=>showBusinessPoint(latlng.lat,latlng.lng));
+ const lat=$('businessLat'),lng=$('businessLng');
+ if(lat.value&&lng.value&&lat.validity.valid&&lng.validity.valid)showBusinessPoint(lat.valueAsNumber,lng.valueAsNumber,true);
+}
+function resetBusinessForm(){
+ editingBusiness=null;
+ $('businessForm').reset();
+ const category=$('businessCategory');
+ category.value=[...category.options].find(option=>option.dataset.slug==='ev-service')?.value||'';
+ $('businessFormTitle').textContent='Добавить компанию на карту';
+ $('businessCancel').classList.add('hidden');
+ $('businessPointHint').textContent=businessMap?'Нажмите на карту, чтобы выбрать точку компании.':'Укажите координаты вручную, если карта недоступна.';
+ businessMarker?.remove();
+ businessMarker=null;
+ updateBusinessHint();
+}
+function resetBusinessPanel(){
+ businessRevision++;
+ resetBusinessForm();
+ $('businessApplications').replaceChildren();
+ $('businessMsg').textContent='';
+ $('businessSubmit').disabled=true;
+}
+function editBusiness(item){
+ resetBusinessForm();
+ editingBusiness=Number(item.id);
+ for(const [id,key] of Object.entries(businessFields))$('business'+id).value=item[key]??'';
+ $('businessCategory').value=String(item.category_id);
+ updateBusinessHint();
+ if(item.latitude!==null&&item.longitude!==null)showBusinessPoint(item.latitude,item.longitude,true);
+ $('businessFormTitle').textContent='Доработать заявку';
+ $('businessCancel').classList.remove('hidden');
+ $('businessName').focus();
+}
+async function loadBusinessApplications(revision){
+ const container=$('businessApplications');
+ try{
+  const {items}=await api('my_businesses');
+  if(revision!==businessRevision)return;
+  container.replaceChildren();
+  if(!items.length)container.textContent='Заявок пока нет.';
+  for(const item of items){
+   const row=document.createElement('article');
+   const heading=document.createElement('strong');
+   heading.textContent=item.name;
+   const status=document.createElement('p');
+   const statusName={pending:'На проверке',approved:'Одобрена',rejected:'На доработке',draft:'Черновик'}[item.status];
+   status.textContent=[item.category,statusName].filter(Boolean).join(' · ');
+   row.append(heading,status);
+   if(item.note){
+    const note=document.createElement('p');
+    note.textContent=item.note;
+    row.append(note);
+   }
+   if(item.status==='rejected'){
+    const edit=document.createElement('button');
+    edit.type='button';
+    edit.textContent='Исправить заявку';
+    edit.addEventListener('click',()=>editBusiness(item));
+    row.append(edit);
+   }
+   container.append(row);
+  }
+ }catch{
+  if(revision===businessRevision)container.textContent='Не удалось загрузить заявки. Обновите страницу.';
+ }
+}
+async function loadBusinessPanel(){
+ const revision=++businessRevision;
+ if(document.readyState==='complete')initBusinessMap();
+ else window.addEventListener('load',initBusinessMap,{once:true});
+ try{
+  const {categories}=await api('categories');
+  if(revision!==businessRevision)return;
+  const select=$('businessCategory');
+  select.replaceChildren(new Option('Выберите вид бизнеса',''));
+  for(const category of categories){
+   const option=new Option(category.name_ru,String(category.id));
+   option.dataset.slug=category.slug;
+   select.append(option);
+  }
+  resetBusinessForm();
+  $('businessSubmit').disabled=false;
+  if(location.hash==='#companyPanel'){
+   selectAccountTab($('companyTab'));
+   $('companyPanel').scrollIntoView();
+  }
+ }catch{
+  if(revision===businessRevision)$('businessMsg').textContent='Не удалось загрузить виды бизнеса. Обновите страницу.';
+ }finally{
+  if(revision===businessRevision)void loadBusinessApplications(revision);
+ }
+}
+$('businessCategory').addEventListener('change',updateBusinessHint);
+$('businessCancel').addEventListener('click',resetBusinessForm);
+for(const id of ['businessLat','businessLng']){
+ $(id).addEventListener('change',()=>{
+  const lat=$('businessLat'),lng=$('businessLng');
+  if(lat.value&&lng.value&&lat.validity.valid&&lng.validity.valid)showBusinessPoint(lat.valueAsNumber,lng.valueAsNumber,true);
+ });
+}
+$('businessForm').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const button=$('businessSubmit'),message=$('businessMsg');
+ if(button.disabled)return;
+ const latitude=$('businessLat').valueAsNumber,longitude=$('businessLng').valueAsNumber;
+ if(!Number.isFinite(latitude)||!Number.isFinite(longitude)){
+  message.textContent='Выберите точку на карте или укажите координаты.';
+  return;
+ }
+ const details=Object.fromEntries(Object.entries(businessFields).map(([id,key])=>[key,$('business'+id).value.trim()]));
+ if(!details.phone&&!details.whatsapp){
+  message.textContent='Укажите телефон или WhatsApp.';
+  return;
+ }
+ const revision=businessRevision;
+ button.disabled=true;
+ message.textContent='';
+ try{
+  await api('business_apply',{...details,id:editingBusiness,category_id:Number($('businessCategory').value),latitude,longitude});
+  if(revision!==businessRevision)return;
+  resetBusinessForm();
+  message.textContent='Заявка отправлена на проверку.';
+  await loadBusinessApplications(revision);
+ }catch(error){
+  if(revision!==businessRevision)return;
+  message.textContent={
+   invalid_business:'Проверьте название, адрес, описание и координаты.',
+   invalid_business_contact:'Проверьте формат номера телефона или WhatsApp.',
+   business_changed:'Статус заявки изменился. Обновите страницу.'
+  }[error.code]||error.message;
+ }finally{
+  if(revision===businessRevision)button.disabled=false;
+ }
+});
 const oauthErrors={not_configured:'Google вход ещё не настроен администратором',expired:'Срок входа истёк. Попробуйте снова',cancelled:'Вход через Google отменён',invalid_response:'Некорректный ответ Google',google_unavailable:'Сервис Google временно недоступен',invalid_identity:'Google не подтвердил данные аккаунта',existing_email:'Этот email уже зарегистрирован другим способом. Войдите с прежним способом; привязку Google настроим отдельно.',server_error:'Не удалось завершить вход. Повторите позже'};
 const authError=new URLSearchParams(window.location.search).get('auth_error');
 if(authError){$('globalMsg').textContent=oauthErrors[authError]||'Не удалось выполнить вход через Google';window.history.replaceState(null,'',window.location.pathname);}

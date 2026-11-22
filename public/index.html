@@ -193,6 +193,7 @@
 .map-layers{position:absolute;z-index:710;right:max(12px,env(safe-area-inset-right));top:50%;transform:translateY(-50%);border:1px solid #e3e9ef;border-radius:14px;background:#fff;color:#23364d;box-shadow:0 3px 16px #14213b26}
 .map-layer-icon{display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:10px;background:transparent;color:inherit;cursor:pointer}
 .map-layer-icon[hidden]{display:none}
+a.map-layer-icon{text-decoration:none}
 .map-layer-icon::-webkit-details-marker{display:none}
 .map-layer-icon:focus-visible{outline:2px solid #2675bd;outline-offset:-2px}
 .map-layer-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -258,6 +259,7 @@
   <div class="map-layer-options">
     <div id="mapLayerOptions" role="group" aria-label="Слои карты"></div>
     <div class="map-layer-feedback" id="mapServicesFeedback" hidden>
+      <a class="map-layer-icon" href="/account.html#companyPanel" aria-label="Добавить компанию"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       <span class="map-layer-status" id="mapServicesStatus" role="status"></span>
       <span class="map-loading-spinner" id="mapServicesSpinner" aria-hidden="true" hidden></span>
       <button class="map-layer-icon" id="mapServicesRetry" type="button" aria-label="Повторить загрузку сервисов" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10a8 8 0 1 0-2 8m2-13v5h-5"/></svg></button>
@@ -307,6 +309,17 @@ async function loadServices(){
     if(!text)continue;
     const line=document.createElement('div');
     line.textContent=text;
+    details.append(line);
+   }
+   for(const [number,whatsapp] of [[item.phone,false],[item.whatsapp,true]]){
+    if(!number)continue;
+    const digits=number.replace(/[^0-9]/g,'');
+    if(digits.length<7||digits.length>15)continue;
+    const link=document.createElement('a');
+    link.href=whatsapp?'https://wa.me/'+digits:'tel:'+(number.startsWith('+')?'+':'')+digits;
+    link.textContent=whatsapp?'WhatsApp':number;
+    const line=document.createElement('div');
+    line.append(link);
     details.append(line);
    }
    L.marker([item.lat,item.lng],{icon,title:item.name,alt:item.name})
