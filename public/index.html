@@ -235,7 +235,7 @@ a.map-layer-icon{text-decoration:none}
 .map-loading-spinner{width:18px;height:18px;flex:none;border:2px solid #dbe5ef;border-top-color:#0755a5;border-radius:50%;animation:map-loading-spin .8s linear infinite}
 @keyframes map-loading-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.map-loading-spinner{animation:none}}
-</style><link rel="stylesheet" href="/donation.css?v=5"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f6f7f9" media="(min-width:851px)"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png"><script src="/pwa.js" defer></script><link rel="stylesheet" href="/pwa.css"></head><body>
+</style><link rel="stylesheet" href="/donation.css?v=5"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f6f7f9" media="(min-width:851px)"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png"><script src="/pwa.js" defer></script><script src="/analytics.js?v=1" defer></script><link rel="stylesheet" href="/pwa.css"></head><body>
 <aside id="donationCard" class="donation-card" aria-label="Поддержка проекта" hidden>
   <p></p>
   <button class="donation-toggle" type="button" aria-expanded="false" aria-controls="donationDetails">Поддержать проект</button>
@@ -658,6 +658,7 @@ document.addEventListener('click',async event=>{
   if(!response.ok)throw Error('Favorites unavailable');
   if(favorite)favoriteStations.add(id);
   else favoriteStations.delete(id);
+   window.evTrack?.(favorite?'favorite_add':'favorite_remove');
   if($('favoritesOnly').checked)draw();
  }catch{
   favoriteMessage={id,signIn:false};
@@ -772,6 +773,7 @@ function closeStationPanel(){
 }
 function openStationPanel(site){
  if(!mobileMQ.matches)return;
+  window.evTrack?.('station_open');
  closeStationPanel();
  closeSheet();
  selectedStation=site;
@@ -870,13 +872,14 @@ function setListMode(enabled){
    if(tab.dataset.mobileTab==='list'||tab.dataset.mobileTab==='map')tab.setAttribute('aria-pressed',String(tab.dataset.mobileTab===(listMode?'list':'map')));
  }
  if(listMode){
-   renderStationList();
+    window.evTrack?.('list_open');
+    renderStationList();
    if(locationState==='idle')requestLocation();
  }else{setTimeout(()=>map.invalidateSize(),60)}
 }
 
 const visibleMarkers=new Map();
-function draw(){closeStationPanel();layer.clearLayers();visibleMarkers.clear();let shown=0,units=0,ports=0,free=0;for(const s of stations){if(!matches(s))continue;const parts=flatten(s);shown++;units+=(s.devices?s.devices.length:1);ports+=parts.length;free+=parts.filter(isFree).length;const availability=stationAvailability(s);const markerRef=L.marker([s.lat,s.lng],{icon:marker(s,availability),title:s.name+' · '+availabilityText(availability)}).addTo(layer);if(mobileMQ.matches){markerRef.on('click',()=>openStationPanel(s))}else{markerRef.bindPopup(()=>popup(s),{maxHeight:350,maxWidth:350}).on('popupopen',event=>enrichSparkPopup(event,s))}visibleMarkers.set(s.id,markerRef)}updateSearchResults();renderStationList();$('summary').textContent=`Найдено площадок: ${shown} · устройств: ${units} · коннекторов: ${ports} · доступных: ${free} · всего SPARK: ${meta.spark?.count||0}, Charge24: ${meta.charge24?.count||0}, WeWay: ${meta.weway?.count||0}, EVION: ${meta.evion?.count||0}, TazaTok: ${meta.tazatok?.count||0}`}
+function draw(){closeStationPanel();layer.clearLayers();visibleMarkers.clear();let shown=0,units=0,ports=0,free=0;for(const s of stations){if(!matches(s))continue;const parts=flatten(s);shown++;units+=(s.devices?s.devices.length:1);ports+=parts.length;free+=parts.filter(isFree).length;const availability=stationAvailability(s);const markerRef=L.marker([s.lat,s.lng],{icon:marker(s,availability),title:s.name+' · '+availabilityText(availability)}).addTo(layer);if(mobileMQ.matches){markerRef.on('click',()=>openStationPanel(s))}else{markerRef.bindPopup(()=>popup(s),{maxHeight:350,maxWidth:350}).on('popupopen',event=>{window.evTrack?.('station_open');enrichSparkPopup(event,s)})}visibleMarkers.set(s.id,markerRef)}updateSearchResults();renderStationList();$('summary').textContent=`Найдено площадок: ${shown} · устройств: ${units} · коннекторов: ${ports} · доступных: ${free} · всего SPARK: ${meta.spark?.count||0}, Charge24: ${meta.charge24?.count||0}, WeWay: ${meta.weway?.count||0}, EVION: ${meta.evion?.count||0}, TazaTok: ${meta.tazatok?.count||0}`}
 function providerStatus(name,provider){
   const color=provider?.count?'#209769':'#d8a13c';
   const source=provider?.source||'none';
