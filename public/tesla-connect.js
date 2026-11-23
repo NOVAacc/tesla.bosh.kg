@@ -26,10 +26,6 @@
     el('teslaVehicleState').textContent=stateLabel(car.state);
     el('teslaOnlineDot').classList.toggle('is-online',car.state==='online');
     el('teslaVin').textContent=car.vin_suffix?'· ••••'+String(car.vin_suffix).slice(-4):'';
-    const art=el('teslaModelArt');
-    const displayModel=chosen||'3';
-    art.src='/tesla-model'+displayModel.toLowerCase()+'-threequarter.svg';
-    art.alt='Tesla Model '+displayModel+' — векторная иллюстрация три четверти';
     const battery=number(car.battery_level);
     const rangeMiles=number(car.battery_range);
     const inside=number(car.inside_temp),outside=number(car.outside_temp),miles=number(car.odometer);
