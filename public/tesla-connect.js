@@ -36,11 +36,14 @@
           const timestamp=new Date(Number(v.charge_timestamp));
           if(!Number.isNaN(timestamp.getTime()))details.push('Данные на '+timestamp.toLocaleString('ru-RU'));
         }
-        if(v.cached_status===404 || v.cached_status===412)details.push('Кэш Tesla пока недоступен');
+        if(v.cached_status===404)details.push('Tesla: кэш пока отсутствует (404)');
+        else if(v.cached_status===412)details.push('Tesla: кэш не поддерживается (412)');
+        else if(v.cached_status==='no_battery')details.push('Tesla: в кэше нет данных батареи');
+        else if(v.cached_status)details.push('Tesla: ошибка кэша HTTP '+v.cached_status);
         return details.join(' · ');
       });
       status.textContent=cars.length?'Подключено: '+cars.join('; '):'Аккаунт Tesla подключён. Автомобили пока не обнаружены.';
-      if(data.api_status)status.textContent+=' Запрос Tesla вернул HTTP '+data.api_status+'.';
+      if(data.api_status)status.textContent+=' Список автомобилей: Tesla HTTP '+data.api_status+'.';
     } catch {
       status.textContent='Не удалось проверить подключение Tesla.';
     }
