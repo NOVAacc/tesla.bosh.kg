@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>Мой кабинет — EV карта</title>
 <link rel="stylesheet" href="/mobile-nav.css">
-<link rel="stylesheet" href="/tesla-dashboard.css?v=6">
+<link rel="stylesheet" href="/tesla-dashboard.css?v=7">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root {
@@ -123,6 +123,23 @@ input, select, textarea { width: 100%; min-height: 46px; padding: 10px 12px; bor
    <div><div class="tesla-range" id="teslaRange">— км</div><div class="tesla-energy-meta"><span id="teslaInsideTemp">В салоне —</span><span id="teslaOutsideTemp">На улице —</span><span id="teslaOdometer">Пробег —</span></div></div>
   </div>
   <p class="tesla-freshness" id="teslaFreshness">Проверяем данные…</p>
+  <form class="tesla-connectors-form" id="teslaConnectorsForm">
+   <fieldset class="vehicle-connectors">
+    <legend>Разъёмы моей Tesla</legend>
+    <p>Укажите разъёмы автомобиля и переходников. Можно выбрать несколько.</p>
+    <div>
+     <label><input type="checkbox" name="teslaConnectors" value="CCS2">CCS2</label>
+     <label><input type="checkbox" name="teslaConnectors" value="GB/T">GB/T</label>
+     <label><input type="checkbox" name="teslaConnectors" value="NACS">NACS</label>
+     <label><input type="checkbox" name="teslaConnectors" value="Type2">Type 2</label>
+     <label><input type="checkbox" name="teslaConnectors" value="CHAdeMO">CHAdeMO</label>
+    </div>
+   </fieldset>
+   <div class="tesla-connector-actions">
+    <button type="submit" id="teslaConnectorsSave">Сохранить разъёмы</button>
+    <span id="teslaConnectorsMsg" role="status" aria-live="polite"></span>
+   </div>
+  </form>
  </div>
  <div class="tesla-privacy" id="teslaPrivacyNotice">
  <div class="tesla-privacy-heading"><span class="tesla-privacy-shield" aria-hidden="true">✓</span><strong>Безопасное подключение через Tesla</strong></div>
@@ -614,4 +631,4 @@ const oauthErrors={not_configured:'Google вход ещё не настроен 
 const authError=new URLSearchParams(window.location.search).get('auth_error');
 if(authError){$('globalMsg').textContent=oauthErrors[authError]||'Не удалось выполнить вход через Google';window.history.replaceState(null,'',window.location.pathname);}
 boot();
-</script><script src="/tesla-connect.js?v=7" defer></script></body></html>
+</script><script src="/tesla-connect.js?v=8" defer></script></body></html>
