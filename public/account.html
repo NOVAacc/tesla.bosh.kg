@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>Мой кабинет — EV карта</title>
 <link rel="stylesheet" href="/mobile-nav.css">
-<link rel="stylesheet" href="/tesla-dashboard.css?v=3">
+<link rel="stylesheet" href="/tesla-dashboard.css?v=4">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root {
@@ -117,7 +117,6 @@ input, select, textarea { width: 100%; min-height: 46px; padding: 10px 12px; bor
  <div class="tesla-vehicle-head"><div><h3 class="tesla-vehicle-name" id="teslaVehicleName">Tesla</h3><p class="tesla-vehicle-status"><span class="tesla-status-dot" id="teslaOnlineDot"></span><span id="teslaVehicleState">Проверка подключения…</span><span id="teslaVin"></span></p></div></div>
  <p class="tesla-vehicle-loading" id="teslaConnectStatus" role="status" aria-live="polite">Получаем данные автомобиля…</p>
  <div id="teslaVehicleDetails" class="hidden">
-  <div class="tesla-car-stage"><img class="tesla-car-art" id="teslaModelArt" src="/tesla-model3-threequarter.svg" width="1040" height="460" alt="Tesla Model 3 — векторный вид три четверти" decoding="async"></div>
   <div class="tesla-energy">
    <div class="tesla-gauge" id="teslaGauge" style="--tesla-progress:0%"><span class="tesla-soc" id="teslaBattery">—</span></div>
    <div class="tesla-energy-divider" aria-hidden="true"></div>
@@ -605,4 +604,4 @@ const oauthErrors={not_configured:'Google вход ещё не настроен 
 const authError=new URLSearchParams(window.location.search).get('auth_error');
 if(authError){$('globalMsg').textContent=oauthErrors[authError]||'Не удалось выполнить вход через Google';window.history.replaceState(null,'',window.location.pathname);}
 boot();
-</script><script src="/tesla-connect.js?v=4" defer></script></body></html>
+</script><script src="/tesla-connect.js?v=5" defer></script></body></html>
