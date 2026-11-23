@@ -8,7 +8,7 @@ function donation_path(): string {
 function donation_read(): array {
   $path = donation_path();
   if (!is_file($path)) {
-    return ['enabled'=>false, 'message'=>'Помогите развивать карту зарядок Кыргызстана. Поддержите проект донатом.', 'button'=>'Поддержать проект', 'image'=>'', 'mime'=>''];
+    return ['enabled'=>false, 'message'=>'Помогите развивать карту зарядок Кыргызстана. Поддержите проект донатом.', 'button'=>'Поддержать проект', 'image'=>'', 'mime'=>'', 'total_amount'=>null, 'total_updated_at'=>null];
   }
   return json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
 }
@@ -21,6 +21,26 @@ function donation_save(array $form, array $upload): void {
       throw new InvalidArgumentException('Проверьте текст сообщения и название кнопки.');
     }
     $settings[$field] = $value;
+  }
+  // Manual total of received donations; independent of payment/QR functionality.
+  $rawAmount=isset($form['total_amount']) && is_string($form['total_amount'])
+    ? trim($form['total_amount']) : '';
+  $rawDate=isset($form['total_updated_at']) && is_string($form['total_updated_at'])
+    ? trim($form['total_updated_at']) : '';
+  if ($rawAmount==='') {
+    if ($rawDate!=='') throw new InvalidArgumentException('Укажите сумму донатов или очистите дату обновления.');
+    $settings['total_amount']=null;
+    $settings['total_updated_at']=null;
+  } else {
+    if (!preg_match('/^(?:0|[1-9][0-9]{0,8})(?:\\.[0-9]{1,2})?$/D', $rawAmount)) {
+      throw new InvalidArgumentException('Введите сумму в сомах от 0 до 999 999 999,99.');
+    }
+    $date=DateTimeImmutable::createFromFormat('!Y-m-d',$rawDate);
+    if ($date===false || $date->format('Y-m-d')!==$rawDate) {
+      throw new InvalidArgumentException('Укажите корректную дату обновления суммы.');
+    }
+    $settings['total_amount']=number_format((float)$rawAmount,2,'.','');
+    $settings['total_updated_at']=$rawDate;
   }
   if (($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
     if ($upload['error'] !== UPLOAD_ERR_OK || $upload['size'] > 2 * 1024 * 1024 || !is_uploaded_file($upload['tmp_name'])) {
