@@ -18,6 +18,7 @@ $page = match ($_GET['page'] ?? null) {
   'faq' => 'faq',
   'donation' => 'donation',
   'users' => 'users',
+  'analytics' => 'analytics',
   default => 'dashboard',
 };
 $donationError = '';
@@ -95,6 +96,7 @@ if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
     <nav class="root-menu" aria-label="Разделы админки">
       <a href="/root"<?= $page === 'dashboard' ? ' aria-current="page"' : '' ?>>Дашборд</a>
       <a href="/root?page=users"<?= $page === 'users' ? ' aria-current="page"' : '' ?>>Пользователи</a>
+      <a href="/root?page=analytics"<?= $page === 'analytics' ? ' aria-current="page"' : '' ?>>Аналитика</a>
       <a href="/root?page=businesses"<?= $page === 'businesses' ? ' aria-current="page"' : '' ?>>Компании</a>
       <a href="/root?page=comments"<?= $page === 'comments' ? ' aria-current="page"' : '' ?>>Комментарии</a>
       <a href="/root?page=faq"<?= $page === 'faq' ? ' aria-current="page"' : '' ?>>FAQ</a>
@@ -114,6 +116,12 @@ if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
     </form></section>
     <section class="faq-admin-list"><div class="section-heading"><h2>Все вопросы</h2><input type="search" id="faqFilter" placeholder="Найти вопрос…"></div><p class="note" id="faqReorderHint">Перетащите вопрос за заголовок или используйте стрелки. Порядок сохраняется автоматически.</p><div id="faqCards"></div></section>
     <script src="/root-faq.js?v=<?= hash_file('sha256', __DIR__.'/root-faq.js') ?>" type="module"></script>
+    <?php elseif ($page === 'analytics'): ?>
+    <section aria-labelledby="analyticsTitle">
+      <div class="section-heading"><h2 id="analyticsTitle">Аналитика аудитории</h2><div><label for="analyticsDays">Период</label> <select id="analyticsDays"><option value="1">Сегодня</option><option value="7">7 дней</option><option value="30" selected>30 дней</option><option value="90">90 дней</option></select> <button id="analyticsRefresh" type="button">Обновить</button></div></div>
+      <p id="analyticsStatus" class="note" role="status"></p><div id="analyticsContent"></div>
+    </section>
+    <script src="/root-analytics.js?v=<?= hash_file('sha256', __DIR__.'/root-analytics.js') ?>" type="module"></script>
     <?php elseif ($page === 'businesses'): ?>
     <section aria-labelledby="businessReviewTitle">
       <div class="section-heading"><h2 id="businessReviewTitle">Заявки компаний</h2><button type="button" id="businessReviewRefresh">Обновить</button></div>
