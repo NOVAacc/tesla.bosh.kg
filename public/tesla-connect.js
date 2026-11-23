@@ -27,7 +27,18 @@
         return;
       }
       link.textContent='Подключить повторно';
-      const cars=(data.vehicles||[]).map(v=>v.display_name+' · '+v.state+' · ••••'+v.vin_suffix);
+      const cars=(data.vehicles||[]).map(v=>{
+        const details=[v.display_name,'••••'+v.vin_suffix,v.state==='online'?'В сети':v.state==='asleep'?'Спит':v.state];
+        if(Number.isFinite(Number(v.battery_level)) && v.battery_level!==undefined)details.push('Батарея '+Number(v.battery_level)+'%');
+        if(Number.isFinite(Number(v.battery_range)) && v.battery_range!==undefined)details.push('Запас хода ≈'+Math.round(Number(v.battery_range)*1.609344)+' км');
+        if(v.charging_state)details.push('Зарядка: '+v.charging_state);
+        if(v.charge_timestamp) {
+          const timestamp=new Date(Number(v.charge_timestamp));
+          if(!Number.isNaN(timestamp.getTime()))details.push('Данные на '+timestamp.toLocaleString('ru-RU'));
+        }
+        if(v.cached_status===404 || v.cached_status===412)details.push('Кэш Tesla пока недоступен');
+        return details.join(' · ');
+      });
       status.textContent=cars.length?'Подключено: '+cars.join('; '):'Аккаунт Tesla подключён. Автомобили пока не обнаружены.';
       if(data.api_status)status.textContent+=' Запрос Tesla вернул HTTP '+data.api_status+'.';
     } catch {
