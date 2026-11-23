@@ -50,11 +50,30 @@ if ($allowed && $page === 'donation') {
 $csrf = $_SESSION['csrf'] ?? '';
 session_write_close();
 $userCount = null;
+$userRows = [];
+$userListError = false;
+$userPage = 1;
+$userTotalPages = 1;
+const EV_ROOT_USERS_PAGE_SIZE = 25;
 if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
   try {
-    $userCount = (int) ev_db()->query('SELECT COUNT(*) FROM users')->fetchColumn();
+    $db = ev_db();
+    $userCount = (int) $db->query('SELECT COUNT(*) FROM users')->fetchColumn();
+    if ($page === 'users') {
+      $requested = filter_var($_GET['p'] ?? 1, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
+      $userTotalPages = max(1, (int) ceil($userCount / EV_ROOT_USERS_PAGE_SIZE));
+      $userPage = min($requested === false ? 1 : $requested, $userTotalPages);
+      $offset = ($userPage - 1) * EV_ROOT_USERS_PAGE_SIZE;
+      $list = $db->prepare('SELECT u.id, u.email, EXISTS(SELECT 1 FROM user_google_identities g WHERE g.user_id=u.id) AS google_linked
+        FROM users u ORDER BY u.id DESC LIMIT :limit OFFSET :offset');
+      $list->bindValue(':limit', EV_ROOT_USERS_PAGE_SIZE, PDO::PARAM_INT);
+      $list->bindValue(':offset', $offset, PDO::PARAM_INT);
+      $list->execute();
+      $userRows = $list->fetchAll(PDO::FETCH_ASSOC);
+    }
   } catch (Throwable $error) {
-    error_log('EV admin user count unavailable');
+    error_log('EV admin user list or count unavailable: '.$error->getMessage());
+    if ($page === 'users') $userListError = true;
   }
 }
 ?><!doctype html>
@@ -128,6 +147,36 @@ if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
       <h2 id="users">Пользователи в базе</h2>
       <p class="total"><?= $userCount === null ? 'Недоступно' : number_format($userCount, 0, ',', ' ') ?></p>
     </section>
+    <?php if ($page === 'users'): ?>
+    <section class="card root-user-list" aria-labelledby="rootUserListTitle">
+      <div class="section-heading"><h2 id="rootUserListTitle">Зарегистрированные пользователи</h2><span class="muted">По 25 на странице</span></div>
+      <?php if ($userListError): ?>
+        <p class="note" role="alert">Не удалось загрузить список пользователей.</p>
+      <?php elseif (!$userRows): ?>
+        <p class="note">Пользователей пока нет.</p>
+      <?php else: ?>
+        <div class="root-user-table-wrap">
+          <table class="root-user-table">
+            <thead><tr><th scope="col">ID</th><th scope="col">Email</th><th scope="col">Google</th></tr></thead>
+            <tbody>
+            <?php foreach ($userRows as $row): ?>
+              <tr>
+                <td><?= (int) $row['id'] ?></td>
+                <td><?= htmlspecialchars((string) $row['email'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></td>
+                <td><?= (int) $row['google_linked'] ? 'Подключён' : 'Нет' ?></td>
+              </tr>
+            <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+        <nav class="root-user-pages" aria-label="Страницы пользователей">
+          <?php if ($userPage > 1): ?><a href="/root?page=users&amp;p=<?= $userPage - 1 ?>">Назад</a><?php endif; ?>
+          <span>Страница <?= $userPage ?> из <?= $userTotalPages ?></span>
+          <?php if ($userPage < $userTotalPages): ?><a href="/root?page=users&amp;p=<?= $userPage + 1 ?>">Вперёд</a><?php endif; ?>
+        </nav>
+      <?php endif; ?>
+    </section>
+    <?php endif; ?>
     <?php if ($page === 'dashboard'): ?>
     <section aria-labelledby="networks">
       <div class="section-heading"><h2 id="networks">Зарядные сети</h2><button id="refreshNetworks" type="button">Обновить</button></div>
