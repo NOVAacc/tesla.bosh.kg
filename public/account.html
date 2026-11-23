@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>Мой кабинет — EV карта</title>
 <link rel="stylesheet" href="/mobile-nav.css">
+<link rel="stylesheet" href="/tesla-dashboard.css?v=1">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root {
@@ -110,7 +111,30 @@ input, select, textarea { width: 100%; min-height: 46px; padding: 10px 12px; bor
 </div>
 <div id="authenticated" class="grid hidden">
 <section class="card garage"><div class="section-heading"><h2>Мои автомобили</h2><button id="vehicleAdd" type="button" class="round hidden" aria-label="Добавить автомобиль" aria-controls="vehicleForm" aria-expanded="false">+</button></div><div id="vehicleList"><p>Загрузка…</p></div><form id="vehicleForm" class="hidden"><label for="make">Марка</label><select id="make" required disabled><option value="">Загрузка марок…</option></select><label for="model">Модель</label><select id="model" required disabled><option value="">Сначала выберите марку</option></select><label for="year">Год выпуска</label><input id="year" type="number" min="1990" max="2100" placeholder="2022"><fieldset class="vehicle-connectors" aria-describedby="connectorHint"><legend>Разъёмы</legend><p id="connectorHint">Отметьте разъёмы автомобиля и переходников.</p><div><label><input type="checkbox" name="connectors" value="CCS2">CCS2</label><label><input type="checkbox" name="connectors" value="GB/T">GB/T</label><label><input type="checkbox" name="connectors" value="NACS">NACS</label><label><input type="checkbox" name="connectors" value="Type2">Type 2</label><label><input type="checkbox" name="connectors" value="CHAdeMO">CHAdeMO</label></div></fieldset><div class="buttons"><button id="vehicleSubmit" type="submit" disabled>Добавить автомобиль</button><button id="vehicleCancel" type="button" class="secondary">Отмена</button><button id="vehicleDelete" type="button" class="secondary hidden">Удалить автомобиль</button></div></form><div id="vehicleMsg" class="message" role="status"></div></section>
-<section class="card" id="teslaConnectCard"><h2>Моя Tesla</h2><p id="teslaConnectStatus" role="status" aria-live="polite">Проверка подключения…</p><a class="google-link" id="teslaConnectLink" href="/api/tesla.php?action=start">Подключить Tesla</a><button type="button" id="teslaLiveRefresh" class="secondary hidden">Получить актуальный заряд</button><div id="teslaLiveResult" class="notice hidden" role="status" aria-live="polite"></div><p>Для подключения потребуется разрешить доступ на официальном сайте Tesla. Пока доступны только просмотр и список автомобилей.</p></section>
+<section class="tesla-dashboard" id="teslaConnectCard" aria-labelledby="teslaDashboardTitle">
+<h2 class="tesla-title" id="teslaDashboardTitle">Моя Tesla</h2>
+<div class="tesla-hero">
+ <div class="tesla-vehicle-head"><div><h3 class="tesla-vehicle-name" id="teslaVehicleName">Tesla</h3><p class="tesla-vehicle-status"><span class="tesla-status-dot" id="teslaOnlineDot"></span><span id="teslaVehicleState">Проверка подключения…</span><span id="teslaVin"></span></p></div></div>
+ <p class="tesla-vehicle-loading" id="teslaConnectStatus" role="status" aria-live="polite">Получаем данные автомобиля…</p>
+ <div id="teslaVehicleDetails" class="hidden">
+  <img class="tesla-car-art" src="/tesla-model3.svg" alt="Силуэт Tesla Model 3" width="1000" height="350" decoding="async">
+  <div class="tesla-energy">
+   <div class="tesla-gauge" id="teslaGauge" style="--tesla-progress:0%"><span class="tesla-soc" id="teslaBattery">—</span></div>
+   <div class="tesla-energy-divider" aria-hidden="true"></div>
+   <div><div class="tesla-range" id="teslaRange">— км</div><div class="tesla-energy-meta"><span id="teslaChargeLimit">Лимит —</span><span id="teslaCharging">Данные зарядки недоступны</span></div></div>
+  </div>
+  <p class="tesla-freshness" id="teslaFreshness">Проверяем данные…</p>
+ </div>
+ <div class="tesla-secondary-action"><a class="tesla-connect-cta hidden is-secondary" id="teslaConnectLink" href="/api/tesla.php?action=start">Подключить Tesla</a></div>
+ <p class="tesla-feedback" id="teslaFeedback" role="status"></p>
+</div>
+<div class="tesla-rows hidden" id="teslaInfoRows">
+ <div class="tesla-info-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.7"/></svg><span class="tesla-info-label">Запас хода</span><span class="tesla-info-value" id="teslaRangeRow">—</span></div>
+ <div class="tesla-info-row"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="18" height="12" rx="2"/><path d="M22 10v4"/><path d="M6 9v6"/></svg><span class="tesla-info-label">Лимит заряда</span><span class="tesla-info-value" id="teslaLimitRow">—</span></div>
+ <div class="tesla-info-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 0-6M6 6a9 9 0 0 0 0 12M18 6a9 9 0 0 1 0 12M3 3a13 13 0 0 0 0 18M21 3a13 13 0 0 1 0 18"/></svg><span class="tesla-info-label">Статус</span><span class="tesla-info-value" id="teslaStateRow">—</span></div>
+ <div class="tesla-info-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 2-9 11h7l-2 9 9-12h-7z"/></svg><span class="tesla-info-label">Зарядка</span><span class="tesla-info-value" id="teslaChargingRow">—</span></div>
+</div>
+</section>
 <div class="account-tabs">
 <div class="account-tab-list" role="tablist" aria-label="Разделы кабинета">
  <button type="button" role="tab" id="companyTab" aria-controls="companyPanel" aria-selected="true">Компании</button>
@@ -587,4 +611,4 @@ const oauthErrors={not_configured:'Google вход ещё не настроен 
 const authError=new URLSearchParams(window.location.search).get('auth_error');
 if(authError){$('globalMsg').textContent=oauthErrors[authError]||'Не удалось выполнить вход через Google';window.history.replaceState(null,'',window.location.pathname);}
 boot();
-</script><script src="/tesla-connect.js" defer></script></body></html>
+</script><script src="/tesla-connect.js?v=2" defer></script></body></html>
