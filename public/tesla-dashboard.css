@@ -6,8 +6,6 @@
 .tesla-dashboard .tesla-vehicle-status{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin:9px 0 0;font-size:13px;color:#656b75;line-height:1.5}
 .tesla-dashboard .tesla-status-dot{flex-shrink:0;width:8px;height:8px;background:#9ca3af;border-radius:50%}
 .tesla-dashboard .tesla-status-dot.is-online{background:#39c65b;box-shadow:0 0 0 3px #d9f7e1}
-.tesla-dashboard .tesla-car-stage{max-width:790px;margin:18px auto 8px}
-.tesla-dashboard .tesla-car-art{display:block;width:100%;height:auto;object-fit:contain;aspect-ratio:1040/460}
 .tesla-dashboard .tesla-energy{display:grid;grid-template-columns:minmax(0,1fr) 1px minmax(0,1.15fr);align-items:center;gap:clamp(14px,3vw,36px);max-width:640px;margin:0 auto 6px}
 .tesla-dashboard .tesla-gauge{width:min(100%,184px);aspect-ratio:1;position:relative;display:grid;place-items:center;margin:auto}
 .tesla-dashboard .tesla-gauge::before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(#2fc451 var(--tesla-progress,0%),#eceef0 0);transform:rotate(-90deg)}
@@ -24,7 +22,6 @@
 .tesla-dashboard .tesla-secondary-action{display:flex;justify-content:end}
 @media(max-width:600px){
  .tesla-dashboard .tesla-hero{padding:19px 17px;border-radius:24px}
- .tesla-dashboard .tesla-car-stage{margin:12px -14px 6px}
  .tesla-dashboard .tesla-energy{gap:14px;grid-template-columns:minmax(0,1fr) 1px minmax(0,1.15fr)}
  .tesla-dashboard .tesla-gauge{width:min(100%,135px)}
  .tesla-dashboard .tesla-gauge::after{inset:9px}
