@@ -46,6 +46,7 @@
     }
     status.classList.add('hidden');
     details.classList.remove('hidden');
+    el('teslaPrivacyNotice').classList.add('hidden');
     link.classList.remove('hidden');
     link.textContent='Переподключить';
   }
