@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>Мой кабинет — EV карта</title>
 <link rel="stylesheet" href="/mobile-nav.css">
-<link rel="stylesheet" href="/tesla-dashboard.css?v=5">
+<link rel="stylesheet" href="/tesla-dashboard.css?v=6">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root {
@@ -130,7 +130,11 @@ input, select, textarea { width: 100%; min-height: 46px; padding: 10px 12px; bor
  <p>После вашего согласия сайт получает только разрешённые вами сведения об автомобиле. Для работы кабинета на нашем защищённом сервере сохраняются зашифрованные токены доступа и последняя полученная сводка: заряд батареи, запас хода, температуры и пробег.</p>
  <p>Эти показатели доступны в вашем личном кабинете. Вы можете отозвать разрешение в настройках своего аккаунта Tesla.</p>
 </div>
-<div class="tesla-secondary-action"><a class="tesla-connect-cta hidden is-secondary" id="teslaConnectLink" href="/api/tesla.php?action=start">Подключить Tesla</a></div>
+<div class="tesla-secondary-action">
+ <a class="tesla-connect-cta hidden is-secondary" id="teslaConnectLink" href="/api/tesla.php?action=start">Подключить Tesla</a>
+ <button type="button" class="tesla-disconnect hidden" id="teslaDisconnect">Отвязать Tesla</button>
+</div>
+<p id="teslaDisconnectHint" class="tesla-disconnect-hint hidden">Для полного отзыва доступа также удалите Bosh.kg из <a href="https://auth.tesla.com/" target="_blank" rel="noopener noreferrer">разрешённых приложений Tesla</a>.</p>
  <p class="tesla-feedback" id="teslaFeedback" role="status"></p>
 </div>
 </section>
@@ -610,4 +614,4 @@ const oauthErrors={not_configured:'Google вход ещё не настроен 
 const authError=new URLSearchParams(window.location.search).get('auth_error');
 if(authError){$('globalMsg').textContent=oauthErrors[authError]||'Не удалось выполнить вход через Google';window.history.replaceState(null,'',window.location.pathname);}
 boot();
-</script><script src="/tesla-connect.js?v=6" defer></script></body></html>
+</script><script src="/tesla-connect.js?v=7" defer></script></body></html>
