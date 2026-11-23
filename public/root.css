@@ -83,3 +83,12 @@ li { overflow-wrap: anywhere; }
 .donation-total-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .donation-total-fields label{min-width:0}
 @media(max-width:600px){.donation-total-fields{grid-template-columns:1fr}}
+
+/* First-party analytics dashboard */
+.analytics-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin:14px 0 22px}
+.analytics-metric{border:1px solid #e1e6ed;background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.analytics-metric span{color:#64748b;font-size:13px}
+.analytics-metric strong{font-size:27px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+#analyticsContent>.card{margin-bottom:16px}
+#analyticsContent>.card h3{font-size:16px;margin:0 0 12px}
+#analyticsContent td:first-child{overflow-wrap:anywhere}
