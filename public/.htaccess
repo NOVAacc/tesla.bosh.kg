@@ -1,5 +1,6 @@
 DirectoryIndex index.html
 RewriteEngine On
+RewriteRule ^auth/tesla/callback/?$ api/tesla.php?action=callback [QSA,L]
 RewriteRule ^root/?$ root.php [L]
 RewriteRule ^faq/?$ faq.html [L]
 RewriteRule ^root/faq/?$ root-faq.php [L]
