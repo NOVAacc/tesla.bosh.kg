@@ -73,7 +73,7 @@ function tesla_redirect(string $code): never {
 try {
   $method=$_SERVER['REQUEST_METHOD']??'';
   $incoming=$_GET['action']??'status';
-  if ($method!=='GET') ev_response(405,['error'=>'method_not_allowed']);
+  if (!(($method==='GET' && $incoming!=='disconnect') || ($method==='POST' && $incoming==='disconnect'))) ev_response(405,['error'=>'method_not_allowed']);
   ev_session();
   $u=ev_user();
   if (!$u) {
@@ -82,6 +82,31 @@ try {
   }
   $action=$_GET['action']??'status';
   $cfg=tesla_secret_config();
+  if ($action==='disconnect') {
+    // Only the signed-in owner can unlink their own Tesla tokens and data.
+    ev_csrf(ev_input());
+    $userId=(int)$u['id'];
+    $cacheDir='/home/g143326/.tesla-vehicle-cache';
+    $cacheFile=$cacheDir.'/user-'.$userId.'.json';
+    $lockFile=$cacheFile.'.lock';
+    if (!is_dir($cacheDir) && !@mkdir($cacheDir,0700) && !is_dir($cacheDir)) {
+      throw new RuntimeException('Tesla cache directory unavailable');
+    }
+    $lock=fopen($lockFile,'c');
+    if ($lock===false || !flock($lock,LOCK_EX)) throw new RuntimeException('Tesla disconnect lock unavailable');
+    $tokenFile=tesla_path($userId);
+    // Keep the local connection intact if token deletion fails.
+    if (is_file($tokenFile) && !unlink($tokenFile)) {
+      flock($lock,LOCK_UN); fclose($lock);
+      throw new RuntimeException('Tesla token deletion failed');
+    }
+    if (is_file($cacheFile) && !unlink($cacheFile)) {
+      error_log('Tesla cache deletion failed for user '.$userId);
+    }
+    unset($_SESSION['tesla_oauth'],$_SESSION['tesla_last_live']);
+    flock($lock,LOCK_UN); fclose($lock);
+    ev_response(200,['ok'=>true,'disconnected'=>true,'tesla_revoke_required'=>true]);
+  }
   if ($action==='start') {
     $state=bin2hex(random_bytes(32));
     $_SESSION['tesla_oauth']=['state'=>$state,'uid'=>(int)$u['id'],'created'=>time()];
