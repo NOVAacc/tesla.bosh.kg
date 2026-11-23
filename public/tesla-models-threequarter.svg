@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 460" role="img" aria-label="Tesla Model S, векторный вид три четверти">
+<defs>
+ <linearGradient id="paint" x1=".1" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="#fefefe"/><stop offset=".3" stop-color="#f4f5f7"/><stop offset=".63" stop-color="#d7dce2"/><stop offset=".86" stop-color="#fafbfd"/><stop offset="1" stop-color="#b0b7c1"/></linearGradient>
+ <linearGradient id="glass" x1="0" y1="0" x2=".1" y2="1"><stop stop-color="#69707a"/><stop offset=".5" stop-color="#202932"/><stop offset="1" stop-color="#070b11"/></linearGradient>
+ <radialGradient id="rim"><stop stop-color="#f4f6f7"/><stop offset=".4" stop-color="#89949d"/><stop offset="1" stop-color="#272d33"/></radialGradient>
+ <filter id="blur"><feGaussianBlur stdDeviation="10"/></filter>
+</defs>
+<ellipse cx="517" cy="374" rx="425" ry="22" fill="#26303b" opacity=".14" filter="url(#blur)"/>
+<!-- distinct vector body profile for Model S -->
+<path d="M299 181 Q384 118 489 99 Q608 91 702 139 L745 178 L676 187 L338 191Z" fill="url(#paint)" stroke="#a1aab2" stroke-width="3"/>
+<path d="M343 178 Q414 130 489 116 Q599 105 672 141 L705 174 L649 182 L353 188Z" fill="url(#glass)" stroke="#828992" stroke-width="3"/>
+<path d="M514 115 L519 186 M648 139 L654 187" fill="none" stroke="#a2acb4" stroke-width="7" stroke-linecap="round"/>
+<path d="M142 244 Q156 219 216 207 L318 184 Q395 164 493 173 L742 178 Q832 184 887 219 L920 260 Q936 299 917 318 Q891 340 847 340 L240 361 Q155 357 102 334 Q84 320 102 285Z" fill="url(#paint)" stroke="#adb6bf" stroke-width="3"/>
+<path d="M133 237 Q211 191 301 181" stroke="#f8fafb" fill="none" stroke-width="7"/>
+<path d="M135 237 Q231 210 325 198" stroke="#bdc5cc" fill="none" stroke-width="2.5"/>
+<path d="M742 178 Q841 186 880 212" stroke="#8d98a4" fill="none" stroke-width="2.5"/>
+<path d="M352 184 L365 327 M646 185 L676 329" stroke="#a5afb9" stroke-width="2.3" opacity=".66"/>
+<path d="M395 227 L422 222 M690 221 L718 224" stroke="#75808b" stroke-width="3" stroke-linecap="round"/>
+<path d="M131 258 Q203 236 276 233 L249 269 Q189 282 115 286Z" fill="#1b232d" stroke="#bbc3cd" stroke-width="4"/>
+<path d="M865 241 L911 261 L917 279 L875 266Z" fill="#7a1018" stroke="#c6b0b0" stroke-width="2"/>
+<path d="M102 305 Q154 306 215 319 L208 331 Q157 329 107 318Z" fill="#1c232a"/>
+<path d="M107 338 Q255 360 498 345 Q718 347 905 325" fill="none" stroke="#8995a0" stroke-width="4"/>
+<g transform="translate(290 345)"><circle r="66" fill="#171b20"/><circle r="53" fill="#3e454d" stroke="#0b1014" stroke-width="5"/><circle r="39" fill="url(#rim)"/><path d="M0 -37 L11 -11 L33 -17 L19 5 L32 26 L7 22 L0 37 L-13 17 L-33 22 L-22 -4 L-34 -18 L-8 -10Z" fill="#4f5860" stroke="#e7eaed" stroke-width="2"/><circle r="14" fill="#bdc5ca"/><circle r="7" fill="#2f363d"/></g>
+<g transform="translate(815 323) scale(.84)"><circle r="66" fill="#171b20"/><circle r="53" fill="#3e454d" stroke="#0b1014" stroke-width="5"/><circle r="39" fill="url(#rim)"/><path d="M0 -37 L11 -11 L33 -17 L19 5 L32 26 L7 22 L0 37 L-13 17 L-33 22 L-22 -4 L-34 -18 L-8 -10Z" fill="#4f5860" stroke="#e7eaed" stroke-width="2"/><circle r="14" fill="#bdc5ca"/><circle r="7" fill="#2f363d"/></g>
+</svg>
