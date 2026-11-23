@@ -3,7 +3,7 @@
   const get=id=>document.getElementById(id);
   const box=get('teslaConnectCard'),status=get('teslaConnectStatus'),link=get('teslaConnectLink');
   if(!box||!status||!link)return;
-  const feedback=get('teslaFeedback'),details=get('teslaVehicleDetails'),rows=get('teslaInfoRows');
+  const feedback=get('teslaFeedback'),details=get('teslaVehicleDetails');
   const result=new URLSearchParams(location.search).get('tesla_result');
   const resultMessages={
     connected:'Tesla-аккаунт подключён.',
@@ -34,7 +34,6 @@
     get('teslaVehicleState').textContent=stateLabel(state);
     get('teslaOnlineDot').classList.toggle('is-online',state==='online');
     get('teslaVin').textContent=car.vin_suffix?'· ••••'+String(car.vin_suffix).slice(-4):'';
-    get('teslaStateRow').textContent=stateLabel(state);
     const level=hasNumber(car.battery_level)?clamp(Number(car.battery_level),0,100):null;
     const km=hasNumber(car.battery_range)?Math.round(Number(car.battery_range)*1.609344):null;
     const limit=hasNumber(car.charge_limit_soc)?clamp(Math.round(Number(car.charge_limit_soc)),0,100):null;
@@ -42,11 +41,8 @@
     get('teslaBattery').textContent=level===null?'—':Math.round(level)+'%';
     get('teslaGauge').style.setProperty('--tesla-progress',(level??0)+'%');
     get('teslaRange').textContent=km===null?'— км':'≈ '+km+' км';
-    get('teslaRangeRow').textContent=km===null?'—':'≈ '+km+' км';
     get('teslaChargeLimit').textContent=limit===null?'Лимит —':'Лимит '+limit+'%';
-    get('teslaLimitRow').textContent=limit===null?'—':limit+'%';
     get('teslaCharging').textContent=charging;
-    get('teslaChargingRow').textContent=charging;
     if(hasNumber(car.charge_timestamp)){
       const ms=Number(car.charge_timestamp);
       const date=new Date(ms<1e12?ms*1000:ms);
@@ -58,7 +54,6 @@
     }
     status.classList.add('hidden');
     details.classList.remove('hidden');
-    rows.classList.remove('hidden');
     link.classList.remove('hidden');
     link.textContent='Переподключить';
     return level!==null;
