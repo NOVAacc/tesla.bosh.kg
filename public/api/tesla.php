@@ -73,7 +73,7 @@ function tesla_redirect(string $code): never {
 try {
   $method=$_SERVER['REQUEST_METHOD']??'';
   $incoming=$_GET['action']??'status';
-  if (!(($method==='GET' && $incoming!=='disconnect') || ($method==='POST' && $incoming==='disconnect'))) ev_response(405,['error'=>'method_not_allowed']);
+  if (!(($method==='GET' && $incoming!=='disconnect') || ($method==='POST' && in_array($incoming,['disconnect','connectors'],true)))) ev_response(405,['error'=>'method_not_allowed']);
   ev_session();
   $u=ev_user();
   if (!$u) {
@@ -82,6 +82,24 @@ try {
   }
   $action=$_GET['action']??'status';
   $cfg=tesla_secret_config();
+  if ($action==='connectors') {
+    $tokens=tesla_load((int)$u['id'],$cfg);
+    if (!$tokens) ev_response(409,['error'=>'tesla_not_connected','message'=>'Сначала подключите Tesla.']);
+    if ($method==='GET') ev_response(200,['connectors'=>ev_tesla_connector_read((int)$u['id'])]);
+    $input=ev_input();
+    ev_csrf($input);
+    $chosen=$input['connectors']??null;
+    $allowed=['CCS2','GB/T','NACS','Type2','CHAdeMO'];
+    if (!is_array($chosen) || count($chosen)>count($allowed) || array_values(array_unique($chosen))!==array_values($chosen)) {
+      ev_response(422,['error'=>'invalid_connectors']);
+    }
+    foreach ($chosen as $item) {
+      if (!is_string($item) || !in_array($item,$allowed,true)) ev_response(422,['error'=>'invalid_connectors']);
+    }
+    $chosen=array_values(array_intersect($allowed,$chosen));
+    ev_tesla_connector_write((int)$u['id'],$chosen);
+    ev_response(200,['ok'=>true,'connectors'=>$chosen]);
+  }
   if ($action==='disconnect') {
     // Only the signed-in owner can unlink their own Tesla tokens and data.
     ev_csrf(ev_input());
@@ -103,6 +121,8 @@ try {
     if (is_file($cacheFile) && !unlink($cacheFile)) {
       error_log('Tesla cache deletion failed for user '.$userId);
     }
+    $connectorFile=ev_tesla_connector_path($userId);
+    if (is_file($connectorFile) && !unlink($connectorFile)) error_log('Tesla connector preference deletion failed for user '.$userId);
     unset($_SESSION['tesla_oauth'],$_SESSION['tesla_last_live']);
     flock($lock,LOCK_UN); fclose($lock);
     ev_response(200,['ok'=>true,'disconnected'=>true,'tesla_revoke_required'=>true]);
