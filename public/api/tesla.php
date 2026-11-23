@@ -73,7 +73,7 @@ function tesla_redirect(string $code): never {
 try {
   $method=$_SERVER['REQUEST_METHOD']??'';
   $incoming=$_GET['action']??'status';
-  if (!(($method==='GET' && $incoming!=='live') || ($method==='POST' && $incoming==='live'))) ev_response(405,['error'=>'method_not_allowed']);
+  if ($method!=='GET') ev_response(405,['error'=>'method_not_allowed']);
   ev_session();
   $u=ev_user();
   if (!$u) {
@@ -113,69 +113,103 @@ try {
     tesla_store((int)$u['id'],$tokens,$cfg);
     tesla_redirect('connected');
   }
-  if ($action==='status' || $action==='live') {
-    if ($action==='live') {
-      ev_csrf(ev_input());
-      $last=(int)($_SESSION['tesla_last_live']??0);
-      if ($last>time()-120) ev_response(429,['error'=>'refresh_too_soon','retry_after'=>120-(time()-$last)]);
-      $_SESSION['tesla_last_live']=time();
-    }
+  if ($action==='status') {
     $tokens=tesla_load((int)$u['id'],$cfg);
     if (!$tokens) ev_response(200,['connected'=>false]);
-    if (($tokens['expires_at']??0)<time()+120) {
-      if (empty($tokens['refresh_token'])) ev_response(200,['connected'=>false,'reason'=>'reauthorize']);
-      [$status,$next]=tesla_request('https://fleet-auth.prd.vn.cloud.tesla.com/oauth2/v3/token',[
-        'grant_type'=>'refresh_token','client_id'=>$cfg['TESLA_CLIENT_ID'],
-        'client_secret'=>$cfg['TESLA_CLIENT_SECRET'],
-        'refresh_token'=>$tokens['refresh_token'],'audience'=>TESLA_AUDIENCE
-      ]);
-      if ($status!==200 || empty($next['access_token'])) ev_response(200,['connected'=>false,'reason'=>'reauthorize']);
-      $tokens=array_merge($tokens,$next);
-      $tokens['expires_at']=time()+max(60,(int)($next['expires_in']??3600));
-      tesla_store((int)$u['id'],$tokens,$cfg);
-    }
-    [$status,$body]=tesla_request(TESLA_AUDIENCE.'/api/1/vehicles',[],(string)$tokens['access_token']);
-    if ($status!==200) ev_response(200,['connected'=>true,'vehicles'=>[],'api_status'=>$status]);
-    if ($action==='live') {
-      $vehicle=($body['response']??[])[0]??null;
-      $vin=is_array($vehicle)?(string)($vehicle['vin']??''):'';
-      if (!preg_match('/^[A-HJ-NPR-Z0-9]{17}$/D',$vin)) ev_response(404,['error'=>'tesla_vehicle_not_found']);
-      [$liveStatus,$liveData]=tesla_request(TESLA_AUDIENCE.'/api/1/vehicles/'.rawurlencode($vin).'/vehicle_data',[],(string)$tokens['access_token']);
-      if ($liveStatus!==200) ev_response(200,['ok'=>false,'tesla_status'=>$liveStatus,'reason'=>is_string($liveData['error']??null)?substr($liveData['error'],0,90):null]);
-      $charge=$liveData['response']['charge_state']??null;
-      if (!is_array($charge)) ev_response(200,['ok'=>false,'reason'=>'charge_data_missing']);
-      $response=['ok'=>true];
-      foreach (['battery_level','battery_range','charging_state','charge_limit_soc','charge_rate','time_to_full_charge'] as $key) {
-        if (isset($charge[$key]) && (is_numeric($charge[$key])||is_string($charge[$key]))) $response[$key]=$charge[$key];
-      }
-      ev_response(200,$response);
+    // This server-side cache avoids calling Tesla on every account page view.
+    // Only low-cost, cached API endpoints are used. The vehicle is never woken.
+    $cacheDir='/home/g143326/.tesla-vehicle-cache';
+    if (!is_dir($cacheDir) && !@mkdir($cacheDir,0700) && !is_dir($cacheDir)) throw new RuntimeException('Tesla cache directory unavailable');
+    $cacheFile=$cacheDir.'/user-'.(int)$u['id'].'.json';
+    $lockFile=$cacheFile.'.lock';
+    $lock=fopen($lockFile,'c');
+    if ($lock===false || !flock($lock,LOCK_EX)) throw new RuntimeException('Tesla cache lock unavailable');
+    $old=is_file($cacheFile)?json_decode((string)file_get_contents($cacheFile),true):null;
+    if (!is_array($old)) $old=null;
+    $age=$old?time()-(int)($old['checked_at']??0):PHP_INT_MAX;
+    if ($old && $age>=0 && $age<900) {
+      flock($lock,LOCK_UN);fclose($lock);
+      ev_response(200,['connected'=>true,'vehicles'=>$old['vehicles']??[],'cache_checked_at'=>$old['checked_at'],'cache_source'=>'server']);
     }
     $vehicles=[];
-    foreach (array_slice($body['response']??[],0,3) as $vehicle) {
-      if (!is_array($vehicle)) continue;
-      $vin=(string)($vehicle['vin']??'');
-      $entry=['display_name'=>(string)($vehicle['display_name']??'Tesla'),
-        'state'=>(string)($vehicle['state']??'unknown'),'vin_suffix'=>substr($vin,-4)];
-      if (preg_match('/^[A-HJ-NPR-Z0-9]{17}$/D',$vin)) {
-        // Tesla's cached endpoint never wakes the car. Responses may be stale.
-        [$cachedStatus,$cached]=tesla_request(TESLA_AUDIENCE.'/api/1/vehicles/'.rawurlencode($vin).'/vehicle_data_cached',[],(string)$tokens['access_token']);
-        if ($cachedStatus===200) {
-          $details=$cached['response']??[];
-          $charge=$details['charge_state']??[];
-          if (is_array($charge)) {
-            foreach (['battery_level','battery_range','charging_state','charge_limit_soc','charge_rate','time_to_full_charge'] as $key) {
-              if (isset($charge[$key]) && (is_numeric($charge[$key])||is_string($charge[$key]))) $entry[$key]=$charge[$key];
-            }
-            if (isset($charge['timestamp']) && is_numeric($charge['timestamp'])) $entry['charge_timestamp']=(int)$charge['timestamp'];
-          }
-          if (!$charge || !isset($charge['battery_level'])) $entry['cached_status']='no_battery';
-        } else {
-          $entry['cached_status']=$cachedStatus;
+    $upstreamOk=false;
+    try {
+      if (($tokens['expires_at']??0)<time()+120) {
+        if (empty($tokens['refresh_token'])) {
+          flock($lock,LOCK_UN);fclose($lock);
+          ev_response(200,['connected'=>false,'reason'=>'reauthorize']);
         }
+        [$refreshStatus,$next]=tesla_request('https://fleet-auth.prd.vn.cloud.tesla.com/oauth2/v3/token',[
+          'grant_type'=>'refresh_token','client_id'=>$cfg['TESLA_CLIENT_ID'],
+          'client_secret'=>$cfg['TESLA_CLIENT_SECRET'],
+          'refresh_token'=>$tokens['refresh_token'],'audience'=>TESLA_AUDIENCE
+        ]);
+        if ($refreshStatus!==200 || empty($next['access_token'])) throw new RuntimeException('Tesla refresh unavailable');
+        $tokens=array_merge($tokens,$next);
+        $tokens['expires_at']=time()+max(60,(int)($next['expires_in']??3600));
+        tesla_store((int)$u['id'],$tokens,$cfg);
       }
-      $vehicles[]=$entry;
+      [$listStatus,$body]=tesla_request(TESLA_AUDIENCE.'/api/1/vehicles',[],(string)$tokens['access_token']);
+      if ($listStatus!==200) throw new RuntimeException('Tesla vehicle list unavailable: '.$listStatus);
+      $upstreamOk=true;
+      $previous=[];
+      foreach (($old['vehicles']??[]) as $saved) {
+        if (is_array($saved) && isset($saved['vin_suffix'])) $previous[$saved['vin_suffix']]=$saved;
+      }
+      foreach (array_slice($body['response']??[],0,3) as $vehicle) {
+        if (!is_array($vehicle)) continue;
+        $vin=(string)($vehicle['vin']??'');
+        $suffix=substr($vin,-4);
+        $previousEntry=$previous[$suffix]??[];
+        $entry=['display_name'=>(string)($vehicle['display_name']??'Tesla'),
+          'state'=>(string)($vehicle['state']??'unknown'),'vin_suffix'=>$suffix];
+        // In Tesla VINs the fourth character normally identifies 3, Y, S or X.
+        // Prefer explicit vehicle_config.car_type where available.
+        $vinModel=strtoupper(substr($vin,3,1));
+        $entry['model']=in_array($vinModel,['3','Y','S','X'],true)?$vinModel:'unknown';
+        if ($entry['model']==='unknown' && isset($previousEntry['model'])) $entry['model']=$previousEntry['model'];
+        foreach (['battery_level','battery_range','inside_temp','outside_temp','odometer','data_timestamp'] as $field) {
+          if (isset($previousEntry[$field])) $entry[$field]=$previousEntry[$field];
+        }
+        if (preg_match('/^[A-HJ-NPR-Z0-9]{17}$/D',$vin)) {
+          [$cachedStatus,$cached]=tesla_request(TESLA_AUDIENCE.'/api/1/vehicles/'.rawurlencode($vin).'/vehicle_data_cached',[],(string)$tokens['access_token']);
+          if ($cachedStatus===200 && is_array($cached['response']??null)) {
+            $details=$cached['response'];
+            $charge=is_array($details['charge_state']??null)?$details['charge_state']:[];
+            $climate=is_array($details['climate_state']??null)?$details['climate_state']:[];
+            $vehicleState=is_array($details['vehicle_state']??null)?$details['vehicle_state']:[];
+            $config=is_array($details['vehicle_config']??null)?$details['vehicle_config']:[];
+            foreach (['battery_level','battery_range'] as $field) {
+              if (isset($charge[$field]) && is_numeric($charge[$field])) $entry[$field]=(float)$charge[$field];
+            }
+            foreach (['inside_temp','outside_temp'] as $field) {
+              if (isset($climate[$field]) && is_numeric($climate[$field])) $entry[$field]=(float)$climate[$field];
+            }
+            if (isset($vehicleState['odometer']) && is_numeric($vehicleState['odometer'])) $entry['odometer']=(float)$vehicleState['odometer'];
+            $type=strtolower((string)($config['car_type']??''));
+            if (preg_match('/(?:model|^m)([3ysx])(?:$|[^a-z0-9])/', $type,$match)) $entry['model']=strtoupper($match[1]);
+            elseif (in_array($type,['3','y','s','x'],true)) $entry['model']=strtoupper($type);
+            $times=[];
+            foreach ([$charge['timestamp']??null,$climate['timestamp']??null,$vehicleState['timestamp']??null] as $time) {
+              if (is_numeric($time) && (float)$time>0) $times[]=(int)$time;
+            }
+            if ($times) $entry['data_timestamp']=max($times);
+          }
+        }
+        $vehicles[]=$entry;
+      }
+    } catch (Throwable $upstreamError) {
+      error_log('Tesla cached vehicle fetch: '.$upstreamError->getMessage());
+      if ($old) $vehicles=$old['vehicles']??[];
     }
-    ev_response(200,['connected'=>true,'vehicles'=>$vehicles]);
+    $checkedAt=time();
+    $payload=json_encode(['checked_at'=>$checkedAt,'vehicles'=>$vehicles],JSON_THROW_ON_ERROR);
+    $temp=$cacheFile.'.'.bin2hex(random_bytes(6)).'.tmp';
+    if (file_put_contents($temp,$payload,LOCK_EX)===false) throw new RuntimeException('Tesla cache write failed');
+    chmod($temp,0600);
+    if (!rename($temp,$cacheFile)) { @unlink($temp);throw new RuntimeException('Tesla cache move failed'); }
+    flock($lock,LOCK_UN);fclose($lock);
+    ev_response(200,['connected'=>true,'vehicles'=>$vehicles,'cache_checked_at'=>$checkedAt,'cache_source'=>$upstreamOk?'tesla_cached':'server_stale']);
   }
   ev_response(404,['error'=>'unknown_action']);
 } catch (Throwable $e) {
