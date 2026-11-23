@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 350" role="img" aria-labelledby="title desc">
+<title id="title">Tesla Model 3</title><desc id="desc">Светлый минималистичный силуэт Tesla Model 3 сбоку</desc>
+<defs>
+ <linearGradient id="paint" x1="0" y1="0" x2="0.14" y2="1"><stop stop-color="#fff"/><stop offset=".22" stop-color="#f6f8fa"/><stop offset=".58" stop-color="#d9dfe5"/><stop offset=".87" stop-color="#f8fafb"/><stop offset="1" stop-color="#b5bec7"/></linearGradient>
+ <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#77828c"/><stop offset=".35" stop-color="#3d4851"/><stop offset="1" stop-color="#111820"/></linearGradient>
+ <linearGradient id="wheel" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#34383d"/><stop offset="1" stop-color="#0b0d10"/></linearGradient>
+ <filter id="shadow" x="-20%" y="-80%" width="140%" height="250%"><feGaussianBlur stdDeviation="11"/></filter>
+</defs>
+<ellipse cx="511" cy="301" rx="426" ry="15" fill="#101820" opacity=".14" filter="url(#shadow)"/>
+<!-- Body and roof: stylized original vector rather than a photographic product rendering -->
+<path d="M65 225 C88 215 112 209 151 201 L240 183 C292 169 349 115 411 103 C475 89 581 93 650 109 C710 121 754 155 792 180 L867 196 Q930 204 946 225 L953 248 L943 264 Q922 277 870 278 L168 281 Q104 276 71 262 Q55 252 65 225Z" fill="url(#paint)" stroke="#8f98a1" stroke-width="3"/>
+<path d="M272 180 C327 145 365 117 422 112 C490 101 572 102 640 115 C687 124 735 152 765 177 L648 179 L274 181 Z" fill="url(#glass)" stroke="#717e86" stroke-width="3"/>
+<path d="M433 112 L446 179 M646 117 L646 180" stroke="#b6c1cb" stroke-width="7"/>
+<path d="M443 181 L430 239 M647 181 L671 241" stroke="#8f9aa3" stroke-width="2.4" opacity=".7"/>
+<path d="M259 185 L260 258 M805 192 L811 259" stroke="#aeb8c1" stroke-width="2" opacity=".7"/>
+<path d="M84 229 C300 214 662 216 944 235" fill="none" stroke="#fff" stroke-width="4" opacity=".75"/>
+<path d="M75 251 C200 259 713 268 938 258" fill="none" stroke="#9aa4af" stroke-width="2" opacity=".55"/>
+<path d="M111 211 Q152 205 181 208 L161 223 L104 224 Z" fill="#343f4d" stroke="#d9e3ed" stroke-width="2"/>
+<path d="M871 206 L925 215 L932 230 L873 221 Z" fill="#9c161c" stroke="#7c1116" stroke-width="2"/>
+<path d="M675 198 L706 196 Q708 201 702 204 L680 206Z M456 199 L486 198 Q487 202 481 205 L460 205Z" fill="#e6ebef" stroke="#a1acb7" stroke-width="2"/>
+<path d="M180 267 C185 220 218 205 255 206 C295 207 324 233 325 278 L180 280Z M724 278 C730 230 765 207 804 209 C847 209 874 236 878 278Z" fill="#293039"/>
+<g>
+ <circle cx="253" cy="272" r="61" fill="#15191e" stroke="#272b30" stroke-width="6"/>
+ <circle cx="253" cy="272" r="43" fill="url(#wheel)" stroke="#7f858d" stroke-width="3"/>
+ <path d="M253 233 L266 258 L287 270 L262 280 L251 308 L239 280 L217 270 L240 258 Z" fill="#5d656d" stroke="#161a1e" stroke-width="2"/>
+ <circle cx="253" cy="272" r="13" fill="#aeb6bc"/><circle cx="253" cy="272" r="7" fill="#293139"/>
+</g>
+<g>
+ <circle cx="804" cy="272" r="61" fill="#15191e" stroke="#272b30" stroke-width="6"/>
+ <circle cx="804" cy="272" r="43" fill="url(#wheel)" stroke="#7f858d" stroke-width="3"/>
+ <path d="M804 233 L817 258 L838 270 L813 280 L802 308 L790 280 L768 270 L791 258 Z" fill="#5d656d" stroke="#161a1e" stroke-width="2"/>
+ <circle cx="804" cy="272" r="13" fill="#aeb6bc"/><circle cx="804" cy="272" r="7" fill="#293139"/>
+</g>
+</svg>
