@@ -85,7 +85,7 @@ jobs:
           published="$(mktemp)"
           curl --fail --silent --show-error --retry 3 --max-time 20 "https://tesla.bosh.kg/?deploy=$GITHUB_SHA" -o "$published"
           cmp public/index.html "$published"
-          for asset in account.html tesla-connect.js tesla-dashboard.css tesla-model3.svg mobile-nav.css root.js root-businesses.js station-feedback.html manifest.webmanifest sw.js pwa.js pwa.css offline.html icons/icon-180.png icons/icon-192.png icons/icon-512.png; do
+          for asset in account.html tesla-connect.js tesla-dashboard.css tesla-model3.svg tesla-model3-threequarter.svg tesla-modely-threequarter.svg tesla-models-threequarter.svg tesla-modelx-threequarter.svg mobile-nav.css root.js root-businesses.js station-feedback.html manifest.webmanifest sw.js pwa.js pwa.css offline.html icons/icon-180.png icons/icon-192.png icons/icon-512.png; do
             curl --fail --silent --show-error --retry 3 --max-time 20 "https://tesla.bosh.kg/$asset?deploy=$GITHUB_SHA" -o "$published"
             cmp "public/$asset" "$published"
           done
