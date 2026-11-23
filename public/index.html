@@ -373,6 +373,7 @@ const mapLayers=[
  {id:'mapLayerServices',name:'Сервисы',icon:'M14.7 6.3a5 5 0 0 0-6.5 6.5l-5.1 5.1a2 2 0 0 0 2.8 2.8l5.1-5.1a5 5 0 0 0 6.5-6.5l-3 3-2.8-2.8 3-3Z',visible:false,description:'mapServicesStatus',setVisible(visible){
   $('mapServicesFeedback').hidden=!visible;
   if(visible){
+   window.evTrack?.('services_open');
    serviceLayer.addTo(map);
    ensureServicesLoaded();
   }else{
