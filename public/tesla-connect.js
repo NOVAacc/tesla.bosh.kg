@@ -4,6 +4,8 @@
   const box=el('teslaConnectCard'),status=el('teslaConnectStatus'),link=el('teslaConnectLink');
   if(!box||!status||!link)return;
   const feedback=el('teslaFeedback'),details=el('teslaVehicleDetails');
+  const disconnect=el('teslaDisconnect');
+  let csrf='';
   const result=new URLSearchParams(location.search).get('tesla_result');
   if(result){
     feedback.textContent=({
@@ -47,8 +49,8 @@
     status.classList.add('hidden');
     details.classList.remove('hidden');
     el('teslaPrivacyNotice').classList.add('hidden');
-    link.classList.remove('hidden');
-    link.textContent='Переподключить';
+    link.classList.add('hidden');
+    disconnect.classList.remove('hidden');
   }
   async function load(){
     try{
@@ -56,6 +58,7 @@
       if(!auth.ok)return;
       const user=await auth.json();
       if(!user.user)return;
+      csrf=user.csrf||'';
       const response=await fetch('/api/tesla.php?action=status',{credentials:'same-origin',cache:'no-store'});
       const data=await response.json();
       if(!response.ok){
@@ -71,7 +74,7 @@
       if(!car){
         status.textContent='Tesla подключена, но список автомобилей временно недоступен.';
         link.classList.remove('hidden');
-        link.textContent='Переподключить';
+        link.textContent='Подключить Tesla';
         return;
       }
       draw(car);
@@ -80,5 +83,38 @@
       status.textContent='Данные Tesla временно недоступны.';
     }
   }
+  disconnect.addEventListener('click',async()=>{
+    if(!csrf || disconnect.disabled)return;
+    const confirmed=window.confirm('Отвязать Tesla от Bosh.kg? Сохранённый токен и данные автомобиля на нашем сервере будут удалены. Для полного отзыва разрешения потребуется также удалить Bosh.kg в аккаунте Tesla.');
+    if(!confirmed)return;
+    disconnect.disabled=true;
+    feedback.textContent='Удаляем подключение…';
+    try{
+      const response=await fetch('/api/tesla.php?action=disconnect',{
+        method:'POST',credentials:'same-origin',cache:'no-store',
+        headers:{'Accept':'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({csrf})
+      });
+      const data=await response.json();
+      if(!response.ok || !data.disconnected)throw new Error('disconnect_failed');
+      details.classList.add('hidden');
+      status.classList.remove('hidden');
+      status.textContent='Tesla не подключена.';
+      el('teslaVehicleName').textContent='Tesla';
+      el('teslaVehicleState').textContent='Не подключена';
+      el('teslaVin').textContent='';
+      el('teslaOnlineDot').classList.remove('is-online');
+      el('teslaPrivacyNotice').classList.remove('hidden');
+      link.classList.remove('hidden');
+      link.textContent='Подключить Tesla';
+      disconnect.classList.add('hidden');
+      el('teslaDisconnectHint').classList.remove('hidden');
+      feedback.textContent='Автомобиль отвязан от сайта. Для полного отзыва доступа откройте настройки Tesla.';
+    }catch{
+      feedback.textContent='Не удалось отвязать Tesla. Повторите попытку.';
+    }finally{
+      disconnect.disabled=false;
+    }
+  });
   void load();
 })();
