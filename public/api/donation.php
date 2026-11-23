@@ -27,6 +27,8 @@ try {
     'enabled'=>$settings['enabled'] && $settings['image'] !== '',
     'message'=>$settings['message'],
     'button'=>$settings['button'],
+    'total_amount'=>$settings['total_amount']??null,
+    'total_updated_at'=>$settings['total_updated_at']??null,
   ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
 } catch (Throwable $error) {
   error_log('EV donation settings: '.$error->getMessage());
