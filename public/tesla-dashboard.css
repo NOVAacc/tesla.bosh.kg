@@ -39,3 +39,10 @@
  .tesla-dashboard .tesla-energy-meta{gap:4px}
 }
 @media(prefers-reduced-motion:no-preference){.tesla-dashboard .tesla-gauge::before{transition:background .25s ease}}
+
+/* Authentic Model 3 photograph. Wikimedia Commons, Fiver, der Hellseher (CC BY-SA 4.0). */
+.tesla-dashboard .tesla-car-photo{margin:16px auto 14px;max-width:740px;position:relative;overflow:hidden;border-radius:17px;background:#f2f3f4}
+.tesla-dashboard .tesla-car-photo .tesla-car-art{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;margin:0;filter:none}
+.tesla-dashboard .tesla-car-photo figcaption{position:absolute;bottom:0;right:0;background:rgba(255,255,255,.89);padding:5px 8px;border-radius:9px 0 0 0;font-size:10px;line-height:1.2}
+.tesla-dashboard .tesla-car-photo figcaption a{color:#454c56;text-decoration:none}
+@media(max-width:600px){.tesla-dashboard .tesla-car-photo{margin:14px -5px 16px;border-radius:13px}}
