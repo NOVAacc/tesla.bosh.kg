@@ -146,6 +146,7 @@ try {
             }
             if (isset($charge['timestamp']) && is_numeric($charge['timestamp'])) $entry['charge_timestamp']=(int)$charge['timestamp'];
           }
+          if (!$charge || !isset($charge['battery_level'])) $entry['cached_status']='no_battery';
         } else {
           $entry['cached_status']=$cachedStatus;
         }
