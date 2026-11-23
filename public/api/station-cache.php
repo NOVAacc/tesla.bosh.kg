@@ -23,7 +23,7 @@ function cachedStationAddress(string $id): ?string
 {
     static $addresses = [];
     $network = strstr($id, ':', true);
-    $key = ['spark'=>'spark-v4', 'charge24'=>'charge24', 'weway'=>'weway', 'evion'=>'evion'][$network] ?? null;
+    $key = ['spark'=>'spark-v4', 'charge24'=>'charge24', 'weway'=>'weway', 'evion'=>'evion', 'tazatok'=>'tazatok'][$network] ?? null;
     if ($key === null) return null;
     if (!isset($addresses[$key])) {
         $addresses[$key] = [];

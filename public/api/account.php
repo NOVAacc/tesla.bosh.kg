@@ -88,7 +88,7 @@ try {
     ev_csrf($data);
     $id = $data['stationId'] ?? null;
     $favorite = $data['favorite'] ?? null;
-    if (!is_string($id) || strlen($id)>1024 || !preg_match('/\A(?:spark|charge24|weway|evion):[^\p{Cc}]+\z/u',$id) || !is_bool($favorite)) {
+    if (!is_string($id) || strlen($id)>1024 || !preg_match('/\A(?:spark|charge24|weway|evion|tazatok):[^\p{Cc}]+\z/u',$id) || !is_bool($favorite)) {
       ev_response(422,['error'=>'invalid_favorite']);
     }
     $db = ev_db();
@@ -110,7 +110,7 @@ try {
     } elseif (!array_key_exists('automatic',$data) && isset($data['filters']) && is_array($data['filters']) && !array_is_list($data['filters'])) {
       $filters = $data['filters'];
       $clean = [];
-      foreach (['spark','charge24','weway','evion','favoritesOnly'] as $key) {
+      foreach (['spark','charge24','weway','evion','tazatok','favoritesOnly'] as $key) {
         if (is_bool($filters[$key] ?? null)) $clean[$key] = $filters[$key];
       }
       foreach (['availability','current','power','station','portstatus','extras'] as $key) {

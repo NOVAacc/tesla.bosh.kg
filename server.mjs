@@ -6,11 +6,12 @@ import {loadFromApi,loadCcs2Ids,assignStationTypes,normalizeAll,groupSites} from
 import {loadCharge24,normalizeCharge24} from './charge24.mjs';
 import {loadWeWay,normalizeWeWay} from './weway.mjs';
 import {loadEvion,loadEvionActive,normalizeEvion,attachEvionPercentages} from './evion.mjs';
+import {loadTazatok} from './tazatok.mjs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 process.chdir(root);
 const PORT=Number(process.env.PORT||3080);
 const CACHE_MS=5*60*1000;
-const cache={spark:{value:null,at:0,error:null,source:'snapshot'},charge24:{value:null,at:0,error:null,source:'none'},weway:{value:null,at:0,error:null,source:'none'},evion:{value:null,at:0,error:null,source:'none'}};
+const cache={spark:{value:null,at:0,error:null,source:'snapshot'},charge24:{value:null,at:0,error:null,source:'none'},weway:{value:null,at:0,error:null,source:'none'},evion:{value:null,at:0,error:null,source:'none'},tazatok:{value:null,at:0,error:null,source:'none'}};
 let requests={};
 async function cached(name, loader, fallback) {
  const c=cache[name];
@@ -31,8 +32,8 @@ http.createServer(async(req,res)=>{
  try{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname==='/api/stations'){
-    const [s,c,w,e]=await Promise.all([loadSpark(),loadCharge(),loadWeWayStations(),loadEvionStations()]);
-    return send(res,200,{stations:[...(url.searchParams.get('view')==='map'?[]:(s.value||[])),...(c.value||[]),...(w.value||[]),...(e.value||[])],sites:groupSites(s.value||[]),meta:{spark:{count:s.value?.length||0,source:s.source,error:s.error,connectorTypesError:s.connectorTypesError||null,updatedAt:s.at?new Date(s.at).toISOString():null},charge24:{count:c.value?.length||0,source:c.source,error:c.error,updatedAt:c.at?new Date(c.at).toISOString():null},weway:{count:w.value?.length||0,source:w.source,error:w.error,updatedAt:w.at?new Date(w.at).toISOString():null},evion:{count:e.value?.length||0,source:e.source,error:e.error,updatedAt:e.at?new Date(e.at).toISOString():null}}});
+    const [s,c,w,e,t]=await Promise.all([loadSpark(),loadCharge(),loadWeWayStations(),loadEvionStations(),cached('tazatok',loadTazatok)]);
+    return send(res,200,{stations:[...(url.searchParams.get('view')==='map'?[]:(s.value||[])),...(c.value||[]),...(w.value||[]),...(e.value||[]),...(t.value||[])],sites:groupSites(s.value||[]),meta:{spark:{count:s.value?.length||0,source:s.source,error:s.error,connectorTypesError:s.connectorTypesError||null,updatedAt:s.at?new Date(s.at).toISOString():null},charge24:{count:c.value?.length||0,source:c.source,error:c.error,updatedAt:c.at?new Date(c.at).toISOString():null},weway:{count:w.value?.length||0,source:w.source,error:w.error,updatedAt:w.at?new Date(w.at).toISOString():null},evion:{count:e.value?.length||0,source:e.source,error:e.error,updatedAt:e.at?new Date(e.at).toISOString():null},tazatok:{count:t.value?.length||0,source:t.source,error:t.error,updatedAt:t.at?new Date(t.at).toISOString():null}}});
   }
   if(url.pathname==='/api/health') return send(res,200,Object.fromEntries(
     Object.entries(cache).map(([name,{at,error,source}])=>[name,{at,error,source}])

@@ -374,6 +374,85 @@ function wewayStations(): array
     return $stations;
 }
 
+function tazatokStations(): array
+{
+    $curl = curl_init('https://api.ecoauto.kg/api/v1/stations');
+    curl_setopt_array($curl, [
+        CURLOPT_HTTPHEADER => ['Accept: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 3,
+        CURLOPT_TIMEOUT => 6,
+    ]);
+    $body = curl_exec($curl);
+    $status = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+    if ($body === false || $status !== 200) {
+        throw new RuntimeException("TazaTok HTTP $status");
+    }
+    return normalizeTazatok(json_decode($body, true, 512, JSON_THROW_ON_ERROR));
+}
+
+function normalizeTazatok(array $data): array
+{
+    $rows = $data['items'] ?? null;
+    if (!is_array($rows) || !$rows || count($rows) !== ($data['total'] ?? null)) {
+        throw new RuntimeException('Получен неполный список TazaTok');
+    }
+
+    $stations = [];
+    foreach ($rows as $row) {
+        $id = (string) ($row['id'] ?? '');
+        $lat = $row['lat'] ?? null;
+        $lng = $row['lng'] ?? null;
+        if ($id === '' || !is_numeric($lat) || !is_numeric($lng) || $lat < 39 || $lat > 44 || $lng < 69 || $lng > 81) {
+            continue;
+        }
+
+        $online = ($row['online'] ?? null) === true;
+        $price = $row['price_per_kwh'] ?? null;
+        $tariff = is_numeric($price) && $price >= 0
+            ? ['type' => 'PER_E', 'currency' => 'KGS', 'amount' => (float) $price] : null;
+        $power = $row['max_power_kw'] ?? null;
+        $name = $row['name'] ?? 'TazaTok';
+        $connectors = [];
+        foreach ($row['connectors'] ?? [] as $port) {
+            $number = $port['connector_id'] ?? null;
+            if ($number === null) {
+                continue;
+            }
+            $status = match (strtoupper((string) ($port['status'] ?? ''))) {
+                'AVAILABLE' => 'AVAILABLE',
+                'BUSY', 'CHARGING', 'OCCUPIED' => 'OCCUPIED',
+                'FAULTED', 'UNAVAILABLE', 'FINISHING', 'PREPARING', 'RESERVED' => strtoupper($port['status']),
+                default => 'UNKNOWN',
+            };
+            $type = $port['connector_type'] ?? null;
+            if ($type === 'GB/T' && preg_match('/\b(AC|DC)\s*\d/i', $name, $current)) {
+                $type = 'GBT_' . strtoupper($current[1]);
+            }
+            $percentage = $port['soc_current'] ?? null;
+            $connectors[] = [
+                'id' => "$id:$number", 'connectorId' => $number,
+                'type' => $type, 'status' => $online ? $status : 'UNAVAILABLE',
+                'available' => $online && $status === 'AVAILABLE',
+                'percentage' => $online && $status === 'OCCUPIED' && is_numeric($percentage)
+                    && $percentage >= 0 && $percentage <= 100 ? (float) $percentage : null,
+                'tariff' => $tariff,
+            ];
+        }
+        $stations[] = stationWithConnectors([
+            'id' => "tazatok:$id", 'sourceId' => $id, 'seqNo' => $row['station_number'] ?? null,
+            'operator' => 'TazaTok', 'name' => $name,
+            'address' => ($row['address'] ?? '') ?: ($row['city'] ?? ''),
+            'lat' => (float) $lat, 'lng' => (float) $lng, 'active' => $online, 'blocked' => false,
+            'powerKw' => is_numeric($power) && $power > 0 ? (float) $power : null,
+        ], $connectors);
+    }
+    if (!$stations) {
+        throw new RuntimeException('TazaTok: нет станций с корректными координатами');
+    }
+    return $stations;
+}
+
 function stationWithConnectors(array $station, array $connectors): array
 {
     return $station + [
@@ -557,18 +636,20 @@ $spark = loadCached('spark-v4', static function (): array {
 $charge = loadCached('charge24', static fn (): array => ['stations' => chargeStations()]);
 $weway = loadCached('weway', static fn (): array => ['stations' => wewayStations()]);
 $evion = loadCached('evion', static fn (): array => ['stations' => evionStations()]);
+$tazatok = loadCached('tazatok', static fn (): array => ['stations' => tazatokStations()]);
+$tazatok['count'] = count($tazatok['stations']);
 $spark['count'] = count($spark['stations']);
 $charge['count'] = count($charge['stations']);
 $weway['count'] = count($weway['stations']);
 $evion['count'] = count($evion['stations']);
 $stations = array_merge(
     ($_GET['view'] ?? null) === 'map' ? [] : $spark['stations'],
-    $charge['stations'], $weway['stations'], $evion['stations']
+    $charge['stations'], $weway['stations'], $evion['stations'], $tazatok['stations']
 );
 $sites = groupSites($spark['stations']);
-unset($spark['stations'], $spark['checkedAt'], $charge['stations'], $charge['checkedAt'], $weway['stations'], $weway['checkedAt'], $evion['stations'], $evion['checkedAt']);
+unset($spark['stations'], $spark['checkedAt'], $charge['stations'], $charge['checkedAt'], $weway['stations'], $weway['checkedAt'], $evion['stations'], $evion['checkedAt'], $tazatok['stations'], $tazatok['checkedAt']);
 // Old cache entries may still contain upstream diagnostics.
-foreach ([&$spark, &$charge, &$weway, &$evion] as &$provider) {
+foreach ([&$spark, &$charge, &$weway, &$evion, &$tazatok] as &$provider) {
     if (!empty($provider['error'])) {
         $provider['error'] = 'Данные временно недоступны';
     }
@@ -578,5 +659,5 @@ if (!empty($spark['connectorTypesError'])) {
     $spark['connectorTypesError'] = 'Данные временно недоступны';
 }
 echo json_encode([
-    'stations' => $stations, 'sites' => $sites, 'meta' => ['spark' => $spark, 'charge24' => $charge, 'weway' => $weway, 'evion' => $evion],
+    'stations' => $stations, 'sites' => $sites, 'meta' => ['spark' => $spark, 'charge24' => $charge, 'weway' => $weway, 'evion' => $evion, 'tazatok' => $tazatok],
 ], JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE);

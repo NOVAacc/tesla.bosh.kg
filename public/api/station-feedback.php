@@ -9,7 +9,7 @@ if (!in_array($method, ['GET','POST'], true)) ev_response(405, ['error'=>'method
 
 function valid_feedback_station($id): bool {
   return is_string($id) && strlen($id) <= 1024
-    && preg_match('/\A(?:spark|charge24|weway|evion):[^\p{Cc}]+\z/u', $id) === 1;
+    && preg_match('/\A(?:spark|charge24|weway|evion|tazatok):[^\p{Cc}]+\z/u', $id) === 1;
 }
 
 try {
@@ -35,7 +35,7 @@ try {
   $id = $body['stationId'] ?? null;
   $type = $body['type'] ?? null;
   $message = $body['message'] ?? null;
-  if (!is_string($id) || strlen($id) > 1024 || !preg_match('/\\A(?:spark|charge24|weway|evion):[^\\p{Cc}]+\\z/u', $id)
+  if (!is_string($id) || strlen($id) > 1024 || !preg_match('/\\A(?:spark|charge24|weway|evion|tazatok):[^\\p{Cc}]+\\z/u', $id)
       || !is_string($type) || !in_array($type, ['broken','incorrect_info','access','other'], true)
       || !is_string($message)) {
     ev_response(422, ['error'=>'invalid_feedback']);

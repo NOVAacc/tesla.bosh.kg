@@ -3,6 +3,7 @@ const operators = [
   ['charge24', 'Charge24'],
   ['weway', 'WeWay'],
   ['evion', 'EVION'],
+  ['tazatok', 'TazaTok'],
 ];
 const workingPorts = new Set(['AVAILABLE', 'FREE', 'OCCUPIED', 'CHARGING', 'PREPARING', 'FINISHING', 'RESERVED', 'SUSPENDEDEV', 'SUSPENDEDEVSE']);
 const failedPorts = new Set(['FAULTED', 'UNAVAILABLE', 'OFFLINE', 'DISABLED', 'OUT_OF_SERVICE', 'INOPERATIVE']);

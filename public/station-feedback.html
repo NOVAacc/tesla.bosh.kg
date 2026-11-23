@@ -47,7 +47,7 @@ body.embedded{padding:0;background:#fff}.embedded main{margin:0;max-width:none;p
  const params=new URLSearchParams(location.search);
  if(params.get('embed')==='1')document.body.classList.add('embedded');
  const stationId=params.get('stationId');
- if(!stationId||stationId.length>1024||!/^(spark|charge24|weway|evion):[^\x00-\x1F\x7F]+$/u.test(stationId)){status.textContent='Откройте карточку станции на карте.';return}
+ if(!stationId||stationId.length>1024||!/^(spark|charge24|weway|evion|tazatok):[^\x00-\x1F\x7F]+$/u.test(stationId)){status.textContent='Откройте карточку станции на карте.';return}
  label.textContent=params.get('name')||'Зарядная станция';
  const address=document.getElementById('stationAddress');
  const numbers=params.getAll('number').filter(Boolean);
