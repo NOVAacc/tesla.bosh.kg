@@ -129,9 +129,28 @@ try {
     [$status,$body]=tesla_request(TESLA_AUDIENCE.'/api/1/vehicles',[],(string)$tokens['access_token']);
     if ($status!==200) ev_response(200,['connected'=>true,'vehicles'=>[],'api_status'=>$status]);
     $vehicles=[];
-    foreach (array_slice($body['response']??[],0,10) as $vehicle) {
+    foreach (array_slice($body['response']??[],0,3) as $vehicle) {
       if (!is_array($vehicle)) continue;
-      $vehicles[]=['display_name'=>(string)($vehicle['display_name']??'Tesla'),'state'=>(string)($vehicle['state']??'unknown'),'vin_suffix'=>substr((string)($vehicle['vin']??''),-4)];
+      $vin=(string)($vehicle['vin']??'');
+      $entry=['display_name'=>(string)($vehicle['display_name']??'Tesla'),
+        'state'=>(string)($vehicle['state']??'unknown'),'vin_suffix'=>substr($vin,-4)];
+      if (preg_match('/^[A-HJ-NPR-Z0-9]{17}$/D',$vin)) {
+        // Tesla's cached endpoint never wakes the car. Responses may be stale.
+        [$cachedStatus,$cached]=tesla_request(TESLA_AUDIENCE.'/api/1/vehicles/'.rawurlencode($vin).'/vehicle_data_cached',[],(string)$tokens['access_token']);
+        if ($cachedStatus===200) {
+          $details=$cached['response']??[];
+          $charge=$details['charge_state']??[];
+          if (is_array($charge)) {
+            foreach (['battery_level','battery_range','charging_state','charge_limit_soc','charge_rate','time_to_full_charge'] as $key) {
+              if (isset($charge[$key]) && (is_numeric($charge[$key])||is_string($charge[$key]))) $entry[$key]=$charge[$key];
+            }
+            if (isset($charge['timestamp']) && is_numeric($charge['timestamp'])) $entry['charge_timestamp']=(int)$charge['timestamp'];
+          }
+        } else {
+          $entry['cached_status']=$cachedStatus;
+        }
+      }
+      $vehicles[]=$entry;
     }
     ev_response(200,['connected'=>true,'vehicles'=>$vehicles]);
   }
