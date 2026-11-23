@@ -33,7 +33,9 @@ try {
         foreach ($query->fetchAll(PDO::FETCH_COLUMN) as $value) {
           $connectors = array_merge($connectors, explode(',', (string)$value));
         }
-        $connectors = array_values(array_intersect(EV_CONNECTORS, $connectors));
+        // Tesla connector preferences are user supplied and included alongside manually added cars.
+        $connectors=array_merge($connectors,ev_tesla_connector_read((int)$user['id']));
+        $connectors = array_values(array_unique(array_intersect(EV_CONNECTORS, $connectors)));
       }
       ev_response(200,[
         'signedIn'=>true, 'csrf'=>$_SESSION['csrf'], 'automatic'=>$automatic, 'connectors'=>$connectors,
