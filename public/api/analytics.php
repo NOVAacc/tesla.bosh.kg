@@ -21,7 +21,17 @@ foreach ($events as $event) {
 if (!$parsed) ev_response(200,['ok'=>true]);
 try {
   $db=ev_db();
-  $db->exec("CREATE TABLE IF NOT EXISTS map_analytics_events (
+  $insertEvents = static function(PDO $db, array $events, string $hash): void {
+    $statement=$db->prepare('INSERT INTO map_analytics_events (visitor_hash,event_name,event_label) VALUES (?,?,?)');
+    foreach($events as [$name,$label])$statement->execute([$hash,$name,$label]);
+  };
+  $config=ev_config();
+  $visitorHash=hash_hmac('sha256',$visitor,(string)$config['DB_PASSWORD'],true);
+  try {
+    $insertEvents($db,$parsed,$visitorHash);
+  } catch(PDOException $missing) {
+    if($missing->getCode()!=='42S02' && (int)($missing->errorInfo[1]??0)!==1146)throw $missing;
+    $db->exec("CREATE TABLE IF NOT EXISTS map_analytics_events (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     visitor_hash BINARY(32) NOT NULL,
     event_name VARCHAR(32) NOT NULL,
@@ -31,10 +41,8 @@ try {
     KEY idx_event_time (event_name,occurred_at),
     KEY idx_visitor_time (visitor_hash,occurred_at)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-  // Daily visitor pseudonym rotation limits long-term tracking.
-  $visitorHash=hash('sha256',gmdate('Y-m-d').':'.$visitor,true);
-  $statement=$db->prepare('INSERT INTO map_analytics_events (visitor_hash,event_name,event_label) VALUES (?,?,?)');
-  foreach($parsed as [$name,$label])$statement->execute([$visitorHash,$name,$label]);
+    $insertEvents($db,$parsed,$visitorHash);
+  }
   ev_response(200,['ok'=>true]);
 } catch(Throwable $error) {
   error_log('EV analytics ingestion: '.$error->getMessage());
