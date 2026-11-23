@@ -24,7 +24,7 @@ fetch(endpoint)
     const date = settings.total_updated_at;
     if (amount !== null && amount !== undefined && amount !== '' &&
         Number.isFinite(Number(amount)) &&
-        typeof date === 'string' && /^\\d{4}-\\d{2}-\\d{2}$/.test(date)) {
+        typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
       const parsed = new Date(date + 'T12:00:00');
       if (!Number.isNaN(parsed.getTime())) {
         card.querySelector('#donationTotalAmount').textContent =
