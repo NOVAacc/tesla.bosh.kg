@@ -13,3 +13,11 @@
  .donation-card .donation-close{top:2px;right:0;width:34px;height:34px;line-height:1}
  .donation-card img{width:calc(100% + 22px);margin-top:8px}
 }
+
+/* Manually updated donation progress, compact on mobile. */
+.donation-card .donation-totals{margin:4px 0 12px;padding:11px 12px;border-radius:13px;background:#f5f7fa;display:grid;gap:2px}
+.donation-card .donation-totals[hidden]{display:none}
+.donation-card .donation-total-label{font-size:11px;line-height:1.4;color:#606977}
+.donation-card .donation-total-value{font-size:23px;line-height:1.2;letter-spacing:-.035em;color:#18202b;font-weight:700;font-variant-numeric:tabular-nums}
+.donation-card .donation-total-date{font-size:10px;color:#747d8a;line-height:1.5}
+@media(max-width:850px){.donation-card .donation-totals{margin:3px 0 8px;padding:8px 10px}.donation-card .donation-total-value{font-size:20px}}
