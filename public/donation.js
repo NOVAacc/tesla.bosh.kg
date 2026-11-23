@@ -1,12 +1,13 @@
 const card = document.getElementById('donationCard');
 const toggle = card.querySelector('.donation-toggle');
-const image = card.querySelector('img');
+const image = card.querySelector('#donationQr');
+const details = card.querySelector('#donationDetails');
 const endpoint = '/api/donation.php';
 
 toggle.addEventListener('click', () => {
   const expanded = toggle.getAttribute('aria-expanded') === 'true';
   toggle.setAttribute('aria-expanded', String(!expanded));
-  image.hidden = expanded;
+  details.hidden = expanded;
   if (!expanded && !image.hasAttribute('src')) image.src = endpoint + '?qr=1';
 });
 
