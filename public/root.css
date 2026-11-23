@@ -79,3 +79,7 @@ li { overflow-wrap: anywhere; }
 .root-user-pages{display:flex;justify-content:center;align-items:center;gap:14px;padding:15px 0 0;font-size:13px;color:#5d626b}
 .root-user-pages a{background:#f2f2f3;padding:9px 14px;border-radius:999px;text-decoration:none;color:#222}
 @media(max-width:600px){.root-user-table th,.root-user-table td{padding:11px 9px}.root-user-table{font-size:12px}.root-user-table td:last-child{width:auto}.root-user-table td:first-child{width:45px}}
+
+.donation-total-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.donation-total-fields label{min-width:0}
+@media(max-width:600px){.donation-total-fields{grid-template-columns:1fr}}
