@@ -32,7 +32,7 @@ function donation_save(array $form, array $upload): void {
     $settings['total_amount']=null;
     $settings['total_updated_at']=null;
   } else {
-    if (!preg_match('/^(?:0|[1-9][0-9]{0,8})(?:\\.[0-9]{1,2})?$/D', $rawAmount)) {
+    if (!preg_match('/^(?:0|[1-9][0-9]{0,8})(?:\.[0-9]{1,2})?$/D', $rawAmount)) {
       throw new InvalidArgumentException('Введите сумму в сомах от 0 до 999 999 999,99.');
     }
     $date=DateTimeImmutable::createFromFormat('!Y-m-d',$rawDate);
