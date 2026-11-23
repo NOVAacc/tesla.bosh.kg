@@ -1,5 +1,5 @@
 .donation-card{position:fixed;top:max(86px,calc(env(safe-area-inset-top,0px) + 70px));right:16px;z-index:1095;width:min(360px,calc(100% - 32px));max-height:calc(100dvh - 165px);overflow:auto;background:#fff;color:#18202b;border:1px solid #e4e8ee;border-radius:20px;box-shadow:0 12px 35px #18202b36;padding:15px 48px 15px 16px}
-.donation-card[hidden],.donation-card img[hidden]{display:none}
+.donation-card[hidden],.donation-card .donation-details[hidden],.donation-card img[hidden]{display:none}
 .donation-card p{margin:0 0 10px;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
 .donation-card button{font:inherit;cursor:pointer;border:0}
 .donation-card .donation-toggle{border-radius:999px;background:#18202b;color:#fff;padding:8px 13px;font-size:13px;max-width:100%;overflow-wrap:anywhere}
@@ -21,3 +21,8 @@
 .donation-card .donation-total-value{font-size:23px;line-height:1.2;letter-spacing:-.035em;color:#18202b;font-weight:700;font-variant-numeric:tabular-nums}
 .donation-card .donation-total-date{font-size:10px;color:#747d8a;line-height:1.5}
 @media(max-width:850px){.donation-card .donation-totals{margin:3px 0 8px;padding:8px 10px}.donation-card .donation-total-value{font-size:20px}}
+
+.donation-card .donation-details{margin-top:11px}
+.donation-card .donation-details img{margin-top:8px}
+.donation-card .donation-details .donation-totals{margin:0 0 8px}
+@media(max-width:850px){.donation-card .donation-details{margin-top:8px}.donation-card .donation-details img{margin-top:6px}}
