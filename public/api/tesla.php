@@ -71,7 +71,9 @@ function tesla_redirect(string $code): never {
   header('Location: /account.html?tesla_result='.rawurlencode($code),true,303); exit;
 }
 try {
-  if (($_SERVER['REQUEST_METHOD']??'')!=='GET') ev_response(405,['error'=>'method_not_allowed']);
+  $method=$_SERVER['REQUEST_METHOD']??'';
+  $incoming=$_GET['action']??'status';
+  if (!(($method==='GET' && $incoming!=='live') || ($method==='POST' && $incoming==='live'))) ev_response(405,['error'=>'method_not_allowed']);
   ev_session();
   $u=ev_user();
   if (!$u) {
@@ -111,7 +113,13 @@ try {
     tesla_store((int)$u['id'],$tokens,$cfg);
     tesla_redirect('connected');
   }
-  if ($action==='status') {
+  if ($action==='status' || $action==='live') {
+    if ($action==='live') {
+      ev_csrf(ev_input());
+      $last=(int)($_SESSION['tesla_last_live']??0);
+      if ($last>time()-120) ev_response(429,['error'=>'refresh_too_soon','retry_after'=>120-(time()-$last)]);
+      $_SESSION['tesla_last_live']=time();
+    }
     $tokens=tesla_load((int)$u['id'],$cfg);
     if (!$tokens) ev_response(200,['connected'=>false]);
     if (($tokens['expires_at']??0)<time()+120) {
@@ -128,6 +136,20 @@ try {
     }
     [$status,$body]=tesla_request(TESLA_AUDIENCE.'/api/1/vehicles',[],(string)$tokens['access_token']);
     if ($status!==200) ev_response(200,['connected'=>true,'vehicles'=>[],'api_status'=>$status]);
+    if ($action==='live') {
+      $vehicle=($body['response']??[])[0]??null;
+      $vin=is_array($vehicle)?(string)($vehicle['vin']??''):'';
+      if (!preg_match('/^[A-HJ-NPR-Z0-9]{17}$/D',$vin)) ev_response(404,['error'=>'tesla_vehicle_not_found']);
+      [$liveStatus,$liveData]=tesla_request(TESLA_AUDIENCE.'/api/1/vehicles/'.rawurlencode($vin).'/vehicle_data',[],(string)$tokens['access_token']);
+      if ($liveStatus!==200) ev_response(200,['ok'=>false,'tesla_status'=>$liveStatus,'reason'=>is_string($liveData['error']??null)?substr($liveData['error'],0,90):null]);
+      $charge=$liveData['response']['charge_state']??null;
+      if (!is_array($charge)) ev_response(200,['ok'=>false,'reason'=>'charge_data_missing']);
+      $response=['ok'=>true];
+      foreach (['battery_level','battery_range','charging_state','charge_limit_soc','charge_rate','time_to_full_charge'] as $key) {
+        if (isset($charge[$key]) && (is_numeric($charge[$key])||is_string($charge[$key]))) $response[$key]=$charge[$key];
+      }
+      ev_response(200,$response);
+    }
     $vehicles=[];
     foreach (array_slice($body['response']??[],0,3) as $vehicle) {
       if (!is_array($vehicle)) continue;
