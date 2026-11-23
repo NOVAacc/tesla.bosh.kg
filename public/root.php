@@ -135,6 +135,11 @@ if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
         <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
         <label>Сообщение <textarea name="message" rows="3" maxlength="240" required><?= htmlspecialchars($donation['message'], ENT_QUOTES, 'UTF-8') ?></textarea></label>
         <label>Текст кнопки <input name="button" maxlength="48" value="<?= htmlspecialchars($donation['button'], ENT_QUOTES, 'UTF-8') ?>" required></label>
+        <div class="donation-total-fields">
+          <label>Всего собрано, сом <input type="number" name="total_amount" min="0" max="999999999.99" step="0.01" inputmode="decimal" placeholder="Например, 12500" value="<?= htmlspecialchars((string)($donation['total_amount'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+          <label>Дата обновления суммы <input type="date" name="total_updated_at" value="<?= htmlspecialchars((string)($donation['total_updated_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"></label>
+        </div>
+        <p class="note">Сумма и дата указываются вручную. Оставьте оба поля пустыми, чтобы скрыть статистику на главной.</p>
         <label>QR-код <input name="qr" type="file" accept="image/png,image/jpeg,image/webp"></label>
         <p class="note"><?= $donation['image'] === '' ? 'QR-код ещё не загружен.' : 'QR-код загружен. Выберите новый файл для замены.' ?> PNG, JPEG или WebP до 2 МБ.</p>
         <label><input type="checkbox" name="enabled"<?= $donation['enabled'] ? ' checked' : '' ?>> Показывать на карте</label>
