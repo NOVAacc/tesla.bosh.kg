@@ -124,6 +124,12 @@
 .connector-picker-option:hover,.connector-picker-option[aria-pressed=true]{background:#eef4f8}
 .connector-picker-check{display:inline-flex;width:17px;height:17px;border-radius:5px;border:1px solid #afbac8;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
 .connector-picker-option[aria-pressed=true] .connector-picker-check{background:#1e293b;border-color:#1e293b}
+:root{--network-spark:#209769;--network-charge24:#b8860b;--network-weway:#d32f2f;--network-evion:#146b45;--network-tazatok:#007dd3}
+#spark{--network-color:var(--network-spark)}
+#charge24{--network-color:var(--network-charge24)}
+#weway{--network-color:var(--network-weway)}
+#evion{--network-color:var(--network-evion)}
+#tazatok{--network-color:var(--network-tazatok)}
 @media(min-width:851px){#availability{order:1}.connector-picker{order:2}#current,#power,#station,#portstatus,#extras{order:3}}
 @media(max-width:850px){.connector-picker{display:none!important}}
 @media(max-width:850px){
@@ -135,9 +141,12 @@
  #filterSheet .filters{display:flex;flex-direction:column;align-items:stretch;gap:12px}
  #filterSheet .filter-group{display:block;min-width:0;background:#fff;border:1px solid #e9e9e6;border-radius:24px;padding:14px}
  #filterSheet .filter-heading{display:block;margin:0 0 10px;font-size:15px;font-weight:700}
-  #filterSheet .filter-networks{display:flex;gap:4px;background:#f0f0ee;padding:4px;border-radius:15px}
- #filterSheet .filter-networks .chip{flex:1;min-width:0;min-height:44px;border:1px solid transparent;background:transparent;color:#595959;border-radius:12px;font-weight:600}
- #filterSheet .filter-networks .chip[aria-pressed=true]{border-color:#e4e4e2;background:#fff;color:#181818;box-shadow:0 2px 5px #0001}
+ #filterSheet .filter-networks{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:4px;background:transparent;border:0}
+ #filterSheet .filter-networks .chip{grid-column:span 2;display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:44px;padding:6px 4px;border:1px solid #e4e4e2;background:#fff;color:#595959;border-radius:12px;font-size:13px;font-weight:600}
+ #filterSheet .filter-networks .chip:nth-last-child(-n+2){grid-column:span 3}
+ #filterSheet .filter-networks .chip::before{content:"";flex:0 0 8px;height:8px;border:1px solid var(--network-color);border-radius:50%}
+ #filterSheet .filter-networks .chip[aria-pressed=true]{border-color:var(--network-color);background:color-mix(in srgb,var(--network-color) 12%,white);color:#181818}
+ #filterSheet .filter-networks .chip[aria-pressed=true]::before{background:var(--network-color)}
  #filterSheet #connector{display:none}
  .connector-cards{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(86px,24%);gap:8px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x proximity;padding:2px 2px 8px}
  .connector-card{scroll-snap-align:start;display:grid;place-items:center;align-content:center;gap:8px;min-height:98px;padding:6px 4px;border:2px solid #ededeb;border-radius:17px;background:#fff;color:#181818;line-height:1.2;font-family:inherit;font-size:12px;font-weight:600;overflow-wrap:anywhere;cursor:pointer}
@@ -557,7 +566,7 @@ function refreshTypes(){
  control.add(new Option('Тип не определён','unknown'));
  renderConnectorCards();
 }
-function marker(s,availability){const color=s.operator==='SPARK KG'?'#209769':s.operator==='Charge24'?'#b8860b':s.operator==='WeWay'?'#d32f2f':s.operator==='EVION'?'#146b45':s.operator==='TazaTok'?'#6244ab':'#8794a5';const name=s.operator==='SPARK KG'?'S':s.operator==='WeWay'?'W':s.operator==='EVION'?'E':s.operator==='TazaTok'?'T':'24';return L.divIcon({html:`<div class="marker" style="background:${color}">${name}${availabilityIcon(availability.kind)}</div>`,className:'',iconSize:[31,31],iconAnchor:[15,15]})}
+function marker(s,availability){const color=s.operator==='SPARK KG'?'var(--network-spark)':s.operator==='Charge24'?'var(--network-charge24)':s.operator==='WeWay'?'var(--network-weway)':s.operator==='EVION'?'var(--network-evion)':s.operator==='TazaTok'?'var(--network-tazatok)':'#8794a5';const name=s.operator==='SPARK KG'?'S':s.operator==='WeWay'?'W':s.operator==='EVION'?'E':s.operator==='TazaTok'?'T':'24';return L.divIcon({html:`<div class="marker" style="background:${color}">${name}${availabilityIcon(availability.kind)}</div>`,className:'',iconSize:[31,31],iconAnchor:[15,15]})}
 function tariffText(t){
   if(typeof t==='string')return esc(t);
   if(!t||!Number.isFinite(Number(t.amount)))return '';
