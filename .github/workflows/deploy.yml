@@ -28,6 +28,7 @@ jobs:
           node --check public/root-businesses.js
           node --check public/pwa.js
           node --check public/sw.js
+          node --check public/tesla-connect.js
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
@@ -84,7 +85,7 @@ jobs:
           published="$(mktemp)"
           curl --fail --silent --show-error --retry 3 --max-time 20 "https://tesla.bosh.kg/?deploy=$GITHUB_SHA" -o "$published"
           cmp public/index.html "$published"
-          for asset in account.html mobile-nav.css root.js root-businesses.js station-feedback.html manifest.webmanifest sw.js pwa.js pwa.css offline.html icons/icon-180.png icons/icon-192.png icons/icon-512.png; do
+          for asset in account.html tesla-connect.js tesla-dashboard.css tesla-model3.svg mobile-nav.css root.js root-businesses.js station-feedback.html manifest.webmanifest sw.js pwa.js pwa.css offline.html icons/icon-180.png icons/icon-192.png icons/icon-512.png; do
             curl --fail --silent --show-error --retry 3 --max-time 20 "https://tesla.bosh.kg/$asset?deploy=$GITHUB_SHA" -o "$published"
             cmp "public/$asset" "$published"
           done
