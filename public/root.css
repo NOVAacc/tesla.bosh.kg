@@ -65,3 +65,17 @@ li { overflow-wrap: anywhere; }
 .donation-form textarea,.donation-form input[name=button]{padding:9px;border:1px solid #cbd5e1;border-radius:8px}
 .donation-form p{margin:0}
 .donation-form button{justify-self:start}
+
+/* Access-restricted admin user directory */
+.root-user-list{margin-top:16px}
+.root-user-table-wrap{overflow-x:auto;margin-top:14px;border:1px solid #ececec;border-radius:15px}
+.root-user-table{width:100%;border-collapse:collapse;font-size:14px;text-align:left}
+.root-user-table th{background:#f7f7f8;color:#686868;font-size:12px;font-weight:650;letter-spacing:.02em}
+.root-user-table th,.root-user-table td{padding:13px 15px;border-bottom:1px solid #ededee}
+.root-user-table tbody tr:last-child td{border-bottom:0}
+.root-user-table td:nth-child(2){overflow-wrap:anywhere}
+.root-user-table td:first-child{color:#888;width:70px;font-variant-numeric:tabular-nums}
+.root-user-table td:last-child{color:#4d535a;white-space:nowrap;width:125px}
+.root-user-pages{display:flex;justify-content:center;align-items:center;gap:14px;padding:15px 0 0;font-size:13px;color:#5d626b}
+.root-user-pages a{background:#f2f2f3;padding:9px 14px;border-radius:999px;text-decoration:none;color:#222}
+@media(max-width:600px){.root-user-table th,.root-user-table td{padding:11px 9px}.root-user-table{font-size:12px}.root-user-table td:last-child{width:auto}.root-user-table td:first-child{width:45px}}
