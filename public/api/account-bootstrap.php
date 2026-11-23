@@ -118,3 +118,30 @@ function ev_csrf(array $body): void {
     ev_response(403,['error'=>'invalid_csrf']);
   }
 }
+
+/**
+ * User-supplied Tesla charging connector types. Never inferred from Fleet API.
+ * Stored outside webroot; separate from manually maintained user_vehicles.
+ */
+function ev_tesla_connector_path(int $uid): string {
+  return '/home/g143326/.tesla-connector-preferences/user-'.$uid.'.json';
+}
+function ev_tesla_connector_read(int $uid): array {
+  $path=ev_tesla_connector_path($uid);
+  if (!is_file($path)) return [];
+  $body=@file_get_contents($path);
+  $item=is_string($body)?json_decode($body,true):null;
+  $allowed=['CCS2','GB/T','NACS','Type2','CHAdeMO'];
+  if (!is_array($item)||!isset($item['connectors'])||!is_array($item['connectors'])) return [];
+  return array_values(array_intersect($allowed,array_filter($item['connectors'],'is_string')));
+}
+function ev_tesla_connector_write(int $uid,array $connectors): void {
+  $dir='/home/g143326/.tesla-connector-preferences';
+  if (!is_dir($dir) && !@mkdir($dir,0700) && !is_dir($dir)) throw new RuntimeException('Tesla connector preferences directory unavailable');
+  $target=ev_tesla_connector_path($uid);
+  $tmp=$target.'.'.bin2hex(random_bytes(6)).'.tmp';
+  $data=json_encode(['connectors'=>$connectors],JSON_THROW_ON_ERROR);
+  if (file_put_contents($tmp,$data,LOCK_EX)===false) throw new RuntimeException('Tesla connector preferences write failed');
+  chmod($tmp,0600);
+  if (!rename($tmp,$target)) { @unlink($tmp);throw new RuntimeException('Tesla connector preferences move failed'); }
+}
