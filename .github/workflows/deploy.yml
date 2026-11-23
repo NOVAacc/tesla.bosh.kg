@@ -95,7 +95,7 @@ jobs:
           curl --fail --silent --show-error --retry 2 --max-time 90 https://tesla.bosh.kg/api/stations |
             jq -e '(.stations | length) > 0 and (.meta.spark != null) and (.meta.charge24 != null)' > /dev/null
           curl --fail --silent --show-error --retry 2 --max-time 90 'https://tesla.bosh.kg/api/stations?view=map' |
-            jq -e '(.sites | length) > 0 and (.stations | length) > 0 and ([.stations[] | select(.operator == "SPARK KG")] | length) == 0 and (.meta | keys) == ["charge24", "evion", "spark", "weway"]' > /dev/null
+            jq -e '(.sites | length) > 0 and (.stations | length) > 0 and ([.stations[] | select(.operator == "SPARK KG")] | length) == 0 and (.meta | keys) == ["charge24", "evion", "spark", "tazatok", "weway"]' > /dev/null
           curl --fail --silent --show-error --retry 2 --max-time 20 'https://tesla.bosh.kg/api/account.php?action=vehicle_catalog' |
             jq -e 'any(.makes[]; .name == "Tesla" and any(.models[]; .name == "Model 3")) and any(.makes[]; .name == "BYD" and any(.models[]; .name == "Song Plus DM-i"))' > /dev/null
           curl --fail --silent --show-error --retry 2 --max-time 20 'https://tesla.bosh.kg/api/map-services.php' |
