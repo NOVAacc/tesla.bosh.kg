@@ -52,6 +52,38 @@
     link.classList.add('hidden');
     disconnect.classList.remove('hidden');
   }
+  const connectorForm=el('teslaConnectorsForm');
+  const connectorInputs=[...connectorForm.querySelectorAll('input[name="teslaConnectors"]')];
+  const connectorMsg=el('teslaConnectorsMsg'),connectorSave=el('teslaConnectorsSave');
+  async function loadConnectors(){
+    try{
+      const response=await fetch('/api/tesla.php?action=connectors',{credentials:'same-origin',cache:'no-store'});
+      if(!response.ok)throw new Error('load');
+      const data=await response.json();
+      const chosen=new Set(data.connectors||[]);
+      for(const input of connectorInputs)input.checked=chosen.has(input.value);
+      connectorMsg.textContent='';
+    }catch{
+      connectorMsg.textContent='Не удалось загрузить разъёмы.';
+    }
+  }
+  connectorForm.addEventListener('submit',async event=>{
+    event.preventDefault();
+    if(connectorSave.disabled||!csrf)return;
+    connectorSave.disabled=true;
+    connectorMsg.textContent='Сохраняем…';
+    try{
+      const response=await fetch('/api/tesla.php?action=connectors',{
+        method:'POST',credentials:'same-origin',cache:'no-store',
+        headers:{'Accept':'application/json','Content-Type':'application/json'},
+        body:JSON.stringify({csrf,connectors:connectorInputs.filter(input=>input.checked).map(input=>input.value)})
+      });
+      if(!response.ok)throw new Error('save');
+      connectorMsg.textContent='Сохранено. Разъёмы учтутся в автофильтре карты.';
+    }catch{
+      connectorMsg.textContent='Ошибка сохранения. Попробуйте ещё раз.';
+    }finally{connectorSave.disabled=false;}
+  });
   async function load(){
     try{
       const auth=await fetch('/api/account.php?action=me',{credentials:'same-origin',cache:'no-store'});
@@ -78,6 +110,7 @@
         return;
       }
       draw(car);
+      await loadConnectors();
       if(data.cache_source==='server_stale')feedback.textContent='Показана последняя сохранённая сводка.';
     }catch{
       status.textContent='Данные Tesla временно недоступны.';
@@ -98,6 +131,8 @@
       const data=await response.json();
       if(!response.ok || !data.disconnected)throw new Error('disconnect_failed');
       details.classList.add('hidden');
+      connectorForm.reset();
+      connectorMsg.textContent='';
       status.classList.remove('hidden');
       status.textContent='Tesla не подключена.';
       el('teslaVehicleName').textContent='Tesla';
