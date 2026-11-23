@@ -226,14 +226,19 @@ a.map-layer-icon{text-decoration:none}
 .map-loading-spinner{width:18px;height:18px;flex:none;border:2px solid #dbe5ef;border-top-color:#0755a5;border-radius:50%;animation:map-loading-spin .8s linear infinite}
 @keyframes map-loading-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.map-loading-spinner{animation:none}}
-</style><link rel="stylesheet" href="/donation.css?v=3"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f6f7f9" media="(min-width:851px)"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png"><script src="/pwa.js" defer></script><link rel="stylesheet" href="/pwa.css"></head><body>
+</style><link rel="stylesheet" href="/donation.css?v=4"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f6f7f9" media="(min-width:851px)"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png"><script src="/pwa.js" defer></script><link rel="stylesheet" href="/pwa.css"></head><body>
 <aside id="donationCard" class="donation-card" aria-label="Поддержка проекта" hidden>
   <p></p>
+  <div class="donation-totals" id="donationTotals" hidden>
+    <span class="donation-total-label">Всего собрано</span>
+    <strong class="donation-total-value" id="donationTotalAmount"></strong>
+    <span class="donation-total-date" id="donationTotalDate"></span>
+  </div>
   <button class="donation-toggle" type="button" aria-expanded="false" aria-controls="donationQr">Поддержать проект</button>
   <button class="donation-close" type="button" aria-label="Закрыть сообщение">×</button>
   <img id="donationQr" alt="QR-код для поддержки проекта" hidden>
 </aside>
-<script type="module" src="/donation.js"></script>
+<script type="module" src="/donation.js?v=2"></script>
 <div class="app"><div class="toolbar"><div class="top"><div class="brand"><h1>Зарядные станции Кыргызстана</h1><div class="sub">Единая карта SPARK KG, Charge24, WeWay и EVION</div></div><button class="chip" id="pwaInstall" type="button" hidden>Установить</button><div class="actions"><button class="chip" id="desktopList" type="button" aria-pressed="false">Списком</button><a class="chip" href="/faq" style="text-decoration:none;display:inline-flex;align-items:center">FAQ</a><a class="chip" href="/account.html" style="text-decoration:none;display:inline-flex;align-items:center">Кабинет</a><button class="chip" id="reset" type="button">Сбросить фильтры</button></div></div><div class="filters" role="group" aria-label="Фильтры зарядных станций"><div class="filter-group">
 <h3 class="filter-heading">Операторы</h3>
 <div class="filter-group filter-networks"><button class="chip" id="spark" type="button" aria-pressed="true">SPARK KG</button><button class="chip" id="charge24" type="button" aria-pressed="true">Charge24</button><button class="chip" id="weway" type="button" aria-pressed="true">WeWay</button><button class="chip" id="evion" type="button" aria-pressed="true">EVION</button></div>
