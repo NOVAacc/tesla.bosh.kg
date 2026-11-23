@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>Мой кабинет — EV карта</title>
 <link rel="stylesheet" href="/mobile-nav.css">
-<link rel="stylesheet" href="/tesla-dashboard.css?v=1">
+<link rel="stylesheet" href="/tesla-dashboard.css?v=2">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root {
@@ -117,7 +117,7 @@ input, select, textarea { width: 100%; min-height: 46px; padding: 10px 12px; bor
  <div class="tesla-vehicle-head"><div><h3 class="tesla-vehicle-name" id="teslaVehicleName">Tesla</h3><p class="tesla-vehicle-status"><span class="tesla-status-dot" id="teslaOnlineDot"></span><span id="teslaVehicleState">Проверка подключения…</span><span id="teslaVin"></span></p></div></div>
  <p class="tesla-vehicle-loading" id="teslaConnectStatus" role="status" aria-live="polite">Получаем данные автомобиля…</p>
  <div id="teslaVehicleDetails" class="hidden">
-  <img class="tesla-car-art" src="/tesla-model3.svg" alt="Силуэт Tesla Model 3" width="1000" height="350" decoding="async">
+  <figure class="tesla-car-photo"><img class="tesla-car-art" src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/White_Tesla_Model_3_%28side%29.jpg/960px-White_Tesla_Model_3_%28side%29.jpg" alt="Настоящая белая Tesla Model 3, вид сбоку" width="960" height="720" loading="lazy" decoding="async" referrerpolicy="no-referrer"><figcaption><a href="https://commons.wikimedia.org/wiki/File:White_Tesla_Model_3_(side).jpg" target="_blank" rel="noopener noreferrer">Фото: Fiver, der Hellseher · CC BY-SA 4.0</a></figcaption></figure>
   <div class="tesla-energy">
    <div class="tesla-gauge" id="teslaGauge" style="--tesla-progress:0%"><span class="tesla-soc" id="teslaBattery">—</span></div>
    <div class="tesla-energy-divider" aria-hidden="true"></div>
@@ -127,12 +127,6 @@ input, select, textarea { width: 100%; min-height: 46px; padding: 10px 12px; bor
  </div>
  <div class="tesla-secondary-action"><a class="tesla-connect-cta hidden is-secondary" id="teslaConnectLink" href="/api/tesla.php?action=start">Подключить Tesla</a></div>
  <p class="tesla-feedback" id="teslaFeedback" role="status"></p>
-</div>
-<div class="tesla-rows hidden" id="teslaInfoRows">
- <div class="tesla-info-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.7"/></svg><span class="tesla-info-label">Запас хода</span><span class="tesla-info-value" id="teslaRangeRow">—</span></div>
- <div class="tesla-info-row"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="18" height="12" rx="2"/><path d="M22 10v4"/><path d="M6 9v6"/></svg><span class="tesla-info-label">Лимит заряда</span><span class="tesla-info-value" id="teslaLimitRow">—</span></div>
- <div class="tesla-info-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 0-6M6 6a9 9 0 0 0 0 12M18 6a9 9 0 0 1 0 12M3 3a13 13 0 0 0 0 18M21 3a13 13 0 0 1 0 18"/></svg><span class="tesla-info-label">Статус</span><span class="tesla-info-value" id="teslaStateRow">—</span></div>
- <div class="tesla-info-row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 2-9 11h7l-2 9 9-12h-7z"/></svg><span class="tesla-info-label">Зарядка</span><span class="tesla-info-value" id="teslaChargingRow">—</span></div>
 </div>
 </section>
 <div class="account-tabs">
@@ -611,4 +605,4 @@ const oauthErrors={not_configured:'Google вход ещё не настроен 
 const authError=new URLSearchParams(window.location.search).get('auth_error');
 if(authError){$('globalMsg').textContent=oauthErrors[authError]||'Не удалось выполнить вход через Google';window.history.replaceState(null,'',window.location.pathname);}
 boot();
-</script><script src="/tesla-connect.js?v=2" defer></script></body></html>
+</script><script src="/tesla-connect.js?v=3" defer></script></body></html>
