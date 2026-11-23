@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="referrer" content="no-referrer"><title>Мой кабинет — EV карта</title>
 <link rel="stylesheet" href="/mobile-nav.css">
-<link rel="stylesheet" href="/tesla-dashboard.css?v=4">
+<link rel="stylesheet" href="/tesla-dashboard.css?v=5">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root {
@@ -124,7 +124,13 @@ input, select, textarea { width: 100%; min-height: 46px; padding: 10px 12px; bor
   </div>
   <p class="tesla-freshness" id="teslaFreshness">Проверяем данные…</p>
  </div>
- <div class="tesla-secondary-action"><a class="tesla-connect-cta hidden is-secondary" id="teslaConnectLink" href="/api/tesla.php?action=start">Подключить Tesla</a></div>
+ <div class="tesla-privacy" id="teslaPrivacyNotice">
+ <div class="tesla-privacy-heading"><span class="tesla-privacy-shield" aria-hidden="true">✓</span><strong>Безопасное подключение через Tesla</strong></div>
+ <p>Авторизация проходит непосредственно на официальном сайте Tesla. Мы не видим и не получаем пароль от вашего Tesla-аккаунта.</p>
+ <p>После вашего согласия сайт получает только разрешённые вами сведения об автомобиле. Для работы кабинета на нашем защищённом сервере сохраняются зашифрованные токены доступа и последняя полученная сводка: заряд батареи, запас хода, температуры и пробег.</p>
+ <p>Эти показатели доступны в вашем личном кабинете. Вы можете отозвать разрешение в настройках своего аккаунта Tesla.</p>
+</div>
+<div class="tesla-secondary-action"><a class="tesla-connect-cta hidden is-secondary" id="teslaConnectLink" href="/api/tesla.php?action=start">Подключить Tesla</a></div>
  <p class="tesla-feedback" id="teslaFeedback" role="status"></p>
 </div>
 </section>
@@ -604,4 +610,4 @@ const oauthErrors={not_configured:'Google вход ещё не настроен 
 const authError=new URLSearchParams(window.location.search).get('auth_error');
 if(authError){$('globalMsg').textContent=oauthErrors[authError]||'Не удалось выполнить вход через Google';window.history.replaceState(null,'',window.location.pathname);}
 boot();
-</script><script src="/tesla-connect.js?v=5" defer></script></body></html>
+</script><script src="/tesla-connect.js?v=6" defer></script></body></html>
