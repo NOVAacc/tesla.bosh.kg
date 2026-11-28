@@ -20,6 +20,7 @@ $page = match ($_GET['page'] ?? null) {
   'users' => 'users',
   'analytics' => 'analytics',
   'tesla' => 'tesla',
+  'wraps' => 'wraps',
   default => 'dashboard',
 };
 $donationError = '';
@@ -142,6 +143,12 @@ function root_business_html($value): string {
   return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+$wrapItems=[];
+if ($allowed && $page==='wraps') {
+  define('EV_WRAP_LIBRARY_ONLY',true);
+  require_once __DIR__.'/api/wraps.php';
+  $wrapItems=ev_wrap_list();
+}
 $csrf = $_SESSION['csrf'] ?? '';
 session_write_close();
 $userCount = null;
@@ -236,6 +243,7 @@ if ($allowed && in_array($page, ['dashboard', 'tesla'], true)) {
       <a href="/root"<?= $page === 'dashboard' ? ' aria-current="page"' : '' ?>>Дашборд</a>
       <a href="/root?page=users"<?= $page === 'users' ? ' aria-current="page"' : '' ?>>Пользователи</a>
       <a href="/root?page=tesla"<?= $page === 'tesla' ? ' aria-current="page"' : '' ?>>Tesla</a>
+      <a href="/root?page=wraps"<?= $page === 'wraps' ? ' aria-current="page"' : '' ?>>Скины</a>
       <a href="/root?page=analytics"<?= $page === 'analytics' ? ' aria-current="page"' : '' ?>>Аналитика</a>
       <a href="/root?page=businesses"<?= $page === 'businesses' ? ' aria-current="page"' : '' ?>>Компании</a>
       <a href="/root?page=comments"<?= $page === 'comments' ? ' aria-current="page"' : '' ?>>Комментарии</a>
@@ -256,6 +264,27 @@ if ($allowed && in_array($page, ['dashboard', 'tesla'], true)) {
     </form></section>
     <section class="faq-admin-list"><div class="section-heading"><h2>Все вопросы</h2><input type="search" id="faqFilter" placeholder="Найти вопрос…"></div><p class="note" id="faqReorderHint">Перетащите вопрос за заголовок или используйте стрелки. Порядок сохраняется автоматически.</p><div id="faqCards"></div></section>
     <script src="/root-faq.js?v=<?= hash_file('sha256', __DIR__.'/root-faq.js') ?>" type="module"></script>
+    <?php elseif ($page === 'wraps'): ?>
+    <section class="card">
+      <h2>Пользовательские скины</h2>
+      <p class="note">Загрузите до 10 PNG за раз. Они появятся в кабинете выбранной модели без значка Tesla. Размер каждого — до 1 МБ.</p>
+      <?php if (isset($_GET['saved'])): ?><p role="status">Добавлено: <?= (int)$_GET['saved'] ?> · Не принято: <?= (int)($_GET['failed']??0) ?></p><?php endif; ?>
+      <?php if (isset($_GET['error'])): ?><p role="alert">Не удалось принять файлы. Проверьте модель и количество PNG.</p><?php endif; ?>
+      <form class="donation-form" method="post" action="/api/wraps.php" enctype="multipart/form-data">
+        <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+        <label>Модель <select name="model" required>
+        <?php foreach (EV_WRAP_MODELS as $model): ?>
+          <option value="<?= htmlspecialchars($model,ENT_QUOTES,'UTF-8') ?>"><?= htmlspecialchars($model==='model3'?'Model 3 · 2017–2023':$model,ENT_QUOTES,'UTF-8') ?></option>
+        <?php endforeach; ?>
+        </select></label>
+        <label>PNG <input type="file" name="skins[]" accept="image/png,.png" multiple required></label>
+        <button type="submit">Добавить скины</button>
+      </form>
+      <h3>Загружено: <?= count($wrapItems) ?></h3>
+      <?php foreach ($wrapItems as $item): ?>
+        <p><?= htmlspecialchars($item['model'].' · '.$item['title'],ENT_QUOTES,'UTF-8') ?> — <a href="<?= htmlspecialchars($item['url'],ENT_QUOTES,'UTF-8') ?>" target="_blank" rel="noopener">PNG</a></p>
+      <?php endforeach; ?>
+    </section>
     <?php elseif ($page === 'tesla'): ?>
     <section class="card users" aria-labelledby="teslaSummary">
       <h2 id="teslaSummary">Подключённые Tesla</h2>
