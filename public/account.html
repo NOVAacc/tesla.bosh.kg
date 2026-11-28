@@ -294,13 +294,14 @@ function renderWraps(){
   const card=document.createElement('article');card.className='wrap-item';
   const img=document.createElement('img');img.src=url;img.alt=title+' — UV-развёртка';img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';
   const h=document.createElement('h3');h.textContent=title;
-  const link=document.createElement('a');link.className='wrap-link';link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Скачать PNG';
+  const downloadUrl=official?url:url+'&download=1';
+  const link=document.createElement('a');link.className='wrap-link';link.href=downloadUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Скачать PNG';
   link.addEventListener('click',async event=>{
    if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||link.dataset.fallback)return;
    event.preventDefault();if(link.dataset.busy)return;
    link.dataset.busy='1';link.textContent='Загрузка…';
    try{
-    const response=await fetch(url,{credentials:official?'omit':'same-origin',referrerPolicy:'no-referrer'});
+    const response=await fetch(downloadUrl,{credentials:official?'omit':'same-origin',referrerPolicy:'no-referrer'});
     if(!response.ok)throw Error();
     const blob=await response.blob();const objectURL=URL.createObjectURL(blob);
     const download=document.createElement('a');download.href=objectURL;download.download=file;document.body.append(download);download.click();download.remove();setTimeout(()=>URL.revokeObjectURL(objectURL),30000);
