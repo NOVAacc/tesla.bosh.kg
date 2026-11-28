@@ -92,3 +92,12 @@ li { overflow-wrap: anywhere; }
 #analyticsContent>.card{margin-bottom:16px}
 #analyticsContent>.card h3{font-size:16px;margin:0 0 12px}
 #analyticsContent td:first-child{overflow-wrap:anywhere}
+
+/* Published business directory */
+.business-directory-item{border:1px solid #e4e4e4;border-radius:14px;padding:14px;overflow-wrap:anywhere}
+.business-directory-item summary{line-height:1.6}
+.business-directory-item p{margin:8px 0;white-space:pre-wrap;font-size:14px}
+.business-directory-item .action{margin-top:8px}
+#publishedBusinessTitle~.donation-form input:not([type=hidden]),#publishedBusinessTitle~.donation-form select{border:1px solid #cbd5e1;border-radius:8px;padding:9px}
+section[aria-labelledby="publishedBusinessTitle"] .donation-form{margin:16px 0 24px;max-width:100%}
+section[aria-labelledby="publishedBusinessTitle"] .donation-form input:not([type=hidden]),section[aria-labelledby="publishedBusinessTitle"] .donation-form select{display:block;width:100%;margin-top:6px;font:inherit;border:1px solid #cbd5e1;border-radius:8px;padding:9px}
