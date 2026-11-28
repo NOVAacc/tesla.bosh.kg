@@ -49,6 +49,99 @@ if ($allowed && $page === 'donation') {
     $donationError = 'Не удалось загрузить настройки.';
   }
 }
+
+$businessError = '';
+$businessRows = [];
+$businessCategories = [];
+$businessEdit = null;
+$businessCount = 0;
+$businessMapCount = 0;
+$businessPage = 1;
+$businessPages = 1;
+$businessLoadError = false;
+if ($allowed && $page === 'businesses') {
+  try {
+    $db = ev_db();
+    $businessCategories = $db->query('SELECT id,slug,name_ru FROM business_categories ORDER BY name_ru')->fetchAll(PDO::FETCH_ASSOC);
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+      ev_csrf($_POST);
+      $id = filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
+      $category = filter_var($_POST['category_id'] ?? null, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
+      $fields = [];
+      foreach (['name'=>150,'address'=>255,'description'=>1500,'phone'=>40,'whatsapp'=>40] as $field=>$limit) {
+        $value = $_POST[$field] ?? '';
+        if (!is_string($value) || mb_strlen($value)>$limit) throw new InvalidArgumentException('Проверьте длину полей.');
+        $fields[$field] = trim($value);
+      }
+      $lat = filter_var($_POST['latitude'] ?? null, FILTER_VALIDATE_FLOAT);
+      $lng = filter_var($_POST['longitude'] ?? null, FILTER_VALIDATE_FLOAT);
+      if (!$id || !$category || $fields['name']==='' || $fields['address']==='' || $lat===false || $lng===false ||
+          !is_finite($lat) || !is_finite($lng) || abs($lat)>90 || abs($lng)>180 ||
+          !in_array($category, array_map(static fn($c)=>(int)$c['id'], $businessCategories), true)) {
+        throw new InvalidArgumentException('Проверьте название, категорию, адрес и координаты.');
+      }
+      foreach (['phone','whatsapp'] as $field) {
+        if ($fields[$field]==='') continue;
+        $digits = preg_replace('/[^0-9]/','',$fields[$field]);
+        if (!preg_match('/^[+0-9 ()-]+$/D',$fields[$field]) || strlen($digits)<7 || strlen($digits)>15) {
+          throw new InvalidArgumentException('Проверьте формат телефона и WhatsApp.');
+        }
+      }
+      $db->beginTransaction();
+      $existing = $db->prepare("SELECT id FROM businesses WHERE id=? AND status='approved' FOR UPDATE");
+      $existing->execute([$id]);
+      if (!$existing->fetchColumn()) {
+        $db->rollBack();
+        throw new InvalidArgumentException('Компания не найдена или больше не опубликована.');
+      }
+      $update = $db->prepare("UPDATE businesses SET category_id=?,name=?,address=?,description=?,phone=?,whatsapp=?,latitude=?,longitude=? WHERE id=? AND status='approved'");
+      $update->execute([$category,$fields['name'],$fields['address'],$fields['description'] ?: null,$fields['phone'] ?: null,$fields['whatsapp'] ?: null,$lat,$lng,$id]);
+      $db->commit();
+      header('Location: /root?page=businesses&edit='.$id.'&saved=1', true, 303);
+      exit;
+    }
+  } catch (InvalidArgumentException $error) {
+    $businessError = $error->getMessage();
+  } catch (Throwable $error) {
+    if (isset($db) && $db->inTransaction()) $db->rollBack();
+    error_log('EV admin business update: '.$error->getMessage());
+    $businessError = 'Не удалось сохранить или загрузить данные компании.';
+  }
+  try {
+    $db = ev_db();
+    $businessCount = (int)$db->query("SELECT COUNT(*) FROM businesses WHERE status='approved'")->fetchColumn();
+    $businessMapCount = (int)$db->query("SELECT COUNT(*) FROM businesses b JOIN business_categories c ON c.id=b.category_id WHERE b.status='approved' AND c.slug='ev-service' AND b.latitude BETWEEN -90 AND 90 AND b.longitude BETWEEN -180 AND 180")->fetchColumn();
+    $businessPages = max(1, (int)ceil($businessCount/25));
+    $requested = filter_var($_GET['p'] ?? 1, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]);
+    $businessPage = min($requested ?: 1,$businessPages);
+    $baseSql = "SELECT b.id,b.name,b.category_id,b.address,b.description,b.phone,b.whatsapp,b.latitude,b.longitude,c.name_ru AS category,
+      (c.slug='ev-service' AND b.latitude BETWEEN -90 AND 90 AND b.longitude BETWEEN -180 AND 180) AS on_map
+      FROM businesses b JOIN business_categories c ON c.id=b.category_id WHERE b.status='approved'";
+    $list = $db->prepare($baseSql.' ORDER BY on_map DESC,b.id DESC LIMIT 25 OFFSET :offset');
+    $list->bindValue(':offset',($businessPage-1)*25,PDO::PARAM_INT);
+    $list->execute();
+    $businessRows = $list->fetchAll(PDO::FETCH_ASSOC);
+    $editId = filter_var($_GET['edit'] ?? null,FILTER_VALIDATE_INT,['options'=>['min_range'=>1]]);
+    if ($editId) {
+      $edit = $db->prepare($baseSql.' AND b.id=?');
+      $edit->execute([$editId]);
+      $businessEdit = $edit->fetch(PDO::FETCH_ASSOC) ?: null;
+      if (!$businessEdit && $businessError==='') $businessError='Компания не найдена.';
+      if ($businessEdit && ($_SERVER['REQUEST_METHOD'] ?? 'GET')==='POST' && $businessError!=='') {
+        foreach (['name','category_id','address','description','phone','whatsapp','latitude','longitude'] as $field) {
+          if (is_string($_POST[$field] ?? null)) $businessEdit[$field]=$_POST[$field];
+        }
+      }
+    }
+  } catch (Throwable $error) {
+    error_log('EV admin business directory: '.$error->getMessage());
+    $businessLoadError = true;
+  }
+}
+function root_business_html($value): string {
+  return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
 $csrf = $_SESSION['csrf'] ?? '';
 session_write_close();
 $userCount = null;
@@ -203,6 +296,63 @@ if ($allowed && in_array($page, ['dashboard', 'tesla'], true)) {
     </section>
     <script src="/root-analytics.js?v=<?= hash_file('sha256', __DIR__.'/root-analytics.js') ?>" type="module"></script>
     <?php elseif ($page === 'businesses'): ?>
+
+    <section class="card users" aria-labelledby="publishedBusinessTitle">
+      <div class="section-heading"><h2 id="publishedBusinessTitle">Опубликованные компании</h2><a href="/root?page=businesses">Обновить</a></div>
+      <?php if ($businessLoadError): ?>
+        <p role="alert">Не удалось загрузить каталог.</p>
+      <?php else: ?>
+        <p class="total"><?= $businessMapCount ?></p>
+        <p class="note">На карте · Всего одобрено: <?= $businessCount ?></p>
+      <?php endif; ?>
+      <?php if ($businessError!==''): ?><p role="alert"><?= root_business_html($businessError) ?></p><?php elseif (isset($_GET['saved'])): ?><p role="status">Данные компании сохранены.</p><?php endif; ?>
+      <?php if ($businessEdit): ?>
+        <h3>Редактирование компании</h3>
+        <form class="donation-form" method="post" action="/root?page=businesses&amp;edit=<?= (int)$businessEdit['id'] ?>&amp;p=<?= $businessPage ?>">
+          <input type="hidden" name="csrf" value="<?= root_business_html($csrf) ?>">
+          <input type="hidden" name="id" value="<?= (int)$businessEdit['id'] ?>">
+          <label>Название<input name="name" required maxlength="150" value="<?= root_business_html($businessEdit['name']) ?>"></label>
+          <label>Категория <select name="category_id" required>
+          <?php foreach ($businessCategories as $category): ?>
+            <option value="<?= (int)$category['id'] ?>"<?= (int)$businessEdit['category_id']===(int)$category['id']?' selected':'' ?>><?= root_business_html($category['name_ru']) ?></option>
+          <?php endforeach; ?>
+          </select></label>
+          <p class="note">На текущем слое карты показываются одобренные компании категории EV-сервис с корректными координатами.</p>
+          <label>Адрес<input name="address" required maxlength="255" value="<?= root_business_html($businessEdit['address']) ?>"></label>
+          <label>Описание<textarea name="description" rows="5" maxlength="1500"><?= root_business_html($businessEdit['description']) ?></textarea></label>
+          <label>Телефон<input name="phone" type="tel" maxlength="40" value="<?= root_business_html($businessEdit['phone']) ?>"></label>
+          <label>WhatsApp<input name="whatsapp" type="tel" maxlength="40" value="<?= root_business_html($businessEdit['whatsapp']) ?>"></label>
+          <div class="donation-total-fields">
+            <label>Широта<input name="latitude" type="number" step="0.0000001" min="-90" max="90" required value="<?= root_business_html($businessEdit['latitude']) ?>"></label>
+            <label>Долгота<input name="longitude" type="number" step="0.0000001" min="-180" max="180" required value="<?= root_business_html($businessEdit['longitude']) ?>"></label>
+          </div>
+          <div><button type="submit">Сохранить</button> <a href="/root?page=businesses&amp;p=<?= $businessPage ?>">Закрыть</a></div>
+        </form>
+      <?php endif; ?>
+      <?php if (!$businessLoadError && !$businessRows): ?><p class="note">Опубликованных компаний пока нет.</p><?php endif; ?>
+      <?php foreach ($businessRows as $company): ?>
+        <details class="card root-user-list business-directory-item">
+          <summary><strong><?= root_business_html($company['name']) ?></strong> · <span class="feedback-state"><?= $company['on_map']?'На карте':'Не на карте' ?></span></summary>
+          <p class="note"><?= root_business_html($company['category']) ?> · ID <?= (int)$company['id'] ?></p>
+          <p>Адрес: <?= root_business_html($company['address'] ?? '—') ?></p>
+          <p>Описание: <?= root_business_html($company['description'] ?? '—') ?></p>
+          <p>Телефон: <?= root_business_html($company['phone'] ?? '—') ?><br>WhatsApp: <?= root_business_html($company['whatsapp'] ?? '—') ?></p>
+          <p>Координаты: <?= root_business_html($company['latitude'] ?? '—') ?>, <?= root_business_html($company['longitude'] ?? '—') ?></p>
+          <?php if ($company['latitude']!==null && $company['longitude']!==null): ?>
+            <a target="_blank" rel="noopener noreferrer" href="https://www.openstreetmap.org/?mlat=<?= rawurlencode((string)$company['latitude']) ?>&amp;mlon=<?= rawurlencode((string)$company['longitude']) ?>#map=17/<?= rawurlencode((string)$company['latitude']) ?>/<?= rawurlencode((string)$company['longitude']) ?>">Посмотреть точку</a><br>
+          <?php endif; ?>
+          <a class="action" href="/root?page=businesses&amp;p=<?= $businessPage ?>&amp;edit=<?= (int)$company['id'] ?>">Редактировать</a>
+        </details>
+      <?php endforeach; ?>
+      <?php if (!$businessLoadError && $businessPages>1): ?>
+        <nav class="root-user-pages" aria-label="Страницы компаний">
+          <?php if ($businessPage>1): ?><a href="/root?page=businesses&amp;p=<?= $businessPage-1 ?>">Назад</a><?php endif; ?>
+          <span>Страница <?= $businessPage ?> из <?= $businessPages ?></span>
+          <?php if ($businessPage<$businessPages): ?><a href="/root?page=businesses&amp;p=<?= $businessPage+1 ?>">Вперёд</a><?php endif; ?>
+        </nav>
+      <?php endif; ?>
+    </section>
+
     <section aria-labelledby="businessReviewTitle">
       <div class="section-heading"><h2 id="businessReviewTitle">Заявки компаний</h2><button type="button" id="businessReviewRefresh">Обновить</button></div>
       <p id="businessReviewStatus" role="status"></p>
