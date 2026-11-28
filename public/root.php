@@ -287,7 +287,7 @@ if ($allowed && in_array($page, ['dashboard', 'tesla'], true)) {
           <img width="100" height="100" loading="lazy" src="<?= htmlspecialchars($item['url'],ENT_QUOTES,'UTF-8') ?>" alt="">
           <h3><?= htmlspecialchars($item['title'],ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8') ?></h3>
           <p><?= htmlspecialchars($item['model'].' · '.$item['author'].' · '.$item['email'],ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8') ?></p>
-          <p class="note"><?= $item['status']==='pending'?'На модерации':'Опубликован' ?> · <?= htmlspecialchars((string)$item['date'],ENT_QUOTES,'UTF-8') ?></p>
+          <p class="note"><?= $item['status']==='pending'?'На модерации':'Опубликован' ?> · <?= htmlspecialchars((string)$item['date'],ENT_QUOTES,'UTF-8') ?> · Скачиваний: <?= (int)$item['downloads'] ?></p>
           <form method="post" action="/api/wraps.php">
             <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf,ENT_QUOTES,'UTF-8') ?>">
             <input type="hidden" name="from" value="admin">
