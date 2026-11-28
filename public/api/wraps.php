@@ -34,7 +34,7 @@ function ev_wrap_item(string $model,string $name,array $meta,bool $admin,?int $u
   $item=['model'=>$model,'file'=>$name,'title'=>$meta['title']??str_replace('_',' ',substr($name,0,-4)),
     'url'=>'/api/wraps.php?model='.rawurlencode($model).'&file='.rawurlencode($name),
     'status'=>$meta['status']??'approved','author'=>$meta['author']??'BOSH',
-    'mine'=>$uid!==null&&$owner===$uid,'date'=>$meta['date']??null];
+    'mine'=>$uid!==null&&$owner===$uid,'date'=>$meta['date']??null,'downloads'=>(int)($meta['downloads']??0)];
   if ($admin) $item['email']=$meta['email']??'';
   return $item;
 }
@@ -121,6 +121,16 @@ try {
       }
       $path=EV_WRAP_DIR.'/'.$model.'/'.$name;
       if (!is_file($path)) ev_response(404,['error'=>'not_found']);
+      if (($_GET['download']??'')==='1' && $meta) {
+        $lock=ev_wrap_lock();
+        try {
+          $index=ev_wrap_index();$key=$model.'/'.$name;
+          if (isset($index[$key])) {
+            $index[$key]['downloads']=(int)($index[$key]['downloads']??0)+1;
+            ev_wrap_write($index);
+          }
+        } finally {flock($lock,LOCK_UN);fclose($lock);}
+      }
       header('Content-Type: image/png');header('Cache-Control: private, no-store');
       header('Content-Disposition: inline; filename="'.$name.'"');
       header('Content-Length: '.filesize($path));readfile($path);exit;
@@ -158,12 +168,12 @@ try {
       $dir=EV_WRAP_DIR.'/'.$model;
       if (!is_dir($dir)&&!@mkdir($dir,0700,true)&&!is_dir($dir)) throw new RuntimeException('Storage unavailable');
       $uploads=$_FILES['skins']??[];$names=$uploads['name']??[];
-      if (!is_array($names)||!count($names)||count($names)>10||(!$admin&&count($names)!==1)) throw new InvalidArgumentException('Выберите PNG.');
+      if (!is_array($names)||!count($names)||count($names)>10||(!$redirect&&count($names)!==1)) throw new InvalidArgumentException('Выберите PNG.');
       $owned=count(array_filter($index,static fn($i)=>(int)($i['owner']??0)===$uid));
       $saved=0;$failed=0;$lastError='';
       foreach ($names as $i=>$original) {
         try {
-          if (!$admin&&$owned>=EV_WRAP_LIMIT) throw new InvalidArgumentException('Лимит: 10 скинов на аккаунт.');
+          if (!$redirect&&$owned>=EV_WRAP_LIMIT) throw new InvalidArgumentException('Лимит: 10 скинов на аккаунт.');
           $tmp=$uploads['tmp_name'][$i]??'';
           if (!is_string($original)||!is_string($tmp)||($uploads['error'][$i]??-1)!==UPLOAD_ERR_OK||!is_uploaded_file($tmp)) throw new InvalidArgumentException('Файл не загружен.');
           if (!preg_match('/^[A-Za-z0-9 _-]{1,30}\.png$/iD',$original)) throw new InvalidArgumentException('Имя PNG: до 30 символов латиницы, цифр, пробелов, дефисов и подчёркиваний.');
@@ -176,7 +186,7 @@ try {
           $name='u_'.bin2hex(random_bytes(12)).'.png';$key=$model.'/'.$name;
           if (!move_uploaded_file($tmp,$dir.'/'.$name)) throw new RuntimeException('Image write failed');
           chmod($dir.'/'.$name,0600);
-          $index[$key]=['owner'=>$uid,'email'=>$user['email'],'author'=>$admin?'BOSH':(trim((string)$user['display_name'])?:'Участник'),
+          $index[$key]=['owner'=>$redirect?0:$uid,'email'=>$user['email'],'author'=>$redirect?'BOSH':(trim((string)$user['display_name'])?:'Участник'),
             'title'=>$title,'hash'=>$hash,'status'=>$admin?'approved':'pending','date'=>gmdate('c')];
           try {ev_wrap_write($index);} catch(Throwable $e){@unlink($dir.'/'.$name);unset($index[$key]);throw $e;}
           ++$saved;++$owned;
