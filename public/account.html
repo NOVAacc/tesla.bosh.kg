@@ -216,6 +216,15 @@ input, select, textarea { width: 100%; min-height: 46px; padding: 10px 12px; bor
   <div><label for="wrapSearch">Поиск дизайна</label><input id="wrapSearch" type="search" placeholder="Например, Camo"></div>
  </div>
  <div class="wrap-actions"><a class="wrap-link" id="wrapTemplate" target="_blank" rel="noopener noreferrer" href="https://raw.githubusercontent.com/teslamotors/custom-wraps/master/model3/template.png">Шаблон PNG</a><a id="wrapSource" target="_blank" rel="noopener noreferrer" href="https://github.com/teslamotors/custom-wraps/tree/master/model3">Источник Tesla</a></div>
+ <details class="wrap-guide" id="wrapUpload"><summary>Добавить свой скин</summary>
+ <p>PNG с прозрачным фоном, по лекалу выбранной модели, 512–1024 px, до 1 МБ. До 10 работ на аккаунт. После проверки администратором скин будет доступен всем; имя автора отображается в каталоге.</p>
+ <form id="wrapUploadForm"><label for="wrapTitle">Название</label><input id="wrapTitle" maxlength="80" required>
+ <label for="wrapUploadModel">Модель</label><select id="wrapUploadModel" required></select>
+ <label for="wrapUploadFile">PNG</label><input type="file" id="wrapUploadFile" accept="image/png,.png" required>
+ <div class="buttons"><button id="wrapSubmit" type="submit">Отправить на модерацию</button></div></form>
+ <p id="wrapUploadStatus" role="status"></p>
+ </details>
+ <div><label for="wrapFilter">Коллекция</label><select id="wrapFilter"><option value="all">Все</option><option value="official">Официальные Tesla</option><option value="community">Сообщество</option><option value="mine">Мои скины</option></select></div>
  <p id="wrapCount" class="notice" role="status"></p>
  <div id="wrapGallery" class="wrap-grid"></div>
  <details class="wrap-guide"><summary>Как установить скин</summary>
@@ -245,7 +254,7 @@ async function api(action,data){
 const wrapModels=[{"id":"model3","label":"Model 3 · 2017–2023","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"model3-2024-base","label":"Model 3 · 2024+ Standard / Premium","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"model3-2024-performance","label":"Model 3 · 2024+ Performance","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"modely","label":"Model Y · до 2025","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"modely-2025-base","label":"Model Y · 2025+ Standard","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"modely-2025-premium","label":"Model Y · 2025+ Premium","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"modely-2025-performance","label":"Model Y · 2025+ Performance","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"modely-l","label":"Model Y L","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"models-2021","label":"Model S · 2021+","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"models-2025-plaid","label":"Model S · 2025+ Plaid","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"modelx-2021","label":"Model X · 2021+","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"cybertruck","label":"Cybertruck","files":["Ani.png","Camo_Blue.png","Camo_Brown.png","Camo_Green.png","Camo_Pink.png","Camo_Sand.png","Camo_Snow.png","Camo_Stealth.png","Clay.png","Cosmic_Burst.png","Digital_Camo_Green.png","Digital_Camo_Snow.png","Digital_Camo_Stealth.png","Doge_Camo.png","Gradient_Black.png","Gradient_Burn.png","Gradient_Cotton_Candy.png","Gradient_Green.png","Gradient_Purple_Burn.png","Gradient_Sunburst.png","Graffiti_back.png","Graffiti_green.png","Graffiti_orange.png","Grandmas_Sofa.png","Houndstooth.png","Leopard.png","Mika.png","Rc_prototype.png","Retro.png","Rudi.png","Rust.png","Valentine.png","Woody.png","Xmas_Camo.png","Xmas_Lights.png","Xray.png"]}];
 // Local community wraps can be added per exact model, with a display title and PNG path.
 const customWraps={};
-let wrapsLoading=false;
+let wrapsLoading=false,wrapOwnCount=0;
 async function loadCommunityWraps(){
  if(wrapsLoading)return;
  wrapsLoading=true;
@@ -254,6 +263,7 @@ async function loadCommunityWraps(){
   if(!response.ok)throw Error();
   const data=await response.json();
   if(!Array.isArray(data.items))throw Error();
+  wrapOwnCount=Number(data.count)||0;
   for(const model of wrapModels)customWraps[model.id]=[];
   for(const item of data.items){
    if(!wrapModels.some(model=>model.id===item.model)||typeof item.file!=='string'||typeof item.title!=='string'||typeof item.url!=='string'||!item.url.startsWith('/api/wraps.php?'))continue;
@@ -266,18 +276,21 @@ async function loadCommunityWraps(){
 }
 
 const wrapRoot='https://raw.githubusercontent.com/teslamotors/custom-wraps/master/';
-const wrapModel=$('wrapModel'),wrapSearch=$('wrapSearch');
+const wrapModel=$('wrapModel'),wrapSearch=$('wrapSearch'),wrapFilter=$('wrapFilter');
+$('wrapUploadModel').replaceChildren(...[...wrapModel.options].map(o=>o.cloneNode(true)));
 let wrapsRendered=false;
 function renderWraps(){
  const model=wrapModels.find(m=>m.id===wrapModel.value)||wrapModels[0];
  const base=wrapRoot+model.id+'/';
  const query=wrapSearch.value.trim().toLowerCase();
  const all=[...(customWraps[model.id]||[]).map(item=>({...item,official:false})),...model.files.map(file=>({file,title:file.replace(/\.png$/i,'').replaceAll('_',' '),url:base+'example/'+encodeURIComponent(file),official:true}))];
- const files=all.filter(item=>item.title.toLowerCase().includes(query));
+ const mode=wrapFilter.value;
+ const pool=mode==='mine'?Object.values(customWraps).flat().filter(item=>item.mine):all;
+ const files=pool.filter(item=>item.title.toLowerCase().includes(query)&&(mode!=='official'||item.official)&&(mode!=='community'||!item.official&&item.status==='approved')&&(mode==='mine'||item.status!=='pending'));
  $('wrapTemplate').href=base+'template.png';
  $('wrapSource').href='https://github.com/teslamotors/custom-wraps/tree/master/'+model.id;
- $('wrapCount').textContent=files.length+' из '+all.length+' дизайнов';
- const cards=files.map(({file,title,url,official})=>{
+ $('wrapCount').textContent=files.length+' дизайнов · Мои скины: '+wrapOwnCount+'/10';
+ const cards=files.map(({file,title,url,official,mine,status,author,model:skinModel})=>{
   const card=document.createElement('article');card.className='wrap-item';
   const img=document.createElement('img');img.src=url;img.alt=title+' — UV-развёртка';img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';
   const h=document.createElement('h3');h.textContent=title;
@@ -287,7 +300,7 @@ function renderWraps(){
    event.preventDefault();if(link.dataset.busy)return;
    link.dataset.busy='1';link.textContent='Загрузка…';
    try{
-    const response=await fetch(url,{credentials:'omit',referrerPolicy:'no-referrer'});
+    const response=await fetch(url,{credentials:official?'omit':'same-origin',referrerPolicy:'no-referrer'});
     if(!response.ok)throw Error();
     const blob=await response.blob();const objectURL=URL.createObjectURL(blob);
     const download=document.createElement('a');download.href=objectURL;download.download=file;document.body.append(download);download.click();download.remove();setTimeout(()=>URL.revokeObjectURL(objectURL),30000);
@@ -297,12 +310,36 @@ function renderWraps(){
   });
   card.append(img);
   if(official){const badge=document.createElement('span');badge.className='wrap-official';badge.title='Официальный дизайн Tesla';badge.setAttribute('aria-label',badge.title);badge.textContent='✓ Tesla';card.append(badge);}
-  card.append(h,link);return card;
+  card.append(h);
+  if(!official){const by=document.createElement('p');by.textContent=(author||'BOSH')+(status==='pending'?' · На модерации':'')+(mode==='mine'&&skinModel?' · '+(wrapModels.find(m=>m.id===skinModel)?.label||skinModel):'');card.append(by);}
+  card.append(link);
+  if(mine){const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Удалить';remove.addEventListener('click',async()=>{if(!confirm('Удалить этот скин?'))return;remove.disabled=true;try{const data=new FormData();data.set('csrf',csrf);data.set('action','delete');data.set('model',skinModel);data.set('file',file);await submitWrap(data);await loadCommunityWraps();}catch(e){$('wrapUploadStatus').textContent=e.message; $('wrapUpload').open=true;}finally{remove.disabled=false;}});card.append(remove);}
+  return card;
  });
  $('wrapGallery').replaceChildren(...cards);
  wrapsRendered=true;
 }
-wrapModel.addEventListener('change',renderWraps);
+async function submitWrap(data){
+ const response=await fetch('/api/wraps.php',{method:'POST',credentials:'same-origin',body:data,cache:'no-store'});
+ const result=await response.json();
+ if(!response.ok)throw Error(result.message||'Не удалось сохранить скин.');
+ return result;
+}
+$('wrapUploadForm').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const button=$('wrapSubmit'),message=$('wrapUploadStatus'),file=$('wrapUploadFile').files[0];
+ if(!file||!csrf)return;
+ if(file.size>1000000){message.textContent='Размер файла превышает 1 МБ.';return;}
+ button.disabled=true;message.textContent='Проверяем лекало и загружаем…';
+ try{
+  const data=new FormData();data.set('csrf',csrf);data.set('action','upload');data.set('model',$('wrapUploadModel').value);data.set('title',$('wrapTitle').value);data.append('skins[]',file);
+  await submitWrap(data);$('wrapUploadForm').reset();wrapFilter.value='mine';
+  message.textContent='Скин принят. Статус смотрите в разделе «Мои скины».';
+  await loadCommunityWraps();
+ }catch(e){message.textContent=e.message;}finally{button.disabled=false;}
+});
+wrapFilter.addEventListener('change',renderWraps);
+wrapModel.addEventListener('change',()=>{$('wrapUploadModel').value=wrapModel.value;renderWraps();});
 wrapSearch.addEventListener('input',renderWraps);
 const accountTabs=[...document.querySelectorAll('.account-tab-list [role="tab"]')];
 function selectAccountTab(active){
@@ -373,6 +410,8 @@ function showUser(u){
   connectorPreference.checked=false;
   connectorPreference.disabled=true;
   selectAccountTab(accountTabs[0]);
+  for(const model of wrapModels)customWraps[model.id]=[];
+  wrapOwnCount=0;wrapsRendered=false;wrapFilter.value='all';$('wrapUploadForm').reset();$('wrapUploadStatus').textContent='';
  }
  $('displayName').textContent=u?.display_name||'Мой профиль';
  $('userEmail').textContent=u?.email||'';
