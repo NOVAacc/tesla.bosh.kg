@@ -38,7 +38,34 @@ function ev_wrap_item(string $model,string $name,array $meta,bool $admin,?int $u
   if ($admin) $item['email']=$meta['email']??'';
   return $item;
 }
+function ev_wrap_seed(): void {
+  $marker=EV_WRAP_DIR.'/.bosh-model3-seed-v1';
+  if (is_file($marker)) return;
+  $seeds=['1','2','3','4','10','11','12','13-2'];
+  $source=dirname(__DIR__).'/wraps/model3';
+  foreach ($seeds as $n) if (!is_file($source.'/modufy_mywrap_'.$n.'.png')) return;
+  $lock=ev_wrap_lock();
+  try {
+    if (is_file($marker)) return;
+    $index=ev_wrap_index();$dir=EV_WRAP_DIR.'/model3';
+    if (!is_dir($dir)&&!@mkdir($dir,0700,true)&&!is_dir($dir)) throw new RuntimeException('Seed directory unavailable');
+    foreach ($seeds as $n) {
+      $original='modufy_mywrap_'.$n.'.png';$path=$source.'/'.$original;
+      $hash=hash_file('sha256',$path);$exists=is_file($dir.'/'.$original);
+      foreach ($index as $meta) if (($meta['hash']??'')===$hash) $exists=true;
+      if ($exists) continue;
+      $name='u_'.substr($hash,0,24).'.png';$key='model3/'.$name;
+      if (!copy($path,$dir.'/'.$name)) throw new RuntimeException('Seed copy failed');
+      chmod($dir.'/'.$name,0600);
+      $index[$key]=['owner'=>0,'author'=>'BOSH','email'=>'','title'=>'BOSH Wrap '.$n,'hash'=>$hash,'status'=>'approved','date'=>gmdate('c')];
+      try {ev_wrap_write($index);}catch(Throwable $e){@unlink($dir.'/'.$name);throw $e;}
+    }
+    if (file_put_contents($marker,'1',LOCK_EX)===false) throw new RuntimeException('Seed marker failed');
+    chmod($marker,0600);
+  } finally {flock($lock,LOCK_UN);fclose($lock);}
+}
 function ev_wrap_list(bool $admin=false,?int $uid=null): array {
+  ev_wrap_seed();
   $index=ev_wrap_index();$items=[];
   foreach (EV_WRAP_MODELS as $model) {
     foreach (glob(EV_WRAP_DIR.'/'.$model.'/*.png') ?: [] as $path) {
@@ -108,6 +135,7 @@ try {
   $redirect=$admin&&($_POST['from']??'')==='admin';
   $model=$_POST['model']??null;$action=$_POST['action']??'upload';
   if (!in_array($model,EV_WRAP_MODELS,true)) throw new InvalidArgumentException('Выберите модель.');
+  ev_wrap_seed();
   $lock=ev_wrap_lock();
   try {
     $index=ev_wrap_index();

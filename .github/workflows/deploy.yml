@@ -35,12 +35,13 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
-          extensions: curl, mbstring
+          extensions: curl, mbstring, gd
       - run: |
           php -l public/api/stations.php
           php -l public/api/map-services.php
           php -l public/api/root-businesses.php
           php -l public/api/wraps.php
+          php -r 'define("EV_WRAP_LIBRARY_ONLY",true); require "public/api/wraps.php"; $files=glob("public/wraps/model3/*.png"); if(count($files)!==8) exit(1); foreach($files as $file) ev_wrap_validate($file,"model3");'
           php -l public/api/station-cache.php
           php -l public/api/account.php
           php -l public/api/station-feedback.php
