@@ -19,6 +19,7 @@ $page = match ($_GET['page'] ?? null) {
   'donation' => 'donation',
   'users' => 'users',
   'analytics' => 'analytics',
+  'tesla' => 'tesla',
   default => 'dashboard',
 };
 $donationError = '';
@@ -77,6 +78,51 @@ if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
     if ($page === 'users') $userListError = true;
   }
 }
+
+// Read only local connection metadata and cached vehicle lists; never call Tesla API.
+$teslaAccounts = null;
+$teslaVehicleCount = null;
+$teslaUnknown = 0;
+$teslaRows = [];
+$teslaError = false;
+if ($allowed && in_array($page, ['dashboard', 'tesla'], true)) {
+  try {
+    $tokenDir = '/home/g143326/.tesla-oauth-tokens';
+    $cacheDir = '/home/g143326/.tesla-vehicle-cache';
+    if (is_dir($tokenDir) && !is_readable($tokenDir)) throw new RuntimeException('Tesla connection directory unreadable');
+    $files = is_dir($tokenDir) ? glob($tokenDir.'/user-*.json') : [];
+    if ($files === false) throw new RuntimeException('Tesla connection directory unavailable');
+    $ids = [];
+    foreach ($files as $file) {
+      if (is_file($file) && preg_match('/^user-([1-9][0-9]*)\\.json$/D', basename($file), $match)) {
+        $ids[(int)$match[1]] = true;
+      }
+    }
+    $teslaAccounts = 0;
+    $teslaVehicleCount = 0;
+    $lookup = ev_db()->prepare('SELECT email FROM users WHERE id = :id');
+    foreach (array_keys($ids) as $id) {
+      $lookup->execute(['id' => $id]);
+      $email = $lookup->fetchColumn();
+      if ($email === false) continue;
+      ++$teslaAccounts;
+      $cacheFile = $cacheDir.'/user-'.$id.'.json';
+      $cache = is_file($cacheFile) ? json_decode((string) @file_get_contents($cacheFile), true) : null;
+      $vehicles = is_array($cache['vehicles'] ?? null) ? array_filter($cache['vehicles'], 'is_array') : null;
+      if ($vehicles === null || !$vehicles) ++$teslaUnknown;
+      if ($vehicles !== null) $teslaVehicleCount += count($vehicles);
+      if ($page === 'tesla') {
+        $teslaRows[] = ['email' => $email, 'vehicles' => $vehicles ?? [], 'checked_at' => (int)($cache['checked_at'] ?? 0)];
+      }
+    }
+  } catch (Throwable $error) {
+    error_log('EV admin Tesla summary unavailable: '.$error->getMessage());
+    $teslaError = true;
+    $teslaAccounts = $teslaVehicleCount = null;
+    $teslaRows = [];
+  }
+}
+
 ?><!doctype html>
 <html lang="ru">
 <head>
@@ -96,6 +142,7 @@ if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
     <nav class="root-menu" aria-label="Разделы админки">
       <a href="/root"<?= $page === 'dashboard' ? ' aria-current="page"' : '' ?>>Дашборд</a>
       <a href="/root?page=users"<?= $page === 'users' ? ' aria-current="page"' : '' ?>>Пользователи</a>
+      <a href="/root?page=tesla"<?= $page === 'tesla' ? ' aria-current="page"' : '' ?>>Tesla</a>
       <a href="/root?page=analytics"<?= $page === 'analytics' ? ' aria-current="page"' : '' ?>>Аналитика</a>
       <a href="/root?page=businesses"<?= $page === 'businesses' ? ' aria-current="page"' : '' ?>>Компании</a>
       <a href="/root?page=comments"<?= $page === 'comments' ? ' aria-current="page"' : '' ?>>Комментарии</a>
@@ -116,6 +163,39 @@ if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
     </form></section>
     <section class="faq-admin-list"><div class="section-heading"><h2>Все вопросы</h2><input type="search" id="faqFilter" placeholder="Найти вопрос…"></div><p class="note" id="faqReorderHint">Перетащите вопрос за заголовок или используйте стрелки. Порядок сохраняется автоматически.</p><div id="faqCards"></div></section>
     <script src="/root-faq.js?v=<?= hash_file('sha256', __DIR__.'/root-faq.js') ?>" type="module"></script>
+    <?php elseif ($page === 'tesla'): ?>
+    <section class="card users" aria-labelledby="teslaSummary">
+      <h2 id="teslaSummary">Подключённые Tesla</h2>
+      <p class="total"><?= $teslaVehicleCount === null ? 'Недоступно' : number_format($teslaVehicleCount, 0, ',', ' ') ?></p>
+      <p class="note">Аккаунтов с локальной привязкой: <?= $teslaAccounts === null ? 'Недоступно' : number_format($teslaAccounts, 0, ',', ' ') ?> · Без сведений об автомобилях: <?= $teslaAccounts === null ? '—' : $teslaUnknown ?></p>
+      <p class="note">Количество записей автомобилей в кэше (до 3 на аккаунт), без запросов к Tesla API. Отозванные разрешения могут оставаться в локальной привязке.</p>
+      <?php if ($page === 'dashboard'): ?><a href="/root?page=tesla">Список подключений</a><?php endif; ?>
+    </section>
+
+    <section class="card root-user-list">
+      <div class="section-heading"><h2>Автомобили и аккаунты</h2><a href="/root?page=tesla">Обновить</a></div>
+      <?php if ($teslaError): ?>
+        <p role="alert">Не удалось загрузить подключения.</p>
+      <?php elseif (!$teslaRows): ?>
+        <p class="note">Подключений пока нет.</p>
+      <?php else: ?>
+      <div class="root-user-table-wrap"><table class="root-user-table">
+        <thead><tr><th scope="col">Email</th><th scope="col">Модель</th><th scope="col">VIN (последние 4)</th><th scope="col">Обновление (UTC)</th></tr></thead>
+        <tbody>
+        <?php foreach ($teslaRows as $row): ?>
+          <?php foreach ($row['vehicles'] ?: [[]] as $car): ?>
+          <tr>
+            <td><?= htmlspecialchars((string)$row['email'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars(in_array($car['model'] ?? '', ['3','Y','S','X'], true) ? 'Model '.$car['model'] : ($car ? 'Tesla' : 'Нет данных'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars((string)($car['vin_suffix'] ?? '—'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></td>
+            <td><?= $row['checked_at'] > 0 ? gmdate('d.m.Y H:i', $row['checked_at']) : '—' ?></td>
+          </tr>
+          <?php endforeach; ?>
+        <?php endforeach; ?>
+        </tbody>
+      </table></div>
+      <?php endif; ?>
+    </section>
     <?php elseif ($page === 'analytics'): ?>
     <section aria-labelledby="analyticsTitle">
       <div class="section-heading"><h2 id="analyticsTitle">Аналитика аудитории</h2><div><label for="analyticsDays">Период</label> <select id="analyticsDays"><option value="1">Сегодня</option><option value="7">7 дней</option><option value="30" selected>30 дней</option><option value="90">90 дней</option></select> <button id="analyticsRefresh" type="button">Обновить</button></div></div>
@@ -191,6 +271,13 @@ if ($allowed && in_array($page, ['dashboard', 'users'], true)) {
     </section>
     <?php endif; ?>
     <?php if ($page === 'dashboard'): ?>
+    <section class="card users" aria-labelledby="teslaSummary">
+      <h2 id="teslaSummary">Подключённые Tesla</h2>
+      <p class="total"><?= $teslaVehicleCount === null ? 'Недоступно' : number_format($teslaVehicleCount, 0, ',', ' ') ?></p>
+      <p class="note">Аккаунтов с локальной привязкой: <?= $teslaAccounts === null ? 'Недоступно' : number_format($teslaAccounts, 0, ',', ' ') ?> · Без сведений об автомобилях: <?= $teslaAccounts === null ? '—' : $teslaUnknown ?></p>
+      <p class="note">По последним сохранённым данным, без запросов к Tesla API. Отозванные разрешения могут оставаться в локальной привязке.</p>
+      <?php if ($page === 'dashboard'): ?><a href="/root?page=tesla">Список подключений</a><?php endif; ?>
+    </section>
     <section aria-labelledby="networks">
       <div class="section-heading"><h2 id="networks">Зарядные сети</h2><button id="refreshNetworks" type="button">Обновить</button></div>
       <p class="note">Рабочая зарядка имеет хотя бы один порт в рабочем статусе, включая занятые порты.</p>
