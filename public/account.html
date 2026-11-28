@@ -91,6 +91,19 @@ input, select, textarea { width: 100%; min-height: 46px; padding: 10px 12px; bor
 #businessForm details{margin:8px 0}
 #businessApplications article{padding:12px 0;border-top:1px solid #dedede}
 #businessApplications article p{margin:6px 0}
+
+.wrap-toolbar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin:16px 0}
+.wrap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin:16px 0}
+.wrap-item{border:1px solid #e7e7e7;border-radius:20px;padding:10px;min-width:0}
+.wrap-item img{width:100%;aspect-ratio:1;object-fit:contain;display:block;background:#e8e8e8;border-radius:13px}
+.wrap-item h3{font-size:14px;margin:10px 0;overflow-wrap:anywhere}
+.wrap-link{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 13px;border-radius:100px;background:#171717;color:white;text-decoration:none;font-size:13px;font-weight:600}
+.wrap-item .wrap-link{width:100%}
+.wrap-guide{margin-top:18px;padding:14px;border-radius:16px;background:#f5f5f5}
+.wrap-guide summary{font-weight:650;color:#171717}
+.wrap-guide li{font-size:14px;line-height:1.5;margin-block:5px}
+.wrap-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+@media(max-width:520px){.wrap-toolbar{grid-template-columns:1fr}.wrap-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.wrap-item{padding:8px}.account-tab-list button{font-size:12px}}
 </style><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#f6f7f9"><link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png"><script src="/pwa.js" defer></script></head><body>
 <header><a class="back" href="/" aria-label="Вернуться к карте">←</a><div class="header-end"><strong>EV Карта</strong>
   <details id="accountMenu" class="account-menu hidden">
@@ -159,6 +172,7 @@ input, select, textarea { width: 100%; min-height: 46px; padding: 10px 12px; bor
 <div class="account-tab-list" role="tablist" aria-label="Разделы кабинета">
  <button type="button" role="tab" id="companyTab" aria-controls="companyPanel" aria-selected="true">Компании</button>
  <button type="button" role="tab" id="settingsTab" aria-controls="settingsPanel" aria-selected="false" tabindex="-1">Настройки</button>
+ <button type="button" role="tab" id="wrapsTab" aria-controls="wrapsPanel" aria-selected="false" tabindex="-1">Скины</button>
  <button type="button" role="tab" id="walletTab" aria-controls="walletPanel" aria-selected="false" tabindex="-1">Кошелёк</button>
 </div>
 <section class="card" role="tabpanel" tabindex="0" id="companyPanel" aria-labelledby="companyTab">
@@ -193,6 +207,29 @@ input, select, textarea { width: 100%; min-height: 46px; padding: 10px 12px; bor
  <p id="vehicleConnectorHint">Карта будет показывать станции с разъёмами, указанными хотя бы у одного из ваших автомобилей.</p>
  <div class="message" id="preferencesMsg" role="status"></div>
 </section>
+
+<section class="card hidden" role="tabpanel" tabindex="0" id="wrapsPanel" aria-labelledby="wrapsTab">
+ <h2>Скины Tesla</h2>
+ <p>Измените внешний вид цифровой модели автомобиля на экране Tesla. Выберите точную версию кузова — шаблоны разных поколений не взаимозаменяемы.</p>
+ <div class="wrap-toolbar">
+  <div><label for="wrapModel">Модель автомобиля</label><select id="wrapModel"><option value="model3">Model 3 · 2017–2023</option><option value="model3-2024-base">Model 3 · 2024+ Standard / Premium</option><option value="model3-2024-performance">Model 3 · 2024+ Performance</option><option value="modely">Model Y · до 2025</option><option value="modely-2025-base">Model Y · 2025+ Standard</option><option value="modely-2025-premium">Model Y · 2025+ Premium</option><option value="modely-2025-performance">Model Y · 2025+ Performance</option><option value="modely-l">Model Y L</option><option value="models-2021">Model S · 2021+</option><option value="models-2025-plaid">Model S · 2025+ Plaid</option><option value="modelx-2021">Model X · 2021+</option><option value="cybertruck">Cybertruck</option></select></div>
+  <div><label for="wrapSearch">Поиск дизайна</label><input id="wrapSearch" type="search" placeholder="Например, Camo"></div>
+ </div>
+ <div class="wrap-actions"><a class="wrap-link" id="wrapTemplate" target="_blank" rel="noopener noreferrer" href="https://raw.githubusercontent.com/teslamotors/custom-wraps/master/model3/template.png">Шаблон PNG</a><a id="wrapSource" target="_blank" rel="noopener noreferrer" href="https://github.com/teslamotors/custom-wraps/tree/master/model3">Источник Tesla</a></div>
+ <p id="wrapCount" class="notice" role="status"></p>
+ <div id="wrapGallery" class="wrap-grid"></div>
+ <details class="wrap-guide"><summary>Как установить скин</summary>
+ <p><strong>Через USB:</strong></p><ol><li>Скачайте PNG для вашей версии кузова.</li><li>Создайте папку Wraps в корне USB-накопителя (exFAT, FAT32, ext3 или ext4; NTFS не поддерживается).</li><li>Поместите PNG в эту папку и подключите накопитель к автомобилю. Не используйте накопитель с файлами обновлений прошивки или карт.</li><li>На экране автомобиля откройте Toybox → Paint Shop → Wraps и выберите изображение.</li></ol>
+ <p><strong>Через приложение Tesla:</strong> если функция доступна, в версии 4.59.0 и новее откройте Creations → Wrap → Upload. Затем выберите скин в Paint Shop.</p>
+ <p>Поддерживается до 10 скинов из приложения и до 10 с USB. Доступность зависит от версии ПО автомобиля.</p>
+ </details>
+ <details class="wrap-guide"><summary>Проверить свой PNG</summary>
+ <p>Размеры сторон — от 512 до 1024 пикселей, файл не более 1 МБ, имя до 30 символов (латиница, цифры, пробел, дефис или подчёркивание). Проверка происходит на устройстве, файл не передаётся на сервер. Совпадение рисунка с кузовом нужно проверять отдельно.</p>
+ <label for="wrapFile">Выберите файл PNG</label><input id="wrapFile" type="file" accept=".png,image/png">
+ <p id="wrapFileResult" role="status" aria-live="polite"></p>
+ </details>
+ <p>Галерея использует официальные примеры Tesla. Загрузка скинов непосредственно в автомобиль по нашему API не производится.</p>
+</section>
 <section class="card hidden" role="tabpanel" tabindex="0" id="walletPanel" aria-labelledby="walletTab"><h2>Единый кошелёк</h2><div class="notice">Платежи и баланс ещё не запущены. Мы не принимаем пополнения до подключения лицензированного платёжного партнёра.</div></section>
 </div></div><p id="globalMsg" class="message" role="status" aria-live="polite"></p></main>
 <script src="/mobile-nav.js" data-page="account"></script>
@@ -209,6 +246,66 @@ async function api(action,data){
  if(!response.ok)throw Object.assign(new Error(body.message||({invalid_credentials:'Неверная почта или пароль',email_not_verified:'Почта ещё не подтверждена',try_later:'Слишком много попыток. Попробуйте позже',unauthorized:'Сначала войдите',service_unavailable:'Сервис временно недоступен'}[body.error]||body.error||'Ошибка запроса')),{code:body.error});
  return body;
 }
+
+const wrapModels=[{"id":"model3","label":"Model 3 · 2017–2023","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"model3-2024-base","label":"Model 3 · 2024+ Standard / Premium","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"model3-2024-performance","label":"Model 3 · 2024+ Performance","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"modely","label":"Model Y · до 2025","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"modely-2025-base","label":"Model Y · 2025+ Standard","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"modely-2025-premium","label":"Model Y · 2025+ Premium","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"modely-2025-performance","label":"Model Y · 2025+ Performance","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"modely-l","label":"Model Y L","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"models-2021","label":"Model S · 2021+","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"models-2025-plaid","label":"Model S · 2025+ Plaid","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"modelx-2021","label":"Model X · 2021+","files":["Acid_Drip.png","Ani.png","Apocalypse.png","Avocado_Green.png","Camo.png","Cosmic_Burst.png","Divide.png","Doge.png","Dot_Matrix.png","Ice_Cream.png","Leopard.png","Pixel_Art.png","Reindeer.png","Rudi.png","Sakura.png","Sketch.png","String_Lights.png","Valentine.png","Vintage_Gradient.png","Vintage_Stripes.png"]},{"id":"cybertruck","label":"Cybertruck","files":["Ani.png","Camo_Blue.png","Camo_Brown.png","Camo_Green.png","Camo_Pink.png","Camo_Sand.png","Camo_Snow.png","Camo_Stealth.png","Clay.png","Cosmic_Burst.png","Digital_Camo_Green.png","Digital_Camo_Snow.png","Digital_Camo_Stealth.png","Doge_Camo.png","Gradient_Black.png","Gradient_Burn.png","Gradient_Cotton_Candy.png","Gradient_Green.png","Gradient_Purple_Burn.png","Gradient_Sunburst.png","Graffiti_back.png","Graffiti_green.png","Graffiti_orange.png","Grandmas_Sofa.png","Houndstooth.png","Leopard.png","Mika.png","Rc_prototype.png","Retro.png","Rudi.png","Rust.png","Valentine.png","Woody.png","Xmas_Camo.png","Xmas_Lights.png","Xray.png"]}];
+const wrapRoot='https://raw.githubusercontent.com/teslamotors/custom-wraps/master/';
+const wrapModel=$('wrapModel'),wrapSearch=$('wrapSearch');
+let wrapsRendered=false;
+function renderWraps(){
+ const model=wrapModels.find(m=>m.id===wrapModel.value)||wrapModels[0];
+ const base=wrapRoot+model.id+'/';
+ const query=wrapSearch.value.trim().toLowerCase();
+ const files=model.files.filter(f=>f.replaceAll('_',' ').toLowerCase().includes(query));
+ $('wrapTemplate').href=base+'template.png';
+ $('wrapSource').href='https://github.com/teslamotors/custom-wraps/tree/master/'+model.id;
+ $('wrapCount').textContent=files.length+' из '+model.files.length+' официальных дизайнов';
+ const cards=files.map(file=>{
+  const card=document.createElement('article');card.className='wrap-item';
+  const title=file.replace(/\.png$/i,'').replaceAll('_',' ');
+  const url=base+'example/'+encodeURIComponent(file);
+  const img=document.createElement('img');img.src=url;img.alt=title+' — UV-развёртка';img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';
+  const h=document.createElement('h3');h.textContent=title;
+  const link=document.createElement('a');link.className='wrap-link';link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Скачать PNG';
+  link.addEventListener('click',async event=>{
+   if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||link.dataset.fallback)return;
+   event.preventDefault();if(link.dataset.busy)return;
+   link.dataset.busy='1';link.textContent='Загрузка…';
+   try{
+    const response=await fetch(url,{credentials:'omit',referrerPolicy:'no-referrer'});
+    if(!response.ok)throw Error();
+    const blob=await response.blob();const objectURL=URL.createObjectURL(blob);
+    const download=document.createElement('a');download.href=objectURL;download.download=file;document.body.append(download);download.click();download.remove();setTimeout(()=>URL.revokeObjectURL(objectURL),30000);
+    link.textContent='Скачать PNG';
+   }catch{link.dataset.fallback='1';link.textContent='Открыть PNG';}
+   finally{delete link.dataset.busy;}
+  });
+  card.append(img,h,link);return card;
+ });
+ $('wrapGallery').replaceChildren(...cards);
+ wrapsRendered=true;
+}
+wrapModel.addEventListener('change',renderWraps);
+wrapSearch.addEventListener('input',renderWraps);
+let wrapCheck=0;
+$('wrapFile').addEventListener('change',async event=>{
+ const request=++wrapCheck, file=event.target.files?.[0], result=$('wrapFileResult');
+ if(!file){result.textContent='';return;}
+ result.textContent='Проверяем…';
+ const errors=[];
+ if(file.size>1000000)errors.push('файл больше 1 МБ');
+ if(!/^[A-Za-z0-9 _-]{1,30}\.png$/i.test(file.name))errors.push('недопустимое имя файла');
+ if(file.size<=1000000){
+  try{
+   const signature=new Uint8Array(await file.slice(0,8).arrayBuffer());
+   if(signature.length!==8||![137,80,78,71,13,10,26,10].every((v,i)=>signature[i]===v))throw Error();
+   const bitmap=await createImageBitmap(file);
+   if(bitmap.width<512||bitmap.width>1024||bitmap.height<512||bitmap.height>1024)errors.push('разрешение '+bitmap.width+' × '+bitmap.height+' вне допустимого диапазона');
+   bitmap.close();
+  }catch{errors.push('не удалось прочитать PNG');}
+ }
+ if(request===wrapCheck)result.textContent=errors.length?'Не подходит: '+errors.join('; ')+'.':'Формальные требования PNG соблюдены. Проверьте соответствие шаблону вашей модели.';
+});
+
 const accountTabs=[...document.querySelectorAll('.account-tab-list [role="tab"]')];
 function selectAccountTab(active){
  for(const tab of accountTabs){
@@ -218,11 +315,12 @@ function selectAccountTab(active){
   $(tab.getAttribute('aria-controls')).classList.toggle('hidden',!selected);
  }
  if(active.id==='companyTab')businessMap?.invalidateSize();
+ if(active.id==='wrapsTab'&&!wrapsRendered)renderWraps();
 }
 for(const [index,tab] of accountTabs.entries()){
  tab.addEventListener('click',()=>selectAccountTab(tab));
  tab.addEventListener('keydown',event=>{
-  const next={ArrowLeft:(index+2)%3,ArrowRight:(index+1)%3,Home:0,End:2}[event.key];
+  const next={ArrowLeft:(index+accountTabs.length-1)%accountTabs.length,ArrowRight:(index+1)%accountTabs.length,Home:0,End:accountTabs.length-1}[event.key];
   if(next===undefined)return;
   event.preventDefault();
   selectAccountTab(accountTabs[next]);
@@ -270,7 +368,7 @@ function showUser(u){
  $('authenticated').classList.toggle('hidden',!u);
  accountMenu.classList.toggle('hidden',!u);
  accountMenu.open=false;
- if(u){loadConnectorPreference();loadBusinessPanel();}
+ if(u){loadConnectorPreference();loadBusinessPanel();if(location.hash==='#wraps')selectAccountTab($('wrapsTab'));}
  else{
   resetBusinessPanel();
   preferenceRequest++;
