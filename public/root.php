@@ -7,7 +7,7 @@ header('Cache-Control: private, no-store');
 header('X-Robots-Tag: noindex, nofollow');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: no-referrer');
-header("Content-Security-Policy: default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+header("Content-Security-Policy: default-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
 ev_session();
 $user = ev_user();
 $allowed = ev_root_access($user);
@@ -147,7 +147,7 @@ $wrapItems=[];
 if ($allowed && $page==='wraps') {
   define('EV_WRAP_LIBRARY_ONLY',true);
   require_once __DIR__.'/api/wraps.php';
-  $wrapItems=ev_wrap_list();
+  $wrapItems=ev_wrap_list(true,(int)$user['id']);
 }
 $csrf = $_SESSION['csrf'] ?? '';
 session_write_close();
@@ -269,9 +269,10 @@ if ($allowed && in_array($page, ['dashboard', 'tesla'], true)) {
       <h2>Пользовательские скины</h2>
       <p class="note">Загрузите до 10 PNG за раз. Они появятся в кабинете выбранной модели без значка Tesla. Размер каждого — до 1 МБ.</p>
       <?php if (isset($_GET['saved'])): ?><p role="status">Добавлено: <?= (int)$_GET['saved'] ?> · Не принято: <?= (int)($_GET['failed']??0) ?></p><?php endif; ?>
-      <?php if (isset($_GET['error'])): ?><p role="alert">Не удалось принять файлы. Проверьте модель и количество PNG.</p><?php endif; ?>
+      <?php if (isset($_GET['error'])): ?><p role="alert"><?= htmlspecialchars(is_string($_GET['error'])?$_GET['error']:'Не удалось принять файлы.',ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8') ?></p><?php endif; ?>
       <form class="donation-form" method="post" action="/api/wraps.php" enctype="multipart/form-data">
         <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" name="from" value="admin">
         <label>Модель <select name="model" required>
         <?php foreach (EV_WRAP_MODELS as $model): ?>
           <option value="<?= htmlspecialchars($model,ENT_QUOTES,'UTF-8') ?>"><?= htmlspecialchars($model==='model3'?'Model 3 · 2017–2023':$model,ENT_QUOTES,'UTF-8') ?></option>
@@ -282,7 +283,20 @@ if ($allowed && in_array($page, ['dashboard', 'tesla'], true)) {
       </form>
       <h3>Загружено: <?= count($wrapItems) ?></h3>
       <?php foreach ($wrapItems as $item): ?>
-        <p><?= htmlspecialchars($item['model'].' · '.$item['title'],ENT_QUOTES,'UTF-8') ?> — <a href="<?= htmlspecialchars($item['url'],ENT_QUOTES,'UTF-8') ?>" target="_blank" rel="noopener">PNG</a></p>
+        <article class="card business-directory-item">
+          <img width="100" height="100" loading="lazy" src="<?= htmlspecialchars($item['url'],ENT_QUOTES,'UTF-8') ?>" alt="">
+          <h3><?= htmlspecialchars($item['title'],ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8') ?></h3>
+          <p><?= htmlspecialchars($item['model'].' · '.$item['author'].' · '.$item['email'],ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8') ?></p>
+          <p class="note"><?= $item['status']==='pending'?'На модерации':'Опубликован' ?> · <?= htmlspecialchars((string)$item['date'],ENT_QUOTES,'UTF-8') ?></p>
+          <form method="post" action="/api/wraps.php">
+            <input type="hidden" name="csrf" value="<?= htmlspecialchars($csrf,ENT_QUOTES,'UTF-8') ?>">
+            <input type="hidden" name="from" value="admin">
+            <input type="hidden" name="model" value="<?= htmlspecialchars($item['model'],ENT_QUOTES,'UTF-8') ?>">
+            <input type="hidden" name="file" value="<?= htmlspecialchars($item['file'],ENT_QUOTES,'UTF-8') ?>">
+            <?php if ($item['status']==='pending'): ?><button type="submit" name="action" value="approve">Одобрить</button><?php endif; ?>
+            <button type="submit" name="action" value="delete">Удалить</button>
+          </form>
+        </article>
       <?php endforeach; ?>
     </section>
     <?php elseif ($page === 'tesla'): ?>
